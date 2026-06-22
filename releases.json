@@ -1,0 +1,24 @@
+{
+  "current_store_version": "v1.0.0",
+  "releases": [
+    {
+      "version": "v1.0.0",
+      "date": "2026-04-11",
+      "backend": {
+        "commit": "aca1109",
+        "branch": "main",
+        "flyway_version": "V046"
+      },
+      "frontend": {
+        "commit": "f81afdc",
+        "branch": "main"
+      },
+      "mobile": {
+        "ios_build_number": 34,
+        "android_build_number": 10,
+        "store_status": "live"
+      },
+      "notes": "First tracked release"
+    }
+  ]
+}

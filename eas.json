@@ -1,0 +1,154 @@
+{
+  "cli": {
+    "appVersionSource": "local"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_APP_ENV": "development"
+      },
+      "ios": {
+        "simulator": true
+      }
+    },
+    "preview": {
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_APP_ENV": "staging",
+        "EXPO_PUBLIC_API_URL": "https://d1twtjfgg5e272.cloudfront.net/graphql",
+        "EXPO_PUBLIC_API_TIMEOUT": "30000",
+        "EXPO_PUBLIC_CAPTCHA_ENABLED": "false",
+        "EXPO_PUBLIC_FEATURE_ANALYTICS": "false",
+        "EXPO_PUBLIC_SENTRY_DSN": "https://03358a5fa1bcc960495dc1e048ac7649@o4511236278583296.ingest.us.sentry.io/4511236388880384"
+      },
+      "android": {
+        "buildType": "apk"
+      }
+    },
+    "e2e-dev": {
+      "developmentClient": false,
+      "distribution": "internal",
+      "withoutCredentials": true,
+      "env": {
+        "EXPO_PUBLIC_APP_ENV": "development",
+        "EXPO_PUBLIC_API_URL": "https://d1twtjfgg5e272.cloudfront.net/graphql",
+        "EXPO_PUBLIC_API_TIMEOUT": "30000",
+        "EXPO_PUBLIC_CAPTCHA_ENABLED": "false",
+        "EXPO_PUBLIC_FEATURE_ANALYTICS": "false"
+      },
+      "ios": {
+        "simulator": true
+      },
+      "android": {
+        "buildType": "apk"
+      }
+    },
+    "e2e-local": {
+      "developmentClient": false,
+      "distribution": "internal",
+      "withoutCredentials": true,
+      "env": {
+        "EXPO_PUBLIC_APP_ENV": "development",
+        "EXPO_PUBLIC_API_URL": "PLACEHOLDER_LOCAL_URL",
+        "EXPO_PUBLIC_API_TIMEOUT": "30000",
+        "EXPO_PUBLIC_CAPTCHA_ENABLED": "false",
+        "EXPO_PUBLIC_FEATURE_ANALYTICS": "false"
+      },
+      "ios": {
+        "simulator": true
+      },
+      "android": {
+        "buildType": "apk"
+      }
+    },
+    "testflight-dev": {
+      "developmentClient": false,
+      "distribution": "store",
+      "env": {
+        "EXPO_PUBLIC_APP_ENV": "development",
+        "EXPO_PUBLIC_API_URL": "https://d1twtjfgg5e272.cloudfront.net/graphql",
+        "EXPO_PUBLIC_API_TIMEOUT": "30000",
+        "EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID": "507420348076-dss463ubq08fukmhu8d2opei8uvv7kib.apps.googleusercontent.com",
+        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "507420348076-pke4jdrm2n541ukk30ulbm5imcrpen99.apps.googleusercontent.com",
+        "EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID": "507420348076-c3kk470ot3fb8fkc9ti1r6320s4jal7p.apps.googleusercontent.com",
+        "EXPO_PUBLIC_CAPTCHA_ENABLED": "false",
+        "EXPO_PUBLIC_FEATURE_ANALYTICS": "false",
+        "EXPO_PUBLIC_USE_MOCKS": "false",
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true"
+      }
+    },
+    "testflight-ngrok": {
+      "developmentClient": false,
+      "distribution": "store",
+      "env": {
+        "EXPO_PUBLIC_APP_ENV": "development",
+        "EXPO_PUBLIC_API_URL": "PLACEHOLDER_NGROK_URL",
+        "EXPO_PUBLIC_API_TIMEOUT": "30000",
+        "EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID": "507420348076-dss463ubq08fukmhu8d2opei8uvv7kib.apps.googleusercontent.com",
+        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "507420348076-pke4jdrm2n541ukk30ulbm5imcrpen99.apps.googleusercontent.com",
+        "EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID": "507420348076-c3kk470ot3fb8fkc9ti1r6320s4jal7p.apps.googleusercontent.com",
+        "EXPO_PUBLIC_CAPTCHA_ENABLED": "false",
+        "EXPO_PUBLIC_FEATURE_ANALYTICS": "false",
+        "EXPO_PUBLIC_USE_MOCKS": "false",
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true"
+      }
+    },
+    "production": {
+      "env": {
+        "EXPO_PUBLIC_APP_ENV": "production",
+        "EXPO_PUBLIC_API_URL": "https://justhestia.app/graphql",
+        "EXPO_PUBLIC_API_TIMEOUT": "30000",
+        "EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID": "507420348076-dss463ubq08fukmhu8d2opei8uvv7kib.apps.googleusercontent.com",
+        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "507420348076-pke4jdrm2n541ukk30ulbm5imcrpen99.apps.googleusercontent.com",
+        "EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID": "507420348076-c3kk470ot3fb8fkc9ti1r6320s4jal7p.apps.googleusercontent.com",
+        "EXPO_PUBLIC_APPLE_SERVICE_ID": "app.just.hestia.web",
+        "EXPO_PUBLIC_APPLE_REDIRECT_URI": "https://justhestia.app/auth/apple-callback",
+        "EXPO_PUBLIC_FEATURE_ANALYTICS": "false",
+        "EXPO_PUBLIC_CAPTCHA_ENABLED": "true",
+        "EXPO_PUBLIC_CAPTCHA_SITE_KEY": "0x4AAAAAACr2GdRZIxNbM0c3",
+        "EXPO_PUBLIC_USE_MOCKS": "false",
+        "EXPO_PUBLIC_SENTRY_DSN": "https://03358a5fa1bcc960495dc1e048ac7649@o4511236278583296.ingest.us.sentry.io/4511236388880384"
+      },
+      "ios": {
+        "image": "latest"
+      }
+    }
+  },
+  "submit": {
+    "testflight-dev": {
+      "ios": {
+        "appleId": "vasu.techd@gmail.com",
+        "ascAppId": "6772645958",
+        "appleTeamId": "MZC5YD24NW"
+      },
+      "android": {
+        "serviceAccountKeyPath": "./google-play-service-account.json",
+        "track": "internal"
+      }
+    },
+    "testflight-ngrok": {
+      "ios": {
+        "appleId": "vasu.techd@gmail.com",
+        "ascAppId": "6772645958",
+        "appleTeamId": "MZC5YD24NW"
+      },
+      "android": {
+        "serviceAccountKeyPath": "./google-play-service-account.json",
+        "track": "internal"
+      }
+    },
+    "production": {
+      "ios": {
+        "appleId": "vasu.techd@gmail.com",
+        "ascAppId": "6772645958",
+        "appleTeamId": "MZC5YD24NW"
+      },
+      "android": {
+        "serviceAccountKeyPath": "./google-play-service-account.json",
+        "track": "internal"
+      }
+    }
+  }
+}

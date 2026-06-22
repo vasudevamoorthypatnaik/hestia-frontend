@@ -1,0 +1,87 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* INV-235 web-only animations — wrapped in @supports so react-native-css-interop
+   skips them during native bundling. The parser crashes on box-shadow/rotateY/compound
+   transforms inside @keyframes (parseAspectRatio TypeError). Browsers evaluate
+   @supports(animation-name: _web_only) as true — animations apply normally on web.
+   INV-245: If adding new web-only CSS, put it inside this @supports block. */
+@supports (animation-name: _web_only) {
+  /* INV-270: Hide demo hero in static HTML to prevent FOUC.
+     The component sets data-hydrated="true" after React mount,
+     which overrides this rule and reveals the content. */
+  [data-testid="demo-hero-section"]:not([data-hydrated="true"]) {
+    opacity: 0 !important;
+    min-height: 400px; /* Reserve space to prevent layout shift */
+  }
+
+  @keyframes envDramaticEntrance {
+    0% { opacity: 0; transform: scale(0.6) translateY(40px); }
+    60% { opacity: 1; transform: scale(1.05) translateY(-5px); }
+    100% { opacity: 1; transform: scale(1) translateY(0); }
+  }
+  @keyframes envFloat {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    25% { transform: translateY(-8px) rotate(0.5deg); }
+    75% { transform: translateY(-4px) rotate(-0.5deg); }
+  }
+  @keyframes envShimmer {
+    0% { transform: translateX(-33%); }
+    100% { transform: translateX(33%); }
+  }
+  @keyframes envGlowPulse {
+    0%, 100% { opacity: 0.5; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.1); }
+  }
+  @keyframes envSealPulse {
+    0%, 100% { box-shadow: 0 2px 8px rgba(180,83,9,0.5); }
+    50% { box-shadow: 0 2px 20px rgba(251,191,36,0.6), 0 0 40px rgba(251,191,36,0.2); }
+  }
+  @keyframes envRotate {
+    0% { transform: rotateY(0deg); }
+    100% { transform: rotateY(360deg); }
+  }
+  @keyframes envSparkle {
+    0%, 100% { opacity: 0; transform: scale(0.5) rotate(0deg); }
+    50% { opacity: 1; transform: scale(1.2) rotate(180deg); }
+  }
+  @keyframes slideInLeft {
+    from { opacity: 0; transform: translateX(-30px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+  @keyframes slideInDown {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .env-scene { animation: envDramaticEntrance 1s cubic-bezier(0.16,1,0.3,1) forwards; }
+  .env-float { animation: envFloat 4s ease-in-out infinite 1s; }
+  .env-shimmer {
+    position: absolute; top: 0; left: -100%; right: 0; bottom: 0; width: 300%;
+    background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.15) 45%, rgba(255,255,255,0.3) 50%, rgba(255,255,255,0.15) 55%, transparent 100%);
+    animation: envShimmer 3s ease-in-out infinite;
+    border-radius: 6px; pointer-events: none; z-index: 4;
+  }
+  .env-glow {
+    position: absolute; inset: -20px; border-radius: 30px;
+    box-shadow: 0 0 60px rgba(251,191,36,0.15);
+    animation: envGlowPulse 3s ease-in-out infinite;
+    z-index: -1; pointer-events: none;
+  }
+  .env-seal-pulse { animation: envSealPulse 2s ease-in-out infinite; }
+  .env-rotate {
+    animation: envRotate 8s linear infinite;
+    transform-style: preserve-3d;
+    perspective: 500px;
+  }
+  .env-sparkle { animation: envSparkle 2s ease-in-out infinite; }
+  .env-particle {
+    position: absolute; border-radius: 50%;
+    background: rgba(251,191,36,0.2); opacity: 0.5;
+    animation: float 6s ease-in-out infinite;
+  }
+  .cta-slide { transition: transform 0.4s ease-out, opacity 0.3s ease-out; }
+  .cta-slide-visible { opacity: 1; transform: translateY(0); }
+  .cta-slide-hidden { opacity: 0; transform: translateY(100%); }
+}
