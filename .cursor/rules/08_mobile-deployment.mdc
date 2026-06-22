@@ -1,0 +1,919 @@
+---
+description: Mobile deployment — EAS Build, App Store/Play Store, versioning, OTA updates, release process
+alwaysApply: true
+---
+
+# Mobile Deployment Strategy
+
+**Role Perspective:** Senior Mobile DevOps Engineer
+**Platform:** EAS (Expo Application Services)
+**Scope:** iOS App Store, Google Play Store, OTA updates
+**Philosophy:** Automated builds, quick iterations, user-controlled updates
+
+---
+
+## Core Principles
+
+1. **Cloud builds** (EAS Build) — Consistent, reproducible builds
+2. **OTA for patches** — Bug fixes without app store review
+3. **Store releases for features** — New features go through review
+4. **Semantic versioning** — Clear version increments
+5. **Staged rollouts** — Test with small % of users first
+
+---
+
+## 0. Build Strategy (NON-NEGOTIABLE)
+
+### Two-Track Build Strategy
+
+| Track | Profile | API Target | Build | Purpose |
+|-------|---------|------------|-------|---------|
+| QA / TestFlight | `preview` | dev AWS | Local Mac (`--local`) | Day-to-day testing, QA, stakeholder demos |
+| App Store submission | `production` | prod AWS | EAS Cloud | Final submission + Apple review |
+
+### Build Commands
+
+```bash
+# TestFlight / QA build (local, points to dev AWS)
+eas build --profile preview --platform ios --local
+
+# App Store submission (EAS cloud, points to prod AWS)
+eas build --profile production --platform ios
+eas submit --platform ios --latest
+```
+
+### Rules
+
+1. TestFlight builds MUST use the `preview` profile (dev AWS). NEVER use `production` for QA testing.
+2. EAS cloud builds are ONLY for the `production` profile (final App Store submissions).
+3. Always use `--local` flag for preview builds (saves EAS credits, faster iteration).
+4. The Apple reviewer tests the SAME `production` binary that ships to users. There is no separate "review build."
+5. A demo account on prod must exist before first App Store submission.
+
+### Prerequisites for Local Builds
+
+- Xcode installed on Mac
+- EAS credentials synced locally: run `eas credentials` to verify
+- Apple Developer account enrolled
+
+### Profile Purpose Reference
+
+| Profile | `APP_ENV` | `API_URL` | Distribution | Build | Purpose |
+|---------|-----------|-----------|-------------|-------|---------|
+| `development` | `development` | (from .env) | internal (simulator) | Local | Active development with dev client |
+| `e2e-dev` | `development` | dev CloudFront | internal (simulator) | Local | Automated E2E testing on simulators |
+| `preview` | `staging` | dev CloudFront | internal (TestFlight) | Local (`--local`) | QA testing, stakeholder demos |
+| `production` | `production` | justhestia.app | App Store | EAS Cloud | App Store release + Apple review |
+
+> **Note on "staging" vs "development":** The `preview` profile uses `EXPO_PUBLIC_APP_ENV: "staging"` to distinguish it from local dev (`development`) and production. It points to dev AWS infrastructure for QA purposes.
+
+---
+
+## 1. EAS Build Overview
+
+### 1.1 What is EAS Build?
+
+**Expo Application Services (EAS)** is Expo's official build and deployment service.
+
+**Replaces:**
+- Classic Expo builds (deprecated)
+- Manual Xcode/Android Studio builds (for most cases)
+
+**Benefits:**
+- ✅ Cloud builds (no local Xcode/Android Studio setup)
+- ✅ Automatic code signing
+- ✅ Consistent build environment
+- ✅ Build for iOS without a Mac (cloud macOS)
+- ✅ GitHub Actions integration
+- ✅ Free tier available
+
+---
+
+### 1.2 EAS CLI Setup
+
+**Install globally:**
+```bash
+npm install -g eas-cli
+```
+
+**Login:**
+```bash
+eas login
+```
+
+**Initialize project:**
+```bash
+eas build:configure
+```
+
+**Creates:** `eas.json` (build configuration)
+
+---
+
+## 2. Build Profiles (`eas.json`)
+
+### 2.1 Configuration File
+
+**Location:** `eas.json` (root)
+
+```json
+{
+  "cli": {
+    "appVersionSource": "local"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_APP_ENV": "development"
+      },
+      "ios": {
+        "simulator": true
+      }
+    },
+    "preview": {
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_APP_ENV": "staging",
+        "EXPO_PUBLIC_API_URL": "https://d1twtjfgg5e272.cloudfront.net/graphql",
+        "EXPO_PUBLIC_API_TIMEOUT": "30000",
+        "EXPO_PUBLIC_CAPTCHA_ENABLED": "false",
+        "EXPO_PUBLIC_FEATURE_ANALYTICS": "false",
+        "EXPO_PUBLIC_SENTRY_DSN": "https://03358a5fa1bcc960495dc1e048ac7649@o4511236278583296.ingest.us.sentry.io/4511236388880384"
+      },
+      "android": {
+        "buildType": "apk"
+      }
+    },
+    "e2e-dev": {
+      "developmentClient": false,
+      "distribution": "internal",
+      "withoutCredentials": true,
+      "env": {
+        "EXPO_PUBLIC_APP_ENV": "development",
+        "EXPO_PUBLIC_API_URL": "https://d1twtjfgg5e272.cloudfront.net/graphql",
+        "EXPO_PUBLIC_API_TIMEOUT": "30000",
+        "EXPO_PUBLIC_CAPTCHA_ENABLED": "false",
+        "EXPO_PUBLIC_FEATURE_ANALYTICS": "false"
+      },
+      "ios": {
+        "simulator": true
+      },
+      "android": {
+        "buildType": "apk"
+      }
+    },
+    "production": {
+      "env": {
+        "EXPO_PUBLIC_APP_ENV": "production",
+        "EXPO_PUBLIC_API_URL": "https://justhestia.app/graphql",
+        "EXPO_PUBLIC_API_TIMEOUT": "30000",
+        "EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID": "507420348076-dss463ubq08fukmhu8d2opei8uvv7kib.apps.googleusercontent.com",
+        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "507420348076-pke4jdrm2n541ukk30ulbm5imcrpen99.apps.googleusercontent.com",
+        "EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID": "507420348076-c3kk470ot3fb8fkc9ti1r6320s4jal7p.apps.googleusercontent.com",
+        "EXPO_PUBLIC_FEATURE_ANALYTICS": "false",
+        "EXPO_PUBLIC_CAPTCHA_ENABLED": "true",
+        "EXPO_PUBLIC_CAPTCHA_SITE_KEY": "0x4AAAAAACr2GdRZIxNbM0c3",
+        "EXPO_PUBLIC_USE_MOCKS": "false",
+        "EXPO_PUBLIC_SENTRY_DSN": "https://03358a5fa1bcc960495dc1e048ac7649@o4511236278583296.ingest.us.sentry.io/4511236388880384"
+      },
+      "ios": {
+        "image": "latest"
+      }
+    }
+  },
+  "submit": {
+    "production": {
+      "ios": {
+        "appleId": "vasu.techd@gmail.com",
+        "ascAppId": "6761153328",
+        "appleTeamId": "MZC5YD24NW"
+      },
+      "android": {
+        "serviceAccountKeyPath": "./google-play-service-account.json",
+        "track": "internal"
+      }
+    }
+  }
+}
+```
+
+---
+
+### 2.2 Build Profile Purposes
+
+#### **development**
+- **Purpose:** Local testing with dev client
+- **Output:** Development build (can load bundles from Expo CLI)
+- **Simulator:** iOS simulator build (faster, for testing)
+- **When to use:** Active development
+
+**Build command:**
+```bash
+eas build --profile development --platform ios
+```
+
+---
+
+#### **preview**
+- **Purpose:** QA testing on real devices via TestFlight (iOS) and APK sideload (Android)
+- **API Target:** Dev AWS (`https://d1twtjfgg5e272.cloudfront.net/graphql`)
+- **Output:** TestFlight build (iOS), APK (Android)
+- **Distribution:** Internal testers only
+- **Build:** Local (`--local` flag) -- NOT EAS cloud
+- **When to use:** Day-to-day QA testing, stakeholder demos, beta testing
+- **Google Sign-In:** Not available (client IDs not configured for dev backend)
+- **Crash Reporting:** Enabled (same Sentry DSN as production)
+
+**Build command:**
+```bash
+eas build --profile preview --platform ios --local
+```
+
+---
+
+#### **production**
+- **Purpose:** App Store and Google Play release
+- **Output:** App Store IPA, Google Play AAB
+- **Auto-increment:** Build number increments automatically
+- **When to use:** Production releases
+
+**Build command:**
+```bash
+eas build --profile production --platform all
+```
+
+---
+
+## 3. Version Numbering
+
+### 3.1 Semantic Versioning
+
+**Format:** `MAJOR.MINOR.PATCH` (e.g., `1.2.3`)
+
+- **MAJOR** (1.0.0 → 2.0.0): Breaking changes, major redesign
+- **MINOR** (1.0.0 → 1.1.0): New features, backward-compatible
+- **PATCH** (1.0.0 → 1.0.1): Bug fixes, small improvements
+
+**Defined in:** `app.config.ts`
+
+```typescript
+export default {
+  version: '1.2.3',  // User-facing version
+  ios: {
+    buildNumber: '45',  // Incremented per build
+  },
+  android: {
+    versionCode: 45,  // Incremented per build
+  },
+}
+```
+
+---
+
+### 3.2 Build Numbers
+
+**iOS: `buildNumber`** (string)
+- Incremented for **every** build submitted to App Store
+- Must always increase, even for same version
+
+**Android: `versionCode`** (integer)
+- Incremented for **every** build submitted to Play Store
+- Must always increase
+
+**Auto-increment:**
+```json
+{
+  "build": {
+    "production": {
+      "autoIncrement": true  // EAS increments buildNumber/versionCode
+    }
+  }
+}
+```
+
+**Manual update:**
+```typescript
+// app.config.ts
+export default {
+  version: '1.2.4',  // Update when releasing new version
+  ios: {
+    buildNumber: '46',  // Incremented manually or by EAS
+  },
+  android: {
+    versionCode: 46,
+  },
+}
+```
+
+---
+
+## 4. iOS Deployment
+
+### 4.1 Prerequisites
+
+**Apple Developer Account:**
+- Individual or Organization account ($99/year)
+- Enrolled in Apple Developer Program
+
+**App Store Connect Setup:**
+1. Create app in App Store Connect
+2. Fill in app metadata (name, description, category)
+3. Upload screenshots
+4. Set pricing
+
+---
+
+### 4.2 Code Signing (Automatic with EAS)
+
+**EAS handles:**
+- Certificate creation
+- Provisioning profile management
+- Keychain management
+
+**First build:**
+```bash
+eas build --profile production --platform ios
+```
+
+**EAS prompts:**
+- "Do you want EAS to manage credentials?" → **Yes**
+- Creates certificates and stores securely
+
+**Manual credentials (advanced):**
+- Use if you have existing certificates
+- `eas credentials` to manage
+
+---
+
+### 4.3 Building for iOS
+
+**Production build:**
+```bash
+eas build --profile production --platform ios
+```
+
+**Monitor build:**
+- Dashboard: https://expo.dev/accounts/[username]/projects/[project]/builds
+- CLI shows build URL and status
+
+**Download IPA:**
+```bash
+eas build:download --platform ios --latest
+```
+
+---
+
+### 4.4 Submitting to App Store
+
+**Automatic submission (recommended):**
+```bash
+eas submit --platform ios --latest
+```
+
+**EAS prompts:**
+- Apple ID
+- App-specific password (generate at appleid.apple.com)
+- App Store Connect app ID
+
+**Manual submission:**
+1. Download IPA from EAS
+2. Upload via Xcode or Transporter app
+3. Submit for review in App Store Connect
+
+---
+
+### 4.5 TestFlight (Beta Testing)
+
+**After submission, build appears in TestFlight automatically.**
+
+**Add testers:**
+- App Store Connect → TestFlight → Internal/External Testing
+- Hestia via email
+
+**External testing:**
+- Requires beta app review (faster than full review)
+- Up to 10,000 external testers
+
+---
+
+## 5. Android Deployment
+
+### 5.1 Prerequisites
+
+**Google Play Console:**
+- Developer account ($25 one-time fee)
+- Create app in Play Console
+
+**Service account (for automation):**
+1. Google Cloud Console → Create service account
+2. Download JSON key
+3. Grant "Release Manager" role in Play Console
+
+---
+
+### 5.2 Building for Android
+
+**Production build:**
+```bash
+eas build --profile production --platform android
+```
+
+**Output:** AAB (Android App Bundle) — required by Play Store since 2021
+
+**APK for testing:**
+```bash
+eas build --profile preview --platform android
+```
+
+**APK output:** Installable on any device (good for manual testing)
+
+---
+
+### 5.3 Submitting to Google Play
+
+**Automatic submission:**
+```bash
+eas submit --platform android --latest
+```
+
+**EAS uses:**
+- Service account key (from `eas.json`)
+- Uploads to specified track (internal, alpha, beta, production)
+
+**Manual submission:**
+1. Download AAB from EAS
+2. Upload to Play Console → Production → Create release
+3. Fill in release notes
+4. Submit for review
+
+---
+
+### 5.4 Internal Testing Track
+
+**Fastest review path:**
+
+1. Upload build to "Internal testing" track
+2. Add internal testers (up to 100)
+3. No review required
+4. Share link with testers
+
+**Usage:** QA, stakeholder testing
+
+---
+
+## 6. OTA Updates (EAS Update)
+
+### 6.1 What are OTA Updates?
+
+**Over-The-Air updates** — JavaScript/asset updates delivered instantly, without app store review.
+
+**Use cases:**
+- Bug fixes
+- Small UI tweaks
+- Content updates
+- A/B tests
+
+**Limitations:**
+- Cannot change native code
+- Cannot update Expo SDK version
+- Cannot add new native permissions
+
+---
+
+### 6.2 EAS Update Setup
+
+**Install:**
+```bash
+npm install expo-updates
+```
+
+**Configure in `app.config.ts`:**
+```typescript
+export default {
+  updates: {
+    url: "https://u.expo.dev/[your-project-id]",
+    fallbackToCacheTimeout: 0,
+  },
+  runtimeVersion: {
+    policy: 'sdkVersion',  // Or 'appVersion' or custom
+  },
+}
+```
+
+---
+
+### 6.3 Publishing OTA Update
+
+**Command:**
+```bash
+eas update --branch production --message "Fix login bug"
+```
+
+**What happens:**
+1. Bundles JavaScript + assets
+2. Uploads to EAS servers
+3. App fetches update on next launch
+
+**Branches:**
+- `production` — Production users
+- `preview` — Staging/QA users
+- Custom branches for testing
+
+---
+
+### 6.4 OTA Update Strategy
+
+**When to use OTA:**
+- ✅ Bug fixes
+- ✅ Copy changes
+- ✅ UI tweaks (colors, spacing)
+- ✅ GraphQL query changes
+
+**When NOT to use OTA (requires app store build):**
+- ❌ New native permissions (camera, location)
+- ❌ Expo SDK upgrade
+- ❌ New native modules
+- ❌ Major features (better to go through review)
+
+---
+
+### 6.5 Update Rollout
+
+**Gradual rollout (safety):**
+
+```bash
+# Start with 10% of users
+eas update --branch production --message "Fix bug" --rollout 0.1
+
+# Increase to 50%
+eas update:republish --branch production --rollout 0.5
+
+# Full rollout
+eas update:republish --branch production --rollout 1.0
+```
+
+**Monitor:** Check error rates in Sentry before increasing rollout
+
+---
+
+## 7. Release Process
+
+### 7.1 Pre-Release Checklist
+
+- [ ] Version number incremented in `app.config.ts`
+- [ ] CHANGELOG updated
+- [ ] All tests pass (`npm run validate`)
+- [ ] QA tested on preview build
+- [ ] Accessibility tested (VoiceOver/TalkBack)
+- [ ] Backend GraphQL schema compatible
+- [ ] Feature flags configured (if needed)
+- [ ] Release notes written
+
+---
+
+### 7.2 Production Release Flow
+
+**Step 1: Build**
+```bash
+eas build --profile production --platform all
+```
+
+**Step 2: Test**
+- Download builds
+- Install on physical devices
+- Smoke test critical flows (login, RSVP, navigation)
+
+**Step 3: Submit**
+```bash
+eas submit --platform ios --latest
+eas submit --platform android --latest
+```
+
+**Step 4: Wait for Review**
+- iOS: 24-48 hours (typically)
+- Android: 1-3 days (typically)
+
+**Step 5: Staged Rollout**
+- iOS: Phased release (7 days) in App Store Connect
+- Android: Staged rollout in Play Console (10% → 50% → 100%)
+
+**Step 6: Monitor**
+- Crash rates in Sentry
+- User reviews in stores
+- Support tickets
+
+**Step 7: Full Release**
+- Increase rollout percentage
+- Announce release (social, email)
+
+---
+
+## 8. Hotfix Process
+
+**When a critical bug is discovered in production:**
+
+### 8.1 Assess Severity
+
+**Can it wait?**
+- Non-critical → Schedule for next release
+
+**OTA eligible?**
+- JavaScript/UI bug → OTA update
+
+**Requires native change?**
+- Emergency app store build
+
+---
+
+### 8.2 OTA Hotfix
+
+```bash
+# Fix bug in code
+git commit -m "fix(rsvp): resolve crash on submit"
+
+# Publish OTA immediately
+eas update --branch production --message "Fix RSVP crash"
+```
+
+**Timeline:** Users get fix within minutes to hours
+
+---
+
+### 8.3 Emergency App Store Build
+
+```bash
+# Update version to patch increment
+# 1.2.3 → 1.2.4 in app.config.ts
+
+# Build
+eas build --profile production --platform all
+
+# Submit with "Expedited Review" request
+eas submit --platform ios --latest
+# In App Store Connect: Request expedited review (explain critical bug)
+
+eas submit --platform android --latest
+# In Play Console: Set priority
+```
+
+**Timeline:**
+- iOS expedited: 1-8 hours (if approved)
+- Android priority: 1-2 days
+
+---
+
+## 9. Multiple Environments
+
+### 9.1 Parallel Installs (Dev + Prod)
+
+**Different bundle identifiers allow both versions installed:**
+
+```typescript
+// app.config.ts
+const isProduction = process.env.EXPO_PUBLIC_APP_ENV === 'production'
+
+export default {
+  name: isProduction ? 'Hestia' : 'Hestia Dev',
+  slug: 'hestia',
+  ios: {
+    bundleIdentifier: isProduction ? 'app.justhestia.ios' : 'app.justhestia.ios.dev',
+  },
+  android: {
+    package: isProduction ? 'app.justhestia.ios' : 'app.justhestia.ios.dev',
+  },
+}
+```
+
+**Result:**
+- Production app: "Hestia" (app.justhestia.ios)
+- Dev app: "Hestia Dev" (app.justhestia.ios.dev)
+- Can install both on same device
+
+---
+
+## 10. App Store Optimization (ASO)
+
+### 10.1 App Store Metadata
+
+**App Name:**
+- Max 30 characters (iOS), 50 characters (Android)
+- Include primary keyword
+- "Hestia — Event RSVP"
+
+**Subtitle (iOS only):**
+- Max 30 characters
+- Describes app purpose
+- "Manage Event Invitations"
+
+**Description:**
+- First 2-3 lines most important (above "more")
+- Include keywords naturally
+- Focus on user benefits, not features
+
+**Keywords (iOS only):**
+- Max 100 characters
+- Comma-separated
+- "hestia, RSVP, event, wedding, party"
+
+---
+
+### 10.2 Screenshots & Previews
+
+**Required sizes:**
+- iOS: 6.5" (iPhone 14 Pro Max), 5.5" (iPhone 8 Plus)
+- Android: 16:9 aspect ratio
+
+**Best practices:**
+- Show core features
+- Use device frames
+- Add captions explaining features
+- Localize for major markets
+
+**App preview videos (optional but recommended):**
+- 15-30 seconds
+- Show actual app usage
+- No sound required
+
+---
+
+## 11. Monitoring Post-Release
+
+### 11.1 Crash Reporting
+
+**Sentry integration:**
+- Real-time crash alerts
+- Stack traces
+- User impact metrics
+
+**Thresholds:**
+- Crash rate > 1% → Investigate immediately
+- Crash rate > 5% → Hotfix
+
+---
+
+### 11.2 User Feedback
+
+**Monitor:**
+- App Store reviews
+- Google Play reviews
+- In-app feedback (if implemented)
+
+**Respond to:**
+- 1-star reviews (attempt to help)
+- Bug reports (confirm fix timeline)
+- Feature requests (thank and consider)
+
+---
+
+## 12. Build Automation (GitHub Actions)
+
+### 12.1 Automated Builds on Merge
+
+**.github/workflows/deploy.yml:**
+```yaml
+name: EAS Build & Submit
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup Expo
+        uses: expo/expo-github-action@v8
+        with:
+          expo-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build iOS
+        run: eas build --profile production --platform ios --non-interactive
+
+      - name: Build Android
+        run: eas build --profile production --platform android --non-interactive
+
+      - name: Submit to stores
+        run: |
+          eas submit --platform ios --latest --non-interactive
+          eas submit --platform android --latest --non-interactive
+```
+
+**Secrets to add in GitHub:**
+- `EXPO_TOKEN` (from `eas login`)
+
+---
+
+## 13. Cost Estimation
+
+### 13.1 EAS Build Pricing (as of 2024)
+
+**Free tier:**
+- 30 builds/month
+- Sufficient for early development
+
+**Production tier ($29/month):**
+- Unlimited builds
+- Priority queue
+- Recommended for active development
+
+**Enterprise:** Custom pricing
+
+---
+
+### 13.2 App Store Fees
+
+**Apple:**
+- $99/year developer account
+- 30% commission on paid apps/in-app purchases
+- 15% if < $1M revenue/year (Small Business Program)
+
+**Google:**
+- $25 one-time developer account
+- 30% commission on paid apps/in-app purchases
+- 15% if < $1M revenue/year
+
+---
+
+## 14. Troubleshooting
+
+### 14.1 Build Failures
+
+**"Build failed to compile":**
+- Check EAS build logs
+- Run locally: `npx expo prebuild` → open Xcode/Android Studio
+
+**"Provisioning profile error" (iOS):**
+```bash
+eas credentials  # Manage/reset credentials
+```
+
+**"Gradle build failed" (Android):**
+- Check `android/build.gradle` for dependency conflicts
+
+---
+
+### 14.2 Submission Failures
+
+**iOS: "Missing compliance":**
+- App Store Connect → App Info → Export Compliance
+- Most apps: "No" (unless using custom encryption)
+
+**Android: "Need to test on more devices":**
+- Play Console → Pre-launch report
+- Wait for automated testing to complete
+
+---
+
+## 15. Checklist Summary
+
+**Before first release:**
+- [ ] EAS configured (`eas.json`)
+- [ ] App Store Connect app created (iOS)
+- [ ] Google Play Console app created (Android)
+- [ ] Service account created (Android automation)
+- [ ] Code signing set up (EAS handles)
+- [ ] Screenshots prepared
+- [ ] App description written
+- [ ] Privacy policy URL added
+- [ ] Test on physical devices
+
+**For each release:**
+- [ ] Version incremented
+- [ ] Tests pass
+- [ ] Build succeeds
+- [ ] Smoke tested
+- [ ] Submitted to stores
+- [ ] Monitoring set up
+- [ ] Staged rollout configured
+
+---
+
+## Final Note
+
+> **Mobile deployment is a marathon, not a sprint.**
+>
+> First release takes weeks (app review, metadata, testing).
+> OTA updates make subsequent iterations instant.
+>
+> Use OTA for speed, app store for trust.
+
+**Recommended cadence:**
+- App store releases: Monthly (new features)
+- OTA updates: As needed (bug fixes)
+
+---
+
+**Related:** See [14_ci-cd-requirements.mdc](./14_ci-cd-requirements.mdc) for automated deployment pipelines.

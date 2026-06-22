@@ -1,0 +1,841 @@
+---
+description: GraphQL integration — URQL client, code generation, error handling, caching strategy
+alwaysApply: true
+---
+
+# GraphQL Integration with URQL
+
+**Role Perspective:** Senior Backend Integration Engineer
+**Stack:** URQL + GraphQL Code Generator
+**Philosophy:** Type-safe, predictable, minimal state
+
+---
+
+## Core Principles
+
+1. **All backend communication via GraphQL** (no REST, no direct fetch)
+2. **Type safety end-to-end** (backend schema → generated types → UI)
+3. **Document caching by default** (normalized cache only when needed)
+4. **Errors are first-class citizens** (never swallow, always handle)
+5. **Features own their queries** (per-feature API modules)
+
+---
+
+## 1. GraphQL Client Setup
+
+### 1.1 Client Configuration (`src/shared/graphql/client.ts`)
+
+```typescript
+import { createClient, fetchExchange, cacheExchange, errorExchange } from 'urql'
+import { authExchange } from '@urql/exchange-auth'
+import { env } from '@/shared/config/env'
+import { getAuthToken, refreshAuthToken, clearAuthToken } from '@/shared/auth/token'
+
+export const urqlClient = createClient({
+  url: env.EXPO_PUBLIC_API_URL,
+
+  // Exchanges run in order (bottom to top)
+  exchanges: [
+    // 1. Error handling (outermost)
+    errorExchange({
+      onError: (error) => {
+        console.error('[GraphQL Error]:', error)
+
+        // Handle network errors
+        if (error.networkError) {
+          // Show toast/alert to user
+          // TODO: Integrate with error reporting (Sentry)
+        }
+
+        // Handle GraphQL errors
+        if (error.graphQLErrors) {
+          error.graphQLErrors.forEach((err) => {
+            // Check for specific error codes
+            if (err.extensions?.code === 'UNAUTHENTICATED') {
+              // Trigger re-login flow
+              clearAuthToken()
+            }
+          })
+        }
+      },
+    }),
+
+    // 2. Document cache (default)
+    cacheExchange,
+
+    // 3. Authentication
+    authExchange(async (utils) => {
+      return {
+        addAuthToOperation(operation) {
+          const token = getAuthToken()
+          if (!token) return operation
+
+          return utils.appendHeaders(operation, {
+            Authorization: `Bearer ${token}`,
+          })
+        },
+
+        didAuthError(error) {
+          // Check if error is auth-related
+          return error.graphQLErrors.some(
+            (e) => e.extensions?.code === 'UNAUTHENTICATED'
+          )
+        },
+
+        async refreshAuth() {
+          // Attempt to refresh token
+          const newToken = await refreshAuthToken()
+          if (!newToken) {
+            clearAuthToken()
+            // Redirect to login
+          }
+        },
+      }
+    }),
+
+    // 4. Network fetch (innermost)
+    fetchExchange,
+  ],
+
+  // Request policy (cache-first for production, network-only for dev)
+  requestPolicy: env.EXPO_PUBLIC_APP_ENV === 'development' ? 'network-only' : 'cache-first',
+
+  // Timeout
+  fetchOptions: () => ({
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  }),
+})
+```
+
+**Key decisions:**
+- **Document cache** by default (simple, predictable)
+- **Auth exchange** handles token injection and refresh automatically
+- **Error exchange** centralizes error handling
+- **Network-only in dev** prevents stale cache confusion
+
+---
+
+### 1.2 Provider Setup (`app/_layout.tsx` or `App.tsx`)
+
+```typescript
+import { Provider as URQLProvider } from 'urql'
+import { urqlClient } from '@/shared/graphql/client'
+
+export default function RootLayout() {
+  return (
+    <URQLProvider value={urqlClient}>
+      {/* App content */}
+    </URQLProvider>
+  )
+}
+```
+
+---
+
+## 2. GraphQL Code Generation
+
+### 2.1 Configuration (`codegen.yml`)
+
+```yaml
+schema: http://localhost:8080/graphql  # Backend GraphQL endpoint (dev)
+documents: 'src/**/*.graphql'          # Query/mutation files
+generates:
+  src/__generated__/graphql.ts:
+    plugins:
+      - typescript                     # Generate types
+      - typescript-operations          # Generate operation types
+      - typescript-urql                # Generate URQL hooks
+    config:
+      withHooks: true                  # Generate useQuery, useMutation hooks
+      enumsAsTypes: true               # Enums as union types (safer)
+      skipTypename: false              # Include __typename
+      scalars:
+        DateTime: string               # Map GraphQL DateTime to TypeScript string
+        UUID: string                   # Map UUID to string
+```
+
+**Location:** Root of project
+
+---
+
+### 2.2 Scripts (`package.json`)
+
+```json
+{
+  "scripts": {
+    "codegen": "graphql-codegen --config codegen.yml",
+    "codegen:watch": "graphql-codegen --config codegen.yml --watch",
+    "codegen:check": "graphql-codegen --config codegen.yml --check"
+  }
+}
+```
+
+**Usage:**
+- `npm run codegen` — Generate types (run after backend schema changes)
+- `npm run codegen:watch` — Auto-regenerate on file changes (during development)
+- `npm run codegen:check` — Verify generated files are up-to-date (in CI/pre-commit)
+
+---
+
+### 2.3 Generated Output
+
+**File:** `src/__generated__/graphql.ts`
+
+**Contains:**
+- TypeScript types for all GraphQL types
+- Types for queries, mutations, subscriptions
+- URQL hooks: `useGetInvitationQuery`, `useSubmitRsvpMutation`, etc.
+
+**Example generated hook:**
+```typescript
+export function useGetInvitationQuery(
+  options: Omit<UseQueryArgs<GetInvitationQueryVariables>, 'query'>
+) {
+  return useQuery<GetInvitationQuery, GetInvitationQueryVariables>({
+    query: GetInvitationDocument,
+    ...options,
+  })
+}
+```
+
+**Benefits:**
+- Zero manual typing
+- Always in sync with backend
+- Autocomplete for fields
+- Compile errors if backend schema changes
+
+---
+
+## 3. Query Organization (Per-Feature Pattern)
+
+### 3.1 Structure
+
+Each feature owns its GraphQL operations:
+
+```
+src/
+└── features/
+    └── invitation/
+        ├── api/
+        │   ├── queries.graphql        ← GraphQL queries
+        │   ├── mutations.graphql      ← GraphQL mutations
+        │   └── invitationApi.ts       ← Re-export generated hooks
+        ├── screens/
+        ├── components/
+        └── types.ts
+```
+
+---
+
+### 3.2 Example: `queries.graphql`
+
+```graphql
+query GetInvitation($eventId: ID!) {
+  invitation(eventId: $eventId) {
+    id
+    eventName
+    eventDate
+    location
+    rsvpDeadline
+    guestCount {
+      adults
+      kids
+    }
+  }
+}
+```
+
+**Rules:**
+- Descriptive query names (no generic `query`, `getData`)
+- Request only fields the UI needs (avoid over-fetching)
+- Use fragments for reusable field sets
+
+---
+
+### 3.3 Example: `mutations.graphql`
+
+```graphql
+mutation SubmitRsvp($input: RsvpInput!) {
+  submitRsvp(input: $input) {
+    success
+    message
+    invitation {
+      id
+      guestCount {
+        adults
+        kids
+      }
+    }
+  }
+}
+```
+
+---
+
+### 3.4 Example: `invitationApi.ts` (Feature API Layer)
+
+```typescript
+// Re-export generated hooks with feature context
+export {
+  useGetInvitationQuery,
+  useSubmitRsvpMutation,
+} from '@/__generated__/graphql'
+
+// Optionally wrap with feature-specific logic
+export function useInvitation(eventId: string) {
+  const [result, refetch] = useGetInvitationQuery({
+    variables: { eventId },
+    pause: !eventId, // Don't execute if no eventId
+  })
+
+  return {
+    invitation: result.data?.invitation,
+    loading: result.fetching,
+    error: result.error,
+    refetch,
+  }
+}
+```
+
+**Why wrap?**
+- Hide URQL implementation details
+- Provide feature-specific error handling
+- Easier to test (mock the wrapper, not URQL)
+
+---
+
+## 4. Using GraphQL in Components
+
+### 4.1 Query Pattern
+
+```typescript
+import { useInvitation } from '@/features/invitation/api/invitationApi'
+
+export function InvitationViewScreen({ eventId }: { eventId: string }) {
+  const { invitation, loading, error } = useInvitation(eventId)
+
+  if (loading) return <LoadingSpinner />
+  if (error) return <ErrorMessage error={error} />
+  if (!invitation) return <NotFound />
+
+  return (
+    <View>
+      <Text>{invitation.eventName}</Text>
+      <Text>{invitation.eventDate}</Text>
+    </View>
+  )
+}
+```
+
+**Rules:**
+- Handle loading, error, and empty states explicitly
+- Never assume data exists (TypeScript union types enforce this)
+
+---
+
+### 4.2 Mutation Pattern
+
+```typescript
+import { useSubmitRsvpMutation } from '@/features/invitation/api/invitationApi'
+
+export function RsvpForm() {
+  const [, submitRsvp] = useSubmitRsvpMutation()
+
+  const handleSubmit = async (data: RsvpFormData) => {
+    const result = await submitRsvp({ input: data })
+
+    if (result.error) {
+      // Show error to user
+      alert('Failed to submit RSVP')
+      return
+    }
+
+    if (result.data?.submitRsvp.success) {
+      // Navigate to confirmation screen
+      router.push('/rsvp-confirmation')
+    }
+  }
+
+  return (
+    <Form onSubmit={handleSubmit}>
+      {/* Form fields */}
+    </Form>
+  )
+}
+```
+
+**Rules:**
+- Always check `result.error` before accessing `result.data`
+- Provide user feedback (success/error messages)
+- Handle optimistic updates when appropriate
+
+---
+
+## 5. Error Handling
+
+### 5.1 Error Types
+
+URQL errors come in two forms:
+
+**Network errors:**
+- No internet connection
+- Server unreachable
+- Timeout
+
+**GraphQL errors:**
+- Validation errors
+- Authorization errors
+- Business logic errors
+
+---
+
+### 5.2 Parsing GraphQL Errors
+
+```typescript
+import { CombinedError } from 'urql'
+
+export function parseGraphQLError(error: CombinedError | undefined): string {
+  if (!error) return 'An unknown error occurred'
+
+  // Network error
+  if (error.networkError) {
+    return 'Unable to connect to the server. Please check your internet connection.'
+  }
+
+  // GraphQL errors
+  if (error.graphQLErrors.length > 0) {
+    const firstError = error.graphQLErrors[0]
+
+    // Backend may include user-friendly message in extensions
+    const userMessage = firstError.extensions?.userMessage as string | undefined
+    if (userMessage) return userMessage
+
+    // Fallback to error message
+    return firstError.message
+  }
+
+  return 'Something went wrong. Please try again.'
+}
+```
+
+**Usage:**
+```typescript
+const errorMessage = parseGraphQLError(error)
+```
+
+#### `extensions.code` vs `extensions.classification` — independent fields
+
+These two fields are populated by **different producers** and should be checked independently:
+
+| Field | Producer | Typical values |
+|---|---|---|
+| `extensions.code` | AWS WAF, CloudFront, custom origin mappings, explicit `GraphqlErrorBuilder.extensions(Map.of("code", ...))` calls | `RATE_LIMITED`, `UNAUTHENTICATED`, `CAPTCHA_FAILED`, `EMAIL_NOT_VERIFIED` |
+| `extensions.classification` | Spring GraphQL's `DefaultDataFetcherExceptionResolver` (automatic) | `INTERNAL_ERROR`, `BAD_REQUEST`, `NOT_FOUND`, `UNAUTHORIZED` |
+
+WAF / proxy errors set `code` but typically NOT `classification`. Backend Spring GraphQL errors set `classification` for most paths and `code` only for explicit mappings.
+
+**Rule:** A correct parser MUST check BOTH fields independently. Place the `extensions.code` check **before** the `classification` check — this catches WAF-originated errors (which lack `classification`) that would otherwise fall through to `firstError.message`.
+
+```typescript
+const firstError = error.graphQLErrors[0]
+
+// 1. userMessage short-circuit (backend-localized text always wins)
+if (firstError.extensions?.userMessage) return firstError.extensions.userMessage as string
+
+// 2. extensions.code FIRST — catches WAF/proxy without classification
+const code = firstError.extensions?.code as string | undefined
+if (code === 'RATE_LIMITED') return t('error.rate_limited')
+// ... other code-keyed branches
+
+// 3. extensions.classification SECOND — Spring's default categorization
+const classification = firstError.extensions?.classification as string | undefined
+switch (classification) {
+  case 'UNAUTHORIZED': return 'Your session has expired. Please log in again.'
+  case 'NOT_FOUND':    return 'The requested resource was not found.'
+  // ...
+}
+```
+
+See `13_error-handling-patterns.mdc` §3.3 for the related WAF Content-Type routing rule.
+
+---
+
+### 5.3 Error Handling Pattern
+
+**DO:**
+- Show user-friendly error messages
+- Log errors for debugging (Sentry in production)
+- Provide retry mechanisms for transient errors
+
+**DON'T:**
+- Show raw GraphQL error messages to users
+- Swallow errors silently
+- Retry destructive mutations automatically
+
+---
+
+## 6. Caching Strategy
+
+### 6.1 Default: Document Cache
+
+**What it is:**
+- URQL's default cache
+- Caches by query + variables
+- Simple, predictable
+
+**When to use:**
+- Default for most queries
+- When data doesn't change often
+- When UI doesn't show same data in multiple places
+
+**Example:**
+```typescript
+const [result] = useGetInvitationQuery({
+  variables: { eventId },
+  requestPolicy: 'cache-first', // Default
+})
+```
+
+---
+
+### 6.2 Request Policies
+
+| Policy | Behavior |
+|--------|----------|
+| `cache-first` | Use cache if available, otherwise fetch (default) |
+| `cache-only` | Only use cache, never fetch |
+| `network-only` | Always fetch, never use cache |
+| `cache-and-network` | Return cache immediately, then fetch in background |
+
+**Choose based on data freshness requirements**
+
+---
+
+### 6.3 Cache Invalidation
+
+**Manual invalidation:**
+```typescript
+import { useClient } from 'urql'
+
+const client = useClient()
+
+// Invalidate specific query
+client.invalidateQuery({
+  query: GetInvitationDocument,
+  variables: { eventId },
+})
+```
+
+**After mutation:**
+```typescript
+const [, submitRsvp] = useSubmitRsvpMutation()
+
+const handleSubmit = async (data: RsvpFormData) => {
+  const result = await submitRsvp({ input: data })
+
+  if (result.data?.submitRsvp.success) {
+    // Refetch invitation to show updated guest count
+    refetch()
+  }
+}
+```
+
+---
+
+### 6.4 Normalized Cache (When Needed)
+
+**Install:**
+```bash
+npm install @urql/exchange-graphcache
+```
+
+**Use when:**
+- Same entity shown in multiple places (list + detail)
+- Need automatic cache updates after mutations
+- Complex relational data
+
+**Setup:**
+```typescript
+import { cacheExchange } from '@urql/exchange-graphcache'
+
+const urqlClient = createClient({
+  exchanges: [
+    cacheExchange({
+      keys: {
+        Invitation: (data) => data.id as string,
+      },
+      updates: {
+        Mutation: {
+          submitRsvp(result, args, cache) {
+            // Automatically update invitation in cache
+            cache.updateQuery(
+              { query: GetInvitationDocument, variables: args.input },
+              (data) => {
+                // Update logic
+                return data
+              }
+            )
+          },
+        },
+      },
+    }),
+    // ... other exchanges
+  ],
+})
+```
+
+**Note:** Only add normalized cache if document cache is insufficient. Adds complexity.
+
+---
+
+## 7. Subscriptions (Real-Time Updates)
+
+### 7.1 When to Use
+
+**Use subscriptions for:**
+- Real-time RSVP count updates
+- Live event updates
+
+**Don't use for:**
+- Data that doesn't change frequently
+- One-time fetches
+
+---
+
+### 7.2 Setup (When Needed)
+
+**Install:**
+```bash
+npm install @urql/exchange-graphcache graphql-ws
+```
+
+**Client config:**
+```typescript
+import { subscriptionExchange } from '@urql/exchange-graphcache'
+import { createClient as createWSClient } from 'graphql-ws'
+
+const wsClient = createWSClient({
+  url: 'ws://localhost:8080/graphql',
+})
+
+const urqlClient = createClient({
+  exchanges: [
+    // ... other exchanges
+    subscriptionExchange({
+      forwardSubscription: (operation) => ({
+        subscribe: (sink) => ({
+          unsubscribe: wsClient.subscribe(operation, sink),
+        }),
+      }),
+    }),
+  ],
+})
+```
+
+**Usage:**
+```typescript
+import { useSubscription } from 'urql'
+
+const [result] = useSubscription({
+  query: gql`
+    subscription OnRsvpUpdate($eventId: ID!) {
+      rsvpUpdate(eventId: $eventId) {
+        guestCount {
+          adults
+          kids
+        }
+      }
+    }
+  `,
+  variables: { eventId },
+})
+```
+
+---
+
+## 8. Optimistic Updates
+
+### 8.1 Pattern
+
+```typescript
+const [, submitRsvp] = useSubmitRsvpMutation()
+
+const handleSubmit = async (data: RsvpFormData) => {
+  // Update UI optimistically
+  const result = await submitRsvp(
+    { input: data },
+    {
+      optimistic: {
+        submitRsvp: {
+          __typename: 'RsvpPayload',
+          success: true,
+          invitation: {
+            id: eventId,
+            guestCount: {
+              adults: data.adults,
+              kids: data.kids,
+            },
+          },
+        },
+      },
+    }
+  )
+
+  // If mutation fails, URQL will revert optimistic update
+}
+```
+
+**When to use:**
+- User interactions that should feel instant
+- Low risk of failure
+- Easy to revert
+
+---
+
+## 9. Testing with URQL
+
+### 9.1 Mock Provider
+
+```typescript
+import { Provider } from 'urql'
+import { fromValue } from 'wonka'
+
+const mockClient = {
+  executeQuery: jest.fn(() =>
+    fromValue({
+      data: {
+        invitation: {
+          id: '1',
+          eventName: 'Test Event',
+        },
+      },
+    })
+  ),
+}
+
+// In test
+render(
+  <Provider value={mockClient}>
+    <InvitationViewScreen eventId="1" />
+  </Provider>
+)
+```
+
+**See:** [04_frontend-testing-strategy.mdc](./04_frontend-testing-strategy.mdc) for full testing patterns
+
+---
+
+## 10. Schema Update Workflow
+
+**When backend GraphQL schema changes:**
+
+1. **Backend team updates schema**
+2. **Pull latest backend changes** (or get new schema file)
+3. **Run codegen:** `npm run codegen`
+4. **Fix TypeScript errors** (compiler will show what broke)
+5. **Update queries/mutations** if needed
+6. **Test affected features**
+7. **Commit generated files** (`src/__generated__/graphql.ts`)
+
+**Pre-commit hook ensures generated files are current:**
+```bash
+npm run codegen:check  # Fails if codegen out of date
+```
+
+---
+
+## 11. Common Patterns
+
+### 11.1 Pagination
+
+```typescript
+const [result, refetch] = useGetInvitationsQuery({
+  variables: {
+    first: 20,
+    after: cursor,
+  },
+})
+
+const loadMore = () => {
+  refetch({
+    after: result.data?.invitations.pageInfo.endCursor,
+  })
+}
+```
+
+---
+
+### 11.2 Polling (Auto-Refresh)
+
+```typescript
+const [result] = useGetInvitationQuery({
+  variables: { eventId },
+  requestPolicy: 'network-only',
+  context: useMemo(
+    () => ({
+      pollInterval: 30000, // Refresh every 30 seconds
+    }),
+    []
+  ),
+})
+```
+
+---
+
+## 12. Debugging
+
+### 12.1 URQL Devtools
+
+**Install:**
+```bash
+npm install --save-dev @urql/devtools
+```
+
+**Setup:**
+```typescript
+import { devtoolsExchange } from '@urql/devtools'
+
+const urqlClient = createClient({
+  exchanges: [
+    devtoolsExchange, // Add first
+    // ... other exchanges
+  ],
+})
+```
+
+**Open:** Chrome DevTools → URQL tab
+
+---
+
+### 12.2 Logging Queries
+
+```typescript
+import { makeOperation } from 'urql'
+
+const logExchange = ({ forward }) => (ops$) => {
+  return forward(ops$).map((result) => {
+    console.log('[GraphQL]:', result)
+    return result
+  })
+}
+```
+
+---
+
+## 13. Summary Checklist
+
+- [ ] URQL client configured in `src/shared/graphql/client.ts`
+- [ ] Provider added to app root
+- [ ] `codegen.yml` configured
+- [ ] Codegen scripts in `package.json`
+- [ ] Pre-commit hook runs `codegen:check`
+- [ ] Queries organized per-feature (`features/*/api/*.graphql`)
+- [ ] Error handling utility created
+- [ ] Auth exchange configured (if using auth)
+- [ ] Cache strategy chosen (document vs normalized)
+
+---
+
+**Next:** See [09_authentication-security.mdc](./09_authentication-security.mdc) for auth token management.

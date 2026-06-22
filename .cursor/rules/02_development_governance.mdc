@@ -1,0 +1,1137 @@
+---
+description: Development governance and process guidelines
+alwaysApply: true
+---
+# Frontend Development Governance & Standards
+
+This document defines the **non-negotiable rules, patterns, and conventions**
+for frontend development in this project.
+
+It is written to be understandable by an **entry-level graduate**
+and enforceable by **AI tools (Cursor + Codex)**.
+
+If a change violates this document, it must be rejected.
+
+---
+
+## 1. Frontend Philosophy (READ FIRST)
+
+### Core Goals
+
+* Excellent **user experience** over technical cleverness
+* Predictable, readable code over abstractions
+* Minimal state, minimal magic
+* Explicit data flow
+* Cross-device correctness (mobile-first)
+
+### What We Optimize For
+
+1. User clarity
+2. Maintainability
+3. Debuggability
+4. Accessibility
+5. Performance (only after correctness)
+
+### What We Avoid
+
+* Clever patterns
+* Over-engineering
+* Global mutable state
+* Hidden side effects
+* Tight coupling to backend internals
+
+### NON-NEGOTIABLE: Frontend is a Presentation Layer Only
+
+**The frontend (web, iOS, Android) MUST NOT contain business logic.** All business logic, validation rules, data transformations, authorization decisions, and feature gating MUST live in the backend. The frontend's job is:
+
+1. **Receive data** from the backend (via GraphQL)
+2. **Display it** to the user
+3. **Collect user input** and send it to the backend
+4. **Show the backend's response** (success, errors, state changes)
+
+**What belongs in the backend:**
+* Validation rules (field length, format, business constraints)
+* Date/time calculations and timezone conversions
+* Feature flags and authorization decisions
+* Data aggregation and computed fields
+* Rate limiting and security enforcement
+
+**What belongs in the frontend:**
+* UI rendering and layout
+* Form input collection (client-side validation is UX-only, never authoritative)
+* Navigation and routing
+* Loading states and error display
+* Animations and visual feedback
+
+**Why:** A single backend serves web, iOS, and Android. Logic in the frontend must be duplicated across platforms and can drift. Logic in the backend is implemented once, tested once, and enforced consistently. If the frontend computes something, it's a convenience — the backend must always be the source of truth.
+
+---
+
+## 2. Technology Stack (LOCKED)
+
+### Target Platforms (EXPLICIT)
+
+> **This project uses a single React Native (Expo) codebase targeting multiple platforms.**
+
+Supported platforms:
+
+* **iOS** (React Native)
+* **Android** (React Native)
+* **Web** (React Native Web)
+
+Key implications:
+
+* The same component codebase renders to native and web
+* Layout rules (Flexbox/Yoga) apply across platforms
+* Web support is first-class, not a separate app
+
+---
+
+### Language & Framework
+
+* **TypeScript (required)**
+* **React Native (Expo)**
+* **React Native Web** for web builds
+* **Functional components only**
+* **React Hooks only**
+
+❌ Class components are forbidden
+❌ JavaScript (non-TypeScript) files are forbidden
+
+---
+
+## 3. Branching Discipline (VERY IMPORTANT)
+
+### Core Rule
+
+> **All work must happen on a non-`main` branch.**
+
+This rule applies to:
+
+* planning changes
+* refactors
+* UI experiments
+* bug fixes
+* feature development
+* documentation updates
+
+### Required Behavior
+
+* Always check the current branch **before making any change**
+* If the current branch is `main`:
+
+  * **Do not make changes**
+  * Create a **new branch**
+  * Ask for confirmation before proceeding if unsure
+
+### friendly guidance
+
+* If you are ever unsure:
+
+  * **Assume `main` is forbidden**
+  * Start a new branch
+  * Proceed only after confirmation
+
+❌ Changes must never start on `main`
+❌ Temporary or "just testing" edits on `main` are not allowed
+
+---
+
+### Git Worktree & Branch Cleanup (REQUIRED WORKFLOW)
+
+> **When starting a new Linear ticket, clean up all previous branches and worktrees.**
+
+**Purpose:** Maintain a clean git state, prevent confusion, and save disk space.
+
+#### Workflow for New Linear Tickets
+
+**Step 1: Before creating a new branch for a Linear ticket**
+
+Check for merged/stale branches and worktrees:
+
+```bash
+# List all worktrees
+git worktree list
+
+# List all branches with merge status
+git branch -vv
+```
+
+**Step 2: Clean up merged branches and worktrees**
+
+```bash
+# Option A: Automated cleanup (recommended)
+# Uses commit-commands:clean_gone skill to remove all [gone] branches
+/clean_gone
+
+# Option B: Manual cleanup
+# Remove worktree
+git worktree remove .claude/worktrees/[old-branch-name]
+
+# Delete local branch (only if merged)
+git branch -d [old-branch-name]
+
+# Delete remote branch (if not auto-deleted by GitHub)
+git push origin --delete [old-branch-name]
+```
+
+**Step 3: Create new branch for the ticket**
+
+```bash
+# From main repo or a reusable worktree
+git checkout main
+git pull origin main
+git checkout -b claude/inv-XX-feature-name
+
+# OR create new worktree if needed for parallel work
+git worktree add .claude/worktrees/inv-XX-feature-name -b claude/inv-XX-feature-name
+```
+
+#### Worktree Strategy
+
+**Recommended approach:**
+
+1. **Keep 1-2 reusable worktrees** for sequential development:
+   - Example: `.claude/worktrees/epic-hertz` or `.claude/worktrees/dev`
+   - Reuse by switching branches within the worktree
+   - Saves disk space, faster setup (no repeated `npm install`)
+
+2. **Create new worktrees only when needed:**
+   - When working on 2+ tickets simultaneously
+   - When main worktree has uncommitted work
+   - For long-running feature branches
+
+3. **Clean up after PR is merged:**
+   - Delete the branch (local and remote)
+   - Remove the worktree if it was ticket-specific
+   - Keep reusable worktrees, just switch branches
+
+#### Exception: Main Worktree
+
+The main repository checkout (not in `.claude/worktrees/`) should:
+- Stay on `main` or a stable branch
+- Not be used for active development (prefer worktrees)
+- Be used for administrative tasks (releases, merges)
+
+#### Automation
+
+**Git hook integration** (optional):
+
+Create `.husky/pre-checkout` hook to warn about uncommitted work:
+
+```bash
+#!/usr/bin/env bash
+# Warn if switching branches with uncommitted work
+if [ -n "$(git status --porcelain)" ]; then
+  echo "⚠️  Warning: You have uncommitted changes"
+  echo "   Consider committing or stashing before switching"
+fi
+```
+
+**Enforcement:**
+
+- ✅ Claude will check for merged branches before creating new ones
+- ✅ Claude will offer to run `/clean_gone` before starting new tickets
+- ✅ Prevents accumulation of stale worktrees
+
+#### Benefits
+
+- **Clean git state** - Only active branches visible
+- **Disk space savings** - No duplicate `node_modules` in old worktrees
+- **Mental clarity** - Fewer directories to navigate
+- **Faster setup** - Reusing worktrees avoids repeated `npm install`
+
+---
+
+## 4. File & Folder Organization (MANDATORY)
+
+### Folder strategy: **By Feature**, not by type
+
+Each feature owns:
+
+* its screens
+* its components
+* its hooks
+* its logic
+
+### Example structure
+
+```
+src/
+ ├── app/
+ │   ├── navigation/
+ │   └── App.tsx
+ ├── features/
+ │   ├── invitation/
+ │   │   ├── screens/
+ │   │   │   ├── InvitationViewScreen.tsx
+ │   │   │   └── RsvpSubmitScreen.tsx
+ │   │   ├── components/
+ │   │   │   ├── RsvpForm.tsx
+ │   │   │   └── GuestCountPicker.tsx
+ │   │   ├── hooks/
+ │   │   │   └── useRsvp.ts
+ │   │   ├── api/
+ │   │   │   └── invitationQueries.ts
+ │   │   └── types.ts
+ │   └── auth/
+ │       ├── screens/
+ │       └── hooks/
+ ├── shared/
+ │   ├── components/
+ │   ├── hooks/
+ │   ├── utils/
+ │   └── theme/
+ └── types/
+```
+
+### Rules
+
+* Screens **must not** import from other feature folders
+* Shared components go in `/shared`
+* No circular dependencies
+* No deep relative imports (`../../../`)
+
+---
+
+## 5. Naming Conventions (STRICT)
+
+### Files
+
+* `PascalCase.tsx` → React components
+* `camelCase.ts` → hooks, utils
+* One component per file
+
+### Components
+
+```tsx
+function InvitationViewScreen() {}
+function RsvpForm() {}
+```
+
+### Hooks
+
+```ts
+useRsvp()
+useHestiaDetails()
+```
+
+### Types
+
+```ts
+type InvitationEvent
+type RsvpStatus
+```
+
+❌ No abbreviations
+❌ No generic names like `Data`, `Helper`, `Utils`
+
+---
+
+## 6. Component Rules (VERY IMPORTANT)
+
+### Functional Components Only
+
+```tsx
+export function RsvpForm(props: RsvpFormProps) {
+  return (...)
+}
+```
+
+### Component Responsibilities
+
+A component should:
+
+* Render UI
+* Handle user interaction
+* Delegate logic to hooks
+
+A component should **NOT**:
+
+* Fetch data directly
+* Contain business rules
+* Mutate global state
+
+---
+
+## 7. State Management Strategy (LOCKED)
+
+State management in this project is intentionally **simple, explicit, and boring**.
+
+There is **no global state management library** by default.
+
+---
+
+### 7.1 Explicit Decision: No Redux / MobX / Zustand (v1)
+
+> **Redux, MobX, Zustand, Recoil, Jotai, etc. are NOT used in v1.**
+
+This is a deliberate architectural decision.
+
+**Why?**
+
+* The app does not require complex cross-feature state
+* Overuse of global state hurts readability for developers
+* Local state + hooks are sufficient and safer
+* Global state makes bugs harder to trace
+
+Any introduction of a global state library requires **explicit approval**.
+
+---
+
+### 7.2 Local Component State (DEFAULT)
+
+Use `useState` for:
+
+* Form inputs
+* Counters (adults / kids)
+* Toggle state
+* Temporary UI state
+
+```ts
+const [adults, setAdults] = useState(0)
+const [kids, setKids] = useState(0)
+```
+
+Rules:
+
+* Keep state as close as possible to where it is used
+* Do not lift state unless multiple components truly need it
+
+---
+
+### 7.3 Shared State via Props (PREFERRED)
+
+When multiple components need the same state:
+
+* Lift state to the nearest common parent
+* Pass it down via props
+
+This keeps data flow **explicit and traceable**.
+
+---
+
+### 7.4 Derived State (USE SPARINGLY)
+
+Use `useMemo` only when:
+
+* Computation is non-trivial
+* It prevents unnecessary re-computation
+
+```ts
+const totalGuests = useMemo(
+  () => adults + kids,
+  [adults, kids]
+)
+```
+
+❌ Do not use `useMemo` for trivial values
+
+---
+
+### 7.5 Side Effects (STRICT RULES)
+
+Use `useEffect` only for:
+
+* Data fetching
+* Subscriptions
+* Imperative browser / platform effects
+
+❌ No business logic in `useEffect`
+❌ No state derivation in `useEffect`
+
+---
+
+### 7.6 Server State vs UI State (IMPORTANT DISTINCTION)
+
+**Server state** (data from backend):
+
+* Fetched via GraphQL hooks
+* Treated as read-only snapshots
+* Refetched when needed
+
+**UI state** (local):
+
+* Managed with `useState`
+* Never duplicated from server state unless required
+
+❌ Do not mirror backend data into local state unless necessary
+
+---
+
+### 7.6.1 Server State Caching (EXPLICITLY ALLOWED)
+
+The "no global state" rule does NOT apply to GraphQL client caching.
+
+**Allowed:**
+- URQL document cache (default)
+- Normalized cache if needed for complex UX  (`@urql/exchange-graphcache`)
+- Query result caching with TTLs
+- Background refetching and cache updates
+
+**Reasoning:**
+- Server state caching is a network optimization, not application state
+- Managed by GraphQL client, not application code
+- Cache invalidation is explicit and predictable
+- Reduces unnecessary network requests
+
+**Forbidden:**
+- Mirroring server state into Redux/Zustand/Jotai
+- Duplicating cached data into local `useState`
+- Treating cache as application state storage
+
+**See:** [06_graphql-integration.mdc](./06_graphql-integration.mdc) for URQL caching strategy details.
+
+---
+
+### 7.7 When Global State MAY Be Introduced (Future)
+
+A global state library may be considered only if:
+
+* Multiple distant features need shared state
+* Props drilling becomes unmanageable
+* Clear ownership and boundaries are defined
+
+If introduced:
+
+* Scope must be minimal
+* Ownership must be documented
+* Justification must be written
+
+---
+
+## 8. Data Fetching & Backend Interaction
+
+### Rules
+
+* All backend interaction goes through **feature-level hooks**
+* Components must not call GraphQL directly
+
+### Example
+
+```ts
+export function useInvitation(eventId: string) {
+  // fetch data
+}
+```
+
+```tsx
+const { data, loading } = useInvitation(eventId)
+```
+
+### Error Handling
+
+* Errors handled in hooks
+* UI shows friendly messages
+* Raw backend errors must not be shown
+
+---
+
+## 9. Reusable Components (Shared Layer)
+
+### What qualifies as reusable
+
+* Buttons
+* Inputs
+* Modals
+* Loaders
+* Error banners
+
+### Rules
+
+* Must accept props
+* Must not assume feature context
+* Must be documented briefly
+
+❌ Do not move components to `/shared` prematurely
+
+---
+
+## 10. Styling & Theming
+
+### Approach
+
+* Centralized theme (colors, spacing, fonts)
+* No inline magic numbers
+
+```ts
+theme.spacing.sm
+theme.colors.primary
+```
+
+### Rules
+
+* No hardcoded colors
+* No duplicated spacing values
+* Styles co-located with components
+
+---
+
+### 10.1 Dark Mode Support (MANDATORY)
+
+> **Every UI component must support both light and dark themes.**
+
+This is a non-negotiable requirement. A component that only looks correct in one theme is considered **incomplete**.
+
+#### Required Pattern
+
+All background, text, border, and icon colors must use NativeWind `dark:` variants:
+
+```tsx
+// ✅ Correct — theme-aware
+<View className="bg-white dark:bg-gray-900">
+  <Text className="text-gray-900 dark:text-white">Hello</Text>
+</View>
+
+// ❌ Wrong — light mode only
+<View className="bg-white">
+  <Text className="text-gray-900">Hello</Text>
+</View>
+```
+
+#### How Dark Mode Works in This Project
+
+* Theme is controlled by `ThemeProvider` in `src/shared/contexts/ThemeContext.tsx`
+* Uses `nativewindColorScheme.set()` for native and `document.documentElement.classList` for web
+* Components do **not** need to read the theme directly — just use `dark:` class variants
+* User preference is persisted via AsyncStorage
+
+#### Checklist for Every New Component
+
+- [ ] Background color has a `dark:` variant
+- [ ] Text colors have `dark:` variants
+- [ ] Border colors have `dark:` variants (if applicable)
+- [ ] Icon colors respond to the current `colorScheme` (use `useTheme()` hook if needed)
+- [ ] Component is visually verified in both light and dark mode
+
+#### E2E Test Requirement
+
+Per rule **20.1**, any component with theme-sensitive UI must have a Playwright test that:
+
+* Verifies the component renders without errors after theme toggle
+* Optionally verifies a background or text color class changes (if testable)
+
+---
+
+## 11. Responsive & Cross-Device Behavior (WEB + MOBILE)
+
+This section applies **equally to mobile and web builds**.
+Nothing here is implicit — all frontend changes must be validated for **both mobile and web**.
+
+---
+
+### 11.1 Core Principle
+
+> **Every frontend change must work correctly on both mobile and web.**
+
+* Mobile and web share the **same codebase**
+* Mobile is the **primary design target**
+* Web is a **first-class supported platform**, not an afterthought
+
+A change is considered **incomplete** if it:
+
+* works only on mobile
+* works only on web
+* introduces layout or interaction regressions on either
+
+---
+
+#### 11.2 How This Is Achieved (Explicit, Not Implicit)
+
+Responsive behavior is achieved primarily through **shared components and layout composition**, not platform forks.
+
+We rely on:
+
+* Flexbox (Yoga) layouts
+* Responsive containers
+* Shared components
+* Conditional styling
+
+---
+
+### Clarification: Shared vs Platform-Specific Components
+
+> **Platform-specific code is an exception, not the default.**
+
+The following are considered **acceptable and non-contradictory**:
+
+* `.native.tsx` / `.web.tsx` **only when UI primitives or platform capabilities differ**
+* `Platform.OS` or `Platform.select()` **for small, localized differences**
+
+The following are considered **forbidden forks**:
+
+* Duplicating entire screens per platform
+* Diverging business logic between platforms
+* Maintaining separate navigation flows for web vs mobile
+
+Rule of thumb:
+
+* **Same feature, same behavior, same data flow**
+* **Only rendering or interaction details may differ**
+
+---
+
+### 11.3 Supported Breakpoints
+
+The application supports the following logical breakpoints:
+
+* **Mobile:** width < 768px
+* **Tablet:** 768px – 1024px
+* **Desktop/Web:** > 1024px
+
+Breakpoints are used to:
+
+* adjust layout density
+* change column count
+* reposition secondary actions
+
+Breakpoints must **never** change:
+
+* business logic
+* data fetching behavior
+* feature availability
+
+---
+
+### 11.4 What Should Change Between Mobile and Web
+
+| Aspect            | Mobile                      | Web                            |
+| ----------------- | --------------------------- | ------------------------------ |
+| Layout            | Single column               | Multi-column where appropriate |
+| Forms             | Full-width, stacked         | Centered, constrained width    |
+| Primary actions   | Bottom-aligned or prominent | Inline with content            |
+| Secondary actions | Hidden or collapsed         | Visible when space allows      |
+| Navigation        | Stack / tabs                | Header or sidebar              |
+
+---
+
+### 11.5 What Must NOT Change Between Mobile and Web
+
+The following must behave **identically**:
+
+* Data shown
+* Validation rules
+* Error handling
+* Loading states
+* Navigation flow
+* API interactions
+
+If behavior differs between platforms, it is considered a **bug** unless explicitly approved.
+
+---
+
+### 11.6 Platform Detection Rules
+
+Platform checks are allowed **only for layout or interaction differences**.
+
+Allowed examples:
+
+* Keyboard handling
+* Hover effects on web
+* Scroll behavior adjustments
+
+Disallowed uses:
+
+* Conditional business logic
+* Conditional data fetching
+* Feature enablement by platform
+
+---
+
+### 11.7 Developer Responsibility (IMPORTANT)
+
+For every frontend change:
+
+* Assume it will be used on **both mobile and web**
+* Verify layout and interaction on:
+
+  * at least one mobile form factor
+  * at least one desktop/web form factor
+
+If you cannot verify both:
+
+* Stop
+* Ask for confirmation before proceeding
+
+---
+
+❌ No duplicated screens per device
+❌ No device-specific forks
+
+---
+
+## 12. Environment & Configuration
+
+### Core Rule
+
+> **All environment-specific values must come from configuration, not hardcoded values.**
+
+### Rules
+
+* API base URLs come from environment configuration (e.g. `.env`, Expo config)
+* No secrets or API keys in the repo or client code
+* No hardcoded backend URLs (already forbidden, reiterated here)
+* Configuration must support dev vs prod
+
+❌ Secrets in source code are forbidden
+❌ Hardcoded environment values are forbidden
+
+---
+
+## 13. Client-Side Security
+
+### Rules
+
+* No API keys or secrets in frontend source code
+* Only non-sensitive, scoped public keys are allowed (if required)
+* Authentication tokens and sensitive data:
+
+  * Stored in **secure storage** on mobile (e.g. SecureStore)
+  * Never stored in plain `localStorage` for secrets
+* No PII in logs
+* Error reports must be sanitized
+
+❌ Logging email, phone, tokens, or PII is forbidden
+
+---
+
+## 14. Platform-Specific Code
+
+### Guiding Principle
+
+> **Prefer shared code. Platform-specific behavior must be explicit, minimal, and justified.**
+
+### Allowed patterns (EXCEPTIONS)
+
+* `Platform.OS` / `Platform.select()` for small UI or interaction differences
+* Platform file extensions (`.native.tsx`, `.web.tsx`) **only for leaf components or primitives**
+
+### Rules
+
+* Platform-specific code must be:
+
+  * minimal
+  * localized
+  * documented with a comment explaining why it exists
+* Business logic must remain platform-agnostic
+* Feature-level screens must remain shared
+
+❌ Do NOT fork entire screens by platform
+❌ Do NOT diverge behavior across platforms
+
+---
+
+## 15. Error Boundaries
+
+### Core Principle
+
+> **Errors should be contained as close as possible to where they occur, without hiding systemic failures.**
+
+This means we use **layered error boundaries**, not a single catch‑all at the root.
+
+---
+
+### Required Structure (Industry‑Standard)
+
+The app must have **at least one error boundary**, but it must be placed deliberately.
+
+#### 1. App‑level (Root) Error Boundary — REQUIRED
+
+* Lives at the app root (e.g. `app/` or `App.tsx`)
+* Purpose:
+
+  * Catch truly unexpected failures
+  * Prevent total white‑screen crashes
+* Behavior:
+
+  * Show a generic fallback UI
+  * Offer a safe recovery action (reload / restart)
+
+⚠️ This boundary should be **rarely triggered** in normal flows.
+
+---
+
+#### 2. Domain / Feature‑level Error Boundaries — STRONGLY RECOMMENDED
+
+Each major **domain or feature** (e.g. `invitation`, `auth`) should define its own error boundary.
+
+* Lives inside the feature folder or at the feature entry screen
+* Wraps only that domain’s UI
+* Purpose:
+
+  * Isolate failures
+  * Prevent one broken feature from taking down the whole app
+
+Example:
+
+* Invitation RSVP screen fails → only RSVP area shows fallback
+* Rest of the app remains usable
+
+---
+
+### What This Prevents 
+
+Without domain‑level boundaries:
+
+* A small bug can crash the entire app
+* Debugging becomes harder
+* Users lose trust
+
+With domain‑level boundaries:
+
+* Failures are localized
+* Impact is contained
+* Recovery is clearer
+
+---
+
+### What Error Boundaries Should NOT Do
+
+❌ They must NOT:
+
+* Contain business logic
+* Swallow errors silently
+* Replace proper error handling in hooks
+
+Error boundaries are for **render‑time failures only**, not for expected errors.
+
+---
+
+### Division of Responsibility (Very Important)
+
+* **Expected errors** (validation, API errors):
+
+  * Handled in hooks and UI states
+* **Unexpected errors** (exceptions, render crashes):
+
+  * Handled by error boundaries
+
+---
+
+## 16. TypeScript Strictness
+
+### Rules
+
+* TypeScript strict mode is enabled
+* `any` is forbidden by default
+* If `any` is used:
+
+  * It must be justified with a comment
+* Prefer `unknown` and proper type narrowing
+
+---
+
+## 17. Navigation
+
+### Rules
+
+* Navigation lives under `app/navigation/`
+* Stack/tab definitions are centralized
+* Route names are constants
+* Deep links and web URLs follow a single convention
+* Route-to-URL mapping lives in one place
+
+---
+
+## 18. Dependencies
+
+### Rules
+
+* Lockfile must be committed
+* New dependencies require justification
+* No “nice to have” dependencies
+* Run security audit (`npm audit`) and:
+
+  * fix issues, or
+  * document accepted risks
+
+---
+
+## 19. Assets
+
+### Rules
+
+* Images and fonts live under `assets/`
+* Assets referenced via theme or shared constants
+* Images conveying meaning must include accessibility labels
+
+---
+
+## 20. Testing
+
+### Core Rule
+
+* Frontend testing follows the **Frontend Testing Strategy** document
+* This document governs structure, mocking, and assertions
+
+---
+
+### 20.1 UI Changes Require E2E Tests (MANDATORY)
+
+> **Any UI change must have a corresponding Playwright E2E test before the task can be marked complete.**
+
+This applies to:
+
+* New screens or pages
+* New UI components that are user-facing
+* Changes to existing UI layouts
+* Navigation flow changes
+* Form interactions and submissions
+* Any visual change that affects user interaction
+
+---
+
+#### Definition of "UI Change"
+
+A UI change is any modification that:
+
+* Adds or removes visual elements from the screen
+* Changes layout, spacing, or positioning
+* Modifies user interaction patterns (buttons, forms, navigation)
+* Affects accessibility (touch targets, labels, roles)
+* Changes responsive behavior across breakpoints
+
+---
+
+#### Required E2E Test Coverage
+
+For each UI change, the Playwright test must verify:
+
+1. **Page Load Success**
+   * Page renders without JavaScript errors
+   * No console errors (except expected network errors when backend is unavailable)
+   * Core content is visible
+
+2. **User Interactions**
+   * Buttons, links, and interactive elements are clickable
+   * Navigation works as expected
+   * Forms accept input (if applicable)
+
+3. **Responsive Behavior** (if the change affects layout)
+   * Test on mobile viewport (375x667)
+   * Test on desktop viewport (1920x1080)
+
+4. **Accessibility** (if the change affects interactive elements)
+   * Elements have proper labels
+   * Touch targets meet minimum size (44x44pt)
+
+5. **Theme Compatibility** (if the component has theme-sensitive styling)
+   * Component renders without errors in both light and dark mode
+   * No visual breakage after toggling theme via the `theme-toggle` testID button
+   * See `e2e/theme-toggle.spec.ts` as a reference implementation
+
+---
+
+#### Test Location
+
+* E2E tests live in `e2e/` directory
+* Name tests descriptively: `feature-name.spec.ts`
+* Group related tests with `test.describe()`
+
+---
+
+#### Before Marking Task Complete
+
+**Checklist:**
+
+- [ ] Playwright test written for the UI change
+- [ ] Test runs successfully: `npm run test:e2e`
+- [ ] Test verifies page loads without errors
+- [ ] Test verifies key user interactions work
+- [ ] Test passes on both mobile and desktop viewports (if responsive)
+
+---
+
+#### Exceptions
+
+The following changes **do not** require E2E tests:
+
+* Internal refactoring with no visual changes
+* Type definition changes
+* Configuration changes
+* Backend-only changes
+* Documentation updates
+* Style tweaks that don't affect layout structure
+
+When in doubt, **write the test**.
+
+---
+
+#### Rationale
+
+E2E tests ensure:
+
+* UI changes work as intended before deployment
+* Regressions are caught early
+* Cross-platform compatibility is verified automatically
+* User-facing features have baseline quality assurance
+
+Skipping E2E tests for UI changes is considered **incomplete work**.
+
+---
+
+## 21. Analytics & Telemetry
+
+### Rules
+
+* All analytics go through a single abstraction (service or hook)
+* Components must not call third-party analytics directly
+
+---
+
+## 22. Offline & Network Behavior
+
+### Rule
+
+* The app is **network-required** in v1
+* Retries, backoff, and error handling live in the data layer (hooks)
+* No ad-hoc retry logic in components
+
+---
+
+## 23. Internationalization
+
+### Rule
+
+* If multiple locales are supported:
+
+  * All user-facing strings go through i18n
+  * No raw user-facing strings in JSX
+
+---
+
+## 24. Responsive Clarification
+
+> **“Mobile” includes both native mobile devices and narrow web viewports.**
+
+All responsive and breakpoint rules apply equally to:
+
+* native mobile
+* mobile-sized web screens
+
+---
+
+## 25. Forbidden Patterns (AUTO-REJECT)
+
+* Working on `main`
+* Class components
+* Global mutable state
+* Feature-to-feature imports
+* Hardcoded backend URLs
+* Secrets or API keys in source code
+* `any` without justification
+* Inline business logic
+* Ignoring this document
+
+---
+
+## 26. Final Rule
+
+> **Frontend code is part of the product experience.**
+> If the code is hard to read, the UX will eventually suffer.
+
+When in doubt:
+
+* Prefer clarity
+* Prefer boring code
+* Prefer small, safe changes

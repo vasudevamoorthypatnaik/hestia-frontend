@@ -1,0 +1,328 @@
+# Frontend Architecture Specification — SPA (S3 + CloudFront) — .mdc
+
+**Role Perspective:** Enterprise Architect  
+**Scope:** Production-ready Single Page Application (SPA)  
+**Deployment Model:** Static hosting via Amazon S3 + CloudFront  
+**Backend:** Spring Boot (GraphQL) — separately deployed  
+**Primary Principle:** Maintainability > Observability > Scalability > Novelty  
+
+---
+
+# 1. Architectural Overview
+
+## 1.1 High-Level Topology
+
+User Browser
+    ↓
+CloudFront (CDN + TLS + Routing)
+    ↓
+S3 (Static SPA Assets)
+    ↓
+Spring Boot GraphQL API (api.yourdomain.com)
+
+## 1.2 Domain Model (Recommended)
+
+- app.yourdomain.com → CloudFront → S3
+- api.yourdomain.com → Backend (Spring Boot)
+
+Clear separation of concerns:
+- Frontend = static delivery
+- Backend = API + business logic
+
+---
+
+# 2. SPA Architectural Principles (Non-Negotiable)
+
+1. Single HTML entry point (index.html)
+2. Client-side routing (React Router or equivalent)
+3. All navigation handled in-browser
+4. Backend communication via GraphQL only
+5. No server-side rendering (pure SPA)
+6. No frontend logic embedded inside backend runtime
+
+## 2.1 Hybrid Static + SPA Architecture (INV-253)
+
+The web build uses Expo's `output: 'static'` mode, producing a hybrid static + SPA site:
+
+- **Static HTML per route:** `npx expo export` generates a separate `.html` file for every route defined under `app/`. Static pages (guides, help, landing) ship with baked-in `<meta>` tags, JSON-LD structured data, and visible content — no JavaScript required for crawlers.
+- **Dynamic route fallback:** Routes with dynamic segments (`[invitationId]`, `[eventId]`, `[token]`) have no pre-rendered HTML. CloudFront's 403/404 error responses redirect these to `/index.html`, which boots the SPA and handles them client-side (same as before).
+- **HTML templates:**
+  - `app/+html.tsx` — the HTML shell template used by `expo export` for static builds.
+  - `public/index.html` — used only during local dev (`npx expo start`).
+- **Guide pages** are the primary beneficiary: each `/guides/*` route gets its own static HTML with SEO metadata and content, making them fully crawlable without JS execution.
+
+This is NOT SSR. There is no runtime server. The static HTML is generated once at build time and deployed to S3 like any other asset.
+
+---
+
+# 3. Project Structure (Recommended)
+
+src/
+ ├── main.tsx
+ ├── App.tsx
+ ├── routes/
+ │    ├── Dashboard.tsx
+ │    ├── Orders.tsx
+ │    └── Login.tsx
+ ├── features/
+ │    ├── orders/
+ │    ├── users/
+ │    └── shared/
+ ├── components/
+ ├── graphql/
+ ├── hooks/
+ ├── utils/
+ ├── test-utils/
+ └── styles/
+
+Principles:
+- Feature-based grouping preferred over type-based grouping.
+- Mirror backend domain boundaries where possible.
+- Avoid deep cross-feature imports.
+
+---
+
+# 4. Build & Artifact Model
+
+## 4.1 Build Command
+
+npm run build
+
+Produces:
+
+dist/
+ ├── index.html
+ ├── assets/
+ │    ├── main.[hash].js
+ │    ├── vendor.[hash].js
+ │    └── route-chunks.[hash].js
+
+## 4.2 Code Splitting
+
+- Use route-based lazy loading.
+- Dynamic imports for heavy modules.
+- Prevent monolithic bundles.
+
+Example pattern:
+
+const Dashboard = lazy(() => import('./routes/Dashboard'))
+
+---
+
+# 5. S3 Hosting Configuration
+
+## 5.1 S3 Bucket Rules
+
+- Static website hosting enabled
+- Public access blocked
+- Access via CloudFront only
+- Versioning enabled (recommended)
+
+## 5.2 Folder Upload
+
+Upload entire dist/ directory to S3 bucket root.
+
+---
+
+# 6. CloudFront Configuration
+
+## 6.1 Origin
+
+- Origin: S3 bucket
+- Restrict direct S3 access using Origin Access Control (OAC)
+
+## 6.2 Routing Behavior (Critical for SPA)
+
+All unknown routes must return index.html.
+
+Error handling configuration:
+- 403 → /index.html
+- 404 → /index.html
+
+This prevents deep-link refresh failures.
+
+## 6.3 Caching Strategy
+
+- index.html → low cache TTL
+- JS/CSS assets → long cache TTL (hash-based invalidation)
+- Enable compression (gzip/brotli)
+
+---
+
+# 7. API Communication Architecture
+
+## 7.1 Base URL Strategy
+
+Do NOT hardcode API URLs.
+
+Use environment-based configuration:
+- VITE_API_URL (or equivalent)
+
+Examples:
+- Development: http://localhost:8080/graphql
+- Production: https://api.yourdomain.com/graphql
+
+## 7.2 CORS Configuration (Backend Responsibility)
+
+Backend must allow:
+- Origin: app.yourdomain.com
+- Credentials if required
+
+Frontend must never bypass CORS via proxy hacks in production.
+
+---
+
+# 8. Environment Configuration Model
+
+## 8.1 Environment Separation
+
+- .env.development
+- .env.production
+
+Only public-safe variables allowed in frontend.
+
+Never store:
+- Secrets
+- API keys (unless public)
+- Private tokens
+
+---
+
+# 9. Security Model
+
+1. All traffic over HTTPS (CloudFront TLS)
+2. Content Security Policy headers (recommended via CloudFront)
+3. No secrets in SPA code
+4. Authentication tokens stored securely (HTTP-only cookies preferred)
+
+---
+
+# 10. Observability & Monitoring
+
+## 10.1 Frontend Monitoring
+
+Recommended:
+- Real User Monitoring (RUM)
+- Error tracking (e.g., Sentry)
+
+## 10.2 Logging Boundaries
+
+Frontend logs:
+- User interaction errors
+- Network failures
+
+Backend logs:
+- Business logic
+- Persistence
+- Security events
+
+Clear separation required.
+
+---
+
+# 11. Deployment Flow
+
+1. Build SPA (CI or local build)
+2. Upload dist/ to S3
+3. Invalidate CloudFront cache (if required)
+4. Smoke test:
+   - Direct deep link (e.g., /dashboard)
+   - API connectivity
+   - Authentication flow
+
+Frontend deployment must not require backend redeploy.
+
+---
+
+# 12. Scalability Model
+
+Frontend:
+- Infinite horizontal scaling via CDN
+- No runtime compute required
+
+Backend:
+- Scales independently (ECS/EC2/EKS/etc.)
+
+This separation prevents frontend traffic from impacting backend compute.
+
+---
+
+# 13. Failure Modes & Guardrails
+
+Common mistakes (Forbidden):
+
+- Hosting SPA inside Spring Boot
+- Path-based API routing under same domain without planning
+- Hardcoded API URLs
+- Missing SPA fallback routing
+- Large un-split JS bundles
+- Storing secrets in frontend
+- UI components that only support light mode (missing `dark:` variants)
+- Hardcoded color values that ignore the active theme
+
+---
+
+# 14. Future Extensibility
+
+If SEO becomes required later:
+- Introduce marketing site separately
+- Do NOT retrofit SSR into core app without strong justification
+
+Keep application SPA isolated and focused.
+
+---
+
+# 15. Final Architectural Decision
+
+Frontend Model:
+- Pure SPA
+- Static build
+- Hosted via S3
+- Distributed via CloudFront
+- Separate subdomain
+- Independent deployment lifecycle
+
+This architecture maximizes:
+- Maintainability
+- Clear ownership boundaries
+- Operational simplicity
+- Scalable delivery
+- Clean testing separation
+
+---
+
+---
+
+# 16. UI Theming Requirements
+
+## 16.1 Dark Mode is Mandatory
+
+Every UI component built for this SPA must support both light and dark themes.
+
+This is enforced via NativeWind's `dark:` class variants:
+
+```tsx
+// Required pattern
+<View className="bg-white dark:bg-gray-900">
+  <Text className="text-gray-900 dark:text-white">Content</Text>
+</View>
+```
+
+Theme state is managed by `ThemeProvider` (see `src/shared/contexts/ThemeContext.tsx`).
+Components do not read the theme directly — they rely on NativeWind resolving `dark:` classes automatically.
+
+## 16.2 Theme Testing Requirement
+
+Any component with theme-sensitive styling must have a corresponding Playwright E2E test that:
+
+1. Verifies the component renders correctly in the default theme
+2. Clicks the theme toggle button (`data-testid="theme-toggle"`) and verifies no errors occur
+3. Confirms the component remains functional after a theme switch
+
+Reference: `e2e/theme-toggle.spec.ts`
+
+A component without theme coverage is considered **incomplete** and must not be merged.
+
+---
+
+END OF SPECIFICATION

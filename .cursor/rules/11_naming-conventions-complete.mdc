@@ -1,0 +1,749 @@
+---
+description: Complete naming conventions — files, variables, constants, GraphQL, routes, events
+alwaysApply: true
+---
+
+# Complete Naming Conventions
+
+**Role Perspective:** Tech Lead + Code Reviewer
+**Scope:** Comprehensive naming standards for all code artifacts
+**Philosophy:** Clarity, consistency, searchability
+
+---
+
+## Core Principles
+
+1. **Names reveal intent** — No ambiguous abbreviations
+2. **Consistency over cleverness** — Follow patterns, not personal preference
+3. **Searchability** — Names should be greppable
+4. **No generic names** — `data`, `helper`, `util` are forbidden
+
+---
+
+## 1. Files
+
+### 1.1 React Components
+
+**Format:** `PascalCase.tsx`
+
+**Examples:**
+```
+InvitationViewScreen.tsx
+RsvpForm.tsx
+GuestCountPicker.tsx
+Button.tsx
+```
+
+**Rules:**
+- One component per file
+- File name matches component name exactly
+- Suffix "Screen" for screen components (routes)
+- No prefixes like "MyComponent" or "AppComponent"
+
+---
+
+### 1.2 Hooks
+
+**Format:** `camelCase.ts`
+
+**Examples:**
+```
+useInvitation.ts
+useAuth.ts
+useRsvpForm.ts
+```
+
+**Rules:**
+- Must start with "use" prefix (React convention)
+- Descriptive of what hook provides
+
+---
+
+### 1.3 Utilities & Helpers
+
+**Format:** `camelCase.ts`
+
+**Examples:**
+```
+formatDate.ts
+parseGraphQLError.ts
+validateEmail.ts
+```
+
+**Rules:**
+- Verb-based names (functions do things)
+- No generic names like `utils.ts`, `helpers.ts`
+
+---
+
+### 1.4 Types & Interfaces
+
+**Format:** `camelCase.ts` (file), `PascalCase` (type name)
+
+**Examples:**
+```
+types.ts → export type Invitation
+userTypes.ts → export type User, export type UserRole
+```
+
+**Rules:**
+- Shared types go in feature `types.ts`
+- Complex type files can be specific: `invitationTypes.ts`
+
+---
+
+### 1.5 GraphQL Queries & Mutations
+
+**Format:** `camelCase.graphql`
+
+**Examples:**
+```
+queries.graphql
+mutations.graphql
+```
+
+**Or feature-specific:**
+```
+invitationQueries.graphql
+rsvpMutations.graphql
+```
+
+---
+
+### 1.6 Tests
+
+**Format:** `MatchingComponentName.test.tsx` or `matchingFileName.test.ts`
+
+**Examples:**
+```
+InvitationViewScreen.test.tsx
+useInvitation.test.ts
+formatDate.test.ts
+```
+
+**Rules:**
+- Test file next to source file
+- `.test.tsx` for component tests
+- `.test.ts` for unit tests
+
+---
+
+### 1.7 Platform-Specific Files
+
+**Format:** `FileName.native.tsx` / `FileName.web.tsx`
+
+**Examples:**
+```
+ShareButton.native.tsx
+ShareButton.web.tsx
+Navigation.native.tsx
+Navigation.web.tsx
+```
+
+---
+
+## 2. Components
+
+### 2.1 Component Names
+
+**Format:** `PascalCase` function
+
+**Examples:**
+```typescript
+export function InvitationViewScreen() {}
+export function RsvpForm() {}
+export function Button() {}
+```
+
+**Rules:**
+- Function components only (no class components)
+- Exported function matches file name
+- Descriptive, not generic
+
+---
+
+### 2.2 Component Props
+
+**Format:** `ComponentNameProps` interface
+
+**Examples:**
+```typescript
+interface InvitationViewScreenProps {
+  eventId: string
+}
+
+interface RsvpFormProps {
+  onSubmit: (data: RsvpFormData) => void
+  initialValues?: RsvpFormData
+}
+```
+
+**Rules:**
+- Always define props interface (no inline types)
+- Suffix "Props"
+- Document complex props with JSDoc
+
+---
+
+## 3. Hooks
+
+### 3.1 Hook Names
+
+**Format:** `use + PascalCase`
+
+**Examples:**
+```typescript
+useInvitation(eventId: string)
+useAuth()
+useRsvpForm()
+useDebouncedValue(value, delay)
+```
+
+**Rules:**
+- Always start with "use"
+- Describe what the hook provides, not how it works
+
+---
+
+### 3.2 Hook Return Values
+
+**Prefer objects over arrays for clarity:**
+
+```typescript
+// ✅ Good
+export function useInvitation(eventId: string) {
+  return {
+    invitation,
+    loading,
+    error,
+    refetch,
+  }
+}
+
+// ❌ Avoid (unless pattern is very clear, like useState)
+export function useInvitation(eventId: string) {
+  return [invitation, refetch]
+}
+```
+
+---
+
+## 4. Variables
+
+### 4.1 Boolean Variables
+
+**Format:** `is/has/should + PascalCase`
+
+**Examples:**
+```typescript
+const isLoading = true
+const hasError = false
+const shouldShowModal = true
+const canSubmit = false
+```
+
+**Rules:**
+- Prefix: `is`, `has`, `should`, `can`, `will`
+- Reads like a question: "Is loading?" → `isLoading`
+
+---
+
+### 4.2 Regular Variables
+
+**Format:** `camelCase`
+
+**Examples:**
+```typescript
+const invitation = data
+const guestCount = adults + kids
+const eventDate = new Date()
+```
+
+**Rules:**
+- Descriptive, not abbreviated
+- Singular for single values, plural for arrays
+
+---
+
+### 4.3 Arrays & Collections
+
+**Format:** Plural nouns
+
+**Examples:**
+```typescript
+const invitations = []
+const users = []
+const guestCounts = []
+```
+
+**Rules:**
+- Always plural for arrays/lists
+- Avoid `listOfUsers`, `userArray` (redundant)
+
+---
+
+## 5. Constants
+
+### 5.1 Module Constants
+
+**Format:** `SCREAMING_SNAKE_CASE`
+
+**Examples:**
+```typescript
+const MAX_GUEST_COUNT = 10
+const DEFAULT_TIMEOUT = 30000
+const API_BASE_URL = 'https://api.hestia.com'
+```
+
+**Rules:**
+- All caps with underscores
+- Defined at module top level
+- Truly constant (never reassigned)
+
+---
+
+### 5.2 Configuration Objects
+
+**Format:** `camelCase` variable, `SCREAMING_SNAKE_CASE` for nested values
+
+**Examples:**
+```typescript
+const apiConfig = {
+  BASE_URL: 'https://api.hestia.com',
+  TIMEOUT: 30000,
+  RETRY_ATTEMPTS: 3,
+}
+```
+
+---
+
+## 6. Functions
+
+### 6.1 Regular Functions
+
+**Format:** `camelCase`, verb-based
+
+**Examples:**
+```typescript
+function fetchInvitation() {}
+function submitRsvp() {}
+function validateEmail() {}
+function formatDate() {}
+```
+
+**Rules:**
+- Start with a verb (describes action)
+- Specific, not generic (no `doSomething`, `handleStuff`)
+
+---
+
+### 6.2 Event Handlers
+
+**Format:** `handle + Action` or `on + Action`
+
+**Examples:**
+```typescript
+function handleSubmit() {}
+function handlePress() {}
+function handleChange() {}
+
+// In props:
+onSubmit: (data) => void
+onPress: () => void
+```
+
+**Rules:**
+- `handle` for implementation
+- `on` for prop callbacks
+
+---
+
+### 6.3 Utility Functions
+
+**Format:** Verb-based, descriptive
+
+**Examples:**
+```typescript
+formatDateToISO(date: Date): string
+parseGraphQLError(error: CombinedError): string
+calculateTotalGuests(adults: number, kids: number): number
+```
+
+**Rules:**
+- Pure functions preferred
+- Clear input/output types
+- No side effects (unless name implies it)
+
+---
+
+## 7. Types & Interfaces
+
+### 7.1 Type Names
+
+**Format:** `PascalCase`
+
+**Examples:**
+```typescript
+type Invitation = { ... }
+type RsvpStatus = 'pending' | 'accepted' | 'declined'
+type GuestCount = { adults: number; kids: number }
+```
+
+**Rules:**
+- Descriptive, domain-specific names
+- No generic `Data`, `Info`, `Object`
+
+---
+
+### 7.2 Interface Names
+
+**Format:** `PascalCase` (no "I" prefix)
+
+**Examples:**
+```typescript
+interface User {
+  id: string
+  email: string
+}
+
+interface RsvpFormData {
+  adults: number
+  kids: number
+}
+```
+
+**Rules:**
+- No "I" prefix (not `IUser`, not `IInterface`)
+- Use interface for object shapes, type for unions/aliases
+
+---
+
+### 7.3 Enum Names
+
+**Format:** `PascalCase` (singular)
+
+**Examples:**
+```typescript
+enum RsvpStatus {
+  Pending = 'pending',
+  Accepted = 'accepted',
+  Declined = 'declined',
+}
+
+// Or use const assertion (preferred for GraphQL codegen):
+const RsvpStatus = {
+  Pending: 'pending',
+  Accepted: 'accepted',
+  Declined: 'declined',
+} as const
+```
+
+**Rules:**
+- Singular name (not `RsvpStatuses`)
+- Values in `PascalCase`, string values in `lowercase`
+
+---
+
+## 8. GraphQL
+
+### 8.1 Query Names
+
+**Format:** `Get + EntityName + Query`
+
+**Examples:**
+```graphql
+query GetInvitation($eventId: ID!) { ... }
+query GetUserProfile { ... }
+query GetInvitationList($first: Int, $after: String) { ... }
+```
+
+**Rules:**
+- Descriptive of what is fetched
+- Prefix "Get" for queries
+
+**Generated hook:**
+```typescript
+useGetInvitationQuery()
+```
+
+---
+
+### 8.2 Mutation Names
+
+**Format:** `Verb + EntityName + Mutation`
+
+**Examples:**
+```graphql
+mutation SubmitRsvp($input: RsvpInput!) { ... }
+mutation UpdateUserProfile($input: ProfileInput!) { ... }
+mutation DeleteInvitation($id: ID!) { ... }
+```
+
+**Rules:**
+- Action verb: Submit, Update, Delete, Create
+- Describes the action performed
+
+**Generated hook:**
+```typescript
+useSubmitRsvpMutation()
+```
+
+---
+
+### 8.3 Fragment Names
+
+**Format:** `EntityName + Fragment`
+
+**Examples:**
+```graphql
+fragment InvitationFragment on Invitation {
+  id
+  eventName
+  eventDate
+}
+```
+
+---
+
+## 9. Routes & URLs
+
+### 9.1 Route File Names (Expo Router)
+
+**Format:** `kebab-case.tsx` for URLs, `PascalCase.tsx` for screens
+
+**Examples:**
+```
+app/
+├── index.tsx                → /
+├── login.tsx                → /login
+├── invitation/
+│   └── [id].tsx            → /invitation/:id
+└── rsvp-confirmation.tsx    → /rsvp-confirmation
+```
+
+**Rules:**
+- URL segments use kebab-case
+- Dynamic segments use `[param].tsx`
+
+---
+
+### 9.2 Route Names (Constants)
+
+**Format:** `SCREAMING_SNAKE_CASE`
+
+**Examples:**
+```typescript
+const ROUTES = {
+  HOME: '/',
+  LOGIN: '/login',
+  INVITATION_DETAIL: '/invitation/[id]',
+  RSVP_CONFIRMATION: '/rsvp-confirmation',
+} as const
+```
+
+---
+
+## 10. Environment Variables
+
+### 10.1 Client-Side Variables
+
+**Format:** `EXPO_PUBLIC_ + SCREAMING_SNAKE_CASE`
+
+**Examples:**
+```
+EXPO_PUBLIC_API_URL
+EXPO_PUBLIC_APP_ENV
+EXPO_PUBLIC_FEATURE_ANALYTICS
+EXPO_PUBLIC_SENTRY_DSN
+```
+
+**Rules:**
+- Must have `EXPO_PUBLIC_` prefix (Expo requirement)
+- All caps with underscores
+- Descriptive, not abbreviated
+
+---
+
+### 10.2 Server-Side Variables (EAS Secrets)
+
+**Format:** `SCREAMING_SNAKE_CASE` (no prefix needed)
+
+**Examples:**
+```
+SENTRY_AUTH_TOKEN
+GOOGLE_OAUTH_CLIENT_SECRET
+```
+
+---
+
+## 11. CSS Classes (NativeWind)
+
+### 11.1 Utility Classes
+
+**Format:** Tailwind utility classes
+
+**Examples:**
+```tsx
+<View className="flex-1 bg-white p-4" />
+<Text className="text-lg font-bold text-gray-900" />
+```
+
+**Rules:**
+- Use Tailwind utilities (no custom class names)
+- Responsive prefixes: `md:`, `lg:`
+- Dark mode: `dark:`
+
+---
+
+## 12. Test Descriptions
+
+### 12.1 describe Blocks
+
+**Format:** Component/feature name
+
+**Examples:**
+```typescript
+describe('InvitationViewScreen', () => {})
+describe('useInvitation', () => {})
+describe('formatDate', () => {})
+```
+
+---
+
+### 12.2 Nested describe Blocks
+
+**Format:** User action or scenario
+
+**Examples:**
+```typescript
+describe('InvitationViewScreen', () => {
+  describe('when data loads successfully', () => {})
+  describe('when API returns an error', () => {})
+  describe('when user is not authenticated', () => {})
+})
+```
+
+---
+
+### 12.3 it/test Blocks
+
+**Format:** Observable behavior (present tense)
+
+**Examples:**
+```typescript
+it('renders the event name', () => {})
+it('shows loading spinner while fetching', () => {})
+it('displays error message when API fails', () => {})
+it('navigates to RSVP screen on button press', () => {})
+```
+
+**Rules:**
+- Describe what user sees/experiences
+- No "should" (redundant)
+- No implementation details
+
+---
+
+## 13. Folder Names
+
+**Format:** `kebab-case` or `camelCase` (be consistent)
+
+**Examples:**
+```
+features/
+shared/
+__generated__/
+```
+
+**Recommended:** `camelCase` for consistency with files
+
+---
+
+## 14. Forbidden Names
+
+❌ **DO NOT use:**
+
+- `temp`, `tmp`, `test` (in production code)
+- `data`, `info`, `obj`, `item` (too generic)
+- `helper`, `util`, `manager`, `handler` (vague)
+- Abbreviations: `btn`, `ctx`, `val`, `err` (spell it out)
+- Single letters: `a`, `b`, `x`, `y` (except loop indices)
+- Numbered variables: `user1`, `user2` (use arrays or descriptive names)
+
+**Exceptions:**
+- Loop indices: `i`, `j`, `k`
+- Common abbreviations: `id`, `url`, `api`, `ui`
+- Established conventions: `req`, `res` (in backend only)
+
+---
+
+## 15. Naming Decision Tree
+
+**Question 1:** Is it a React component?
+- **Yes** → `PascalCase.tsx`, exported function `PascalCase`
+- **No** → Continue
+
+**Question 2:** Is it a hook?
+- **Yes** → `useHookName.ts` (camelCase file, `use` prefix)
+- **No** → Continue
+
+**Question 3:** Is it a constant?
+- **Yes** → `SCREAMING_SNAKE_CASE`
+- **No** → Continue
+
+**Question 4:** Is it a type/interface?
+- **Yes** → `PascalCase` (no "I" prefix)
+- **No** → Continue
+
+**Question 5:** Is it a boolean?
+- **Yes** → `is/has/should + camelCase`
+- **No** → Continue
+
+**Default:** `camelCase` for variables and functions
+
+---
+
+## 16. Consistency Checklist
+
+Before committing code, verify:
+
+- [ ] Component files are `PascalCase.tsx`
+- [ ] Hook files are `camelCase.ts` and start with "use"
+- [ ] Boolean variables use `is/has/should` prefix
+- [ ] Constants are `SCREAMING_SNAKE_CASE`
+- [ ] No generic names (`data`, `helper`, `util`)
+- [ ] No abbreviations (except common ones)
+- [ ] GraphQL queries/mutations follow naming pattern
+- [ ] Environment variables use `EXPO_PUBLIC_` prefix
+- [ ] Test descriptions are user-focused
+
+---
+
+## 17. Summary Table
+
+| Artifact | Format | Example |
+|----------|--------|---------|
+| Component file | `PascalCase.tsx` | `InvitationViewScreen.tsx` |
+| Hook file | `camelCase.ts` | `useInvitation.ts` |
+| Utility file | `camelCase.ts` | `formatDate.ts` |
+| Component function | `PascalCase` | `function InvitationViewScreen()` |
+| Hook function | `use + PascalCase` | `function useInvitation()` |
+| Boolean variable | `is/has/should + camelCase` | `const isLoading` |
+| Regular variable | `camelCase` | `const invitation` |
+| Constant | `SCREAMING_SNAKE_CASE` | `const MAX_GUESTS` |
+| Type/Interface | `PascalCase` | `type Invitation`, `interface User` |
+| GraphQL query | `Get + Entity + Query` | `GetInvitationQuery` |
+| GraphQL mutation | `Verb + Entity + Mutation` | `SubmitRsvpMutation` |
+| Route file | `kebab-case.tsx` | `rsvp-confirmation.tsx` |
+| Environment var | `EXPO_PUBLIC_NAME` | `EXPO_PUBLIC_API_URL` |
+| Event handler | `handle + Action` | `handleSubmit` |
+| Callback prop | `on + Action` | `onPress` |
+
+---
+
+## Final Note
+
+> **Names are communication.**
+>
+> Future developers (including yourself) will thank you for clear, consistent naming.
+> When in doubt, choose the more descriptive name.

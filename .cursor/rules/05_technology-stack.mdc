@@ -1,0 +1,606 @@
+---
+description: Technology stack — locked decisions for libraries, frameworks, and tools
+alwaysApply: true
+---
+
+# Technology Stack (LOCKED)
+
+**Role Perspective:** Senior Staff Engineer
+**Status:** Production-grade, battle-tested selections
+**Philosophy:** Simplicity, TypeScript-first, cross-platform parity
+
+---
+
+## Core Principle
+
+> **Every technology choice must serve the project's goals: excellent UX, maintainability, and cross-platform correctness.**
+
+Avoid:
+- Novelty for its own sake
+- Heavy abstractions
+- Libraries with poor TypeScript support
+- Tools that create platform divergence
+
+---
+
+## 1. GraphQL Client
+
+### Decision: URQL (Formidable Labs)
+
+**Required packages:**
+```json
+{
+  "urql": "^4.0.0",
+  "graphql": "^16.8.0"
+}
+```
+
+**Rationale:**
+- Lightweight (~30KB vs Apollo's ~100KB)
+- Excellent TypeScript support out of the box
+- Document caching by default (aligns with minimal state philosophy)
+- Normalized caching available when needed via `@urql/exchange-graphcache`
+- First-class React Native support
+- Exchanges system allows surgical control (auth, retry, optimistic updates)
+- Production-proven at Formidable, Coinbase, Major League Soccer
+
+**Configuration location:** `src/shared/graphql/client.ts`
+
+**Forbidden alternatives:**
+- ❌ Apollo Client (too heavy, too much implicit behavior)
+- ❌ Relay (overkill for this project's scale)
+- ❌ Direct fetch calls (bypasses caching and error handling)
+
+---
+
+## 2. Navigation
+
+### Decision: Expo Router (File-based routing)
+
+**Required packages:**
+```json
+{
+  "expo-router": "~3.5.0"
+}
+```
+
+**Rationale:**
+- File-based routing works identically for web and mobile
+- Universal linking built-in (critical for hestia link flows)
+- Type-safe navigation with TypeScript
+- Web-style URLs on mobile improve hestia sharing UX
+- SEO-friendly metadata support (future-proofing)
+- Official Expo recommendation as of 2024+
+- Reduces platform-specific navigation code
+
+**Routing structure:** `app/` directory (Expo Router convention)
+
+**Forbidden alternatives:**
+- ❌ React Navigation alone (requires manual web setup, divergence risk)
+- ❌ Custom routing (unmaintainable)
+
+**Note:** Expo Router uses React Navigation under the hood, so React Navigation knowledge applies.
+
+---
+
+## 3. Styling
+
+### Decision: NativeWind v4 (Tailwind CSS for React Native)
+
+**Required packages:**
+```json
+{
+  "nativewind": "^4.0.0",
+  "tailwindcss": "^3.4.0"
+}
+```
+
+**Rationale:**
+- Write once, runs on iOS/Android/Web with identical syntax
+- Tailwind CSS has become the industry standard (2024+)
+- Type-safe with TypeScript via `className` prop
+- No runtime style injection (compiled to StyleSheet)
+- Design tokens defined centrally in `tailwind.config.js`
+- Faster development velocity for cross-platform UI
+- Excellent dark mode support (`dark:` prefix)
+- Production-proven at Shopify, Expo, Vercel
+
+**Configuration location:** `tailwind.config.js` (root)
+
+**Theme tokens location:** `src/shared/theme/` (extend Tailwind defaults)
+
+**Forbidden alternatives:**
+- ❌ Tamagui (more complex, steeper learning curve)
+- ❌ Styled-components (runtime overhead on mobile)
+- ❌ Inline styles (unmaintainable, no design system)
+
+**Allowed exceptions:**
+- StyleSheet API for platform-specific edge cases only
+- Must be documented with a comment explaining why
+
+---
+
+## 4. Form Handling
+
+### Decision: React Hook Form v7+
+
+**Required packages:**
+```json
+{
+  "react-hook-form": "^7.51.0",
+  "@hookform/resolvers": "^3.3.0"
+}
+```
+
+**Rationale:**
+- Uncontrolled forms minimize re-renders (performance)
+- Excellent TypeScript support with type inference
+- Built-in validation + Zod integration via `@hookform/resolvers`
+- Tiny bundle size (40KB minified, zero dependencies)
+- Works seamlessly on React Native + Web
+- Industry standard (used by Next.js, Vercel, Microsoft)
+- Integrates cleanly with GraphQL mutations
+
+**Pattern:**
+```tsx
+const { control, handleSubmit } = useForm<RsvpFormData>({
+  resolver: zodResolver(rsvpSchema)
+})
+```
+
+**Forbidden alternatives:**
+- ❌ Formik (slower, controlled inputs, maintenance declining)
+- ❌ Manual form state (error-prone, reinventing the wheel)
+
+---
+
+## 5. Schema Validation
+
+### Decision: Zod
+
+**Required packages:**
+```json
+{
+  "zod": "^3.22.0"
+}
+```
+
+**Rationale:**
+- Runtime + compile-time type safety
+- GraphQL codegen can generate Zod schemas from backend types
+- Form validation via `@hookform/resolvers`
+- Environment variable validation (type-safe config)
+- Excellent, user-friendly error messages
+- Zero dependencies, small bundle (8KB)
+- TypeScript-first design
+
+**Use cases:**
+- Form validation
+- Environment variable schemas
+- API response validation (when needed)
+- User input sanitization
+
+**Pattern:**
+```ts
+const rsvpSchema = z.object({
+  adults: z.number().min(0).max(10),
+  kids: z.number().min(0).max(10)
+})
+```
+
+**Forbidden alternatives:**
+- ❌ Yup (slower, less TypeScript-friendly)
+- ❌ Joi (Node.js-focused, too heavy)
+
+---
+
+## 6. GraphQL Code Generation
+
+### Decision: GraphQL Code Generator
+
+**Required packages:**
+```json
+{
+  "@graphql-codegen/cli": "^5.0.0",
+  "@graphql-codegen/typescript": "^4.0.0",
+  "@graphql-codegen/typescript-operations": "^4.0.0",
+  "@graphql-codegen/typescript-urql": "^4.0.0"
+}
+```
+
+**Rationale:**
+- De facto industry standard
+- Generates typed hooks directly for URQL
+- Type-safe queries/mutations from backend GraphQL schema
+- Watch mode for development workflow
+- Integrates with pre-commit hooks (ensures types stay current)
+
+**Configuration location:** `codegen.yml` (root)
+
+**Generated files location:** `src/__generated__/graphql.ts`
+
+**Workflow:**
+1. Backend exposes GraphQL schema (introspection or `schema.graphql`)
+2. Frontend runs `npm run codegen`
+3. Generated hooks used in feature API layers
+4. Pre-commit hook ensures generated files are current
+
+**Command:**
+```bash
+npm run codegen        # Generate types
+npm run codegen:watch  # Watch mode during development
+```
+
+**Forbidden alternatives:**
+- ❌ Manual type definitions (will drift from backend)
+- ❌ Any-typed GraphQL calls (defeats TypeScript benefits)
+
+---
+
+## 7. Icons
+
+### Decision: Expo Vector Icons (Lucide icon set)
+
+**Required packages:**
+```json
+{
+  "@expo/vector-icons": "^14.0.0"
+}
+```
+
+**Rationale:**
+- Ships with Expo SDK (zero additional config)
+- Lucide = modern, consistent, minimalist design
+- Tree-shakeable (only bundle icons actually used)
+- Works identically on iOS/Android/Web
+- TypeScript autocomplete for icon names
+- Scalable vector format (crisp at all sizes)
+
+**Pattern:**
+```tsx
+import { Lucide } from '@expo/vector-icons'
+
+<Lucide name="calendar" size={24} color="black" />
+```
+
+**Forbidden alternatives:**
+- ❌ React Native Vector Icons (Expo Vector Icons wraps this, use the wrapper)
+- ❌ Custom SVG icon components (unless brand-specific)
+- ❌ Image-based icons (not scalable)
+
+---
+
+## 8. Build & Deployment
+
+### Decision: EAS Build + EAS Update
+
+**Required setup:**
+- EAS CLI: `npm install -g eas-cli`
+- Configuration: `eas.json` (root)
+
+**Rationale:**
+- Official Expo build service (replaces classic Expo builds)
+- Handles iOS/Android code signing automatically
+- Cloud builds ensure consistent environment (no "works on my machine")
+- EAS Update enables OTA updates (bug fixes without App Store review)
+- Free tier sufficient for early development
+- Production-grade CI/CD integration (GitHub Actions)
+
+**Build profiles:**
+- `development`: Local dev builds with debugging enabled
+- `preview`: Internal testing (TestFlight, Firebase App Distribution)
+- `production`: App Store / Google Play releases
+
+**Commands:**
+```bash
+eas build --profile development
+eas build --profile production
+eas update --branch production  # OTA update
+```
+
+**Forbidden alternatives:**
+- ❌ Expo classic builds (deprecated)
+- ❌ Manual Xcode/Android Studio builds (unless debugging native modules)
+
+---
+
+## 9. Internationalization (i18n)
+
+### Decision: English-only for v1, i18next for future
+
+**v1 (current):**
+- English-only, explicitly documented
+- Use `expo-localization` for date/time formatting only
+
+**Future (when multiple languages required):**
+```json
+{
+  "i18next": "^23.0.0",
+  "react-i18next": "^14.0.0"
+}
+```
+
+**Rationale:**
+- Don't over-engineer for v1 (YAGNI principle)
+- i18next is proven industry standard when needed
+- Migration path is clear when business need arises
+
+**Forbidden alternatives:**
+- ❌ Building custom i18n (reinventing the wheel)
+- ❌ react-intl (heavier, more complex API)
+
+---
+
+## 10. Testing (References Frontend Testing Strategy)
+
+All testing technology is defined in [04_frontend-testing-strategy.mdc](./04_frontend-testing-strategy.mdc).
+
+**Summary:**
+- **Test Runner:** Jest
+- **Component Testing:** React Testing Library
+- **Network Mocking:** MSW (Mock Service Worker)
+- **E2E:** Playwright (minimal usage)
+
+---
+
+## 11. TypeScript
+
+### Decision: TypeScript 5.x (strict mode)
+
+**Required packages:**
+```json
+{
+  "typescript": "~5.3.0"
+}
+```
+
+**Configuration:** `tsconfig.json` (root)
+
+**Required compiler options:**
+```json
+{
+  "strict": true,
+  "noUncheckedIndexedAccess": true,
+  "exactOptionalPropertyTypes": true
+}
+```
+
+**Rationale:**
+- Industry standard for React Native + Expo
+- Strict mode catches bugs at compile time
+- Excellent editor support (autocomplete, refactoring)
+- Required by all chosen libraries (URQL, Zod, RHF)
+
+---
+
+## 12. Code Quality Tools
+
+### ESLint
+
+**Required packages:**
+```json
+{
+  "eslint": "^8.57.0",
+  "@typescript-eslint/eslint-plugin": "^7.0.0",
+  "@typescript-eslint/parser": "^7.0.0",
+  "eslint-plugin-react": "^7.34.0",
+  "eslint-plugin-react-hooks": "^4.6.0"
+}
+```
+
+**Configuration:** `.eslintrc.js` (root)
+
+**Required rules:**
+- `react-hooks/rules-of-hooks`: error
+- `react-hooks/exhaustive-deps`: warn
+- `@typescript-eslint/no-explicit-any`: error (unless justified)
+
+---
+
+### Prettier
+
+**Required packages:**
+```json
+{
+  "prettier": "^3.2.0"
+}
+```
+
+**Configuration:** `.prettierrc` (root)
+
+**Standard config:**
+```json
+{
+  "semi": false,
+  "singleQuote": true,
+  "trailingComma": "es5",
+  "printWidth": 100
+}
+```
+
+**Integration:** Runs on save via editor, pre-commit hook
+
+---
+
+## 13. Environment & Configuration
+
+### Decision: Expo Config + Zod validation
+
+**Configuration files:**
+- `app.config.ts` (not `app.json` — TypeScript required for dynamic config)
+- `.env.development`
+- `.env.production`
+
+**Rationale:**
+- `app.config.ts` allows runtime logic (build profiles, dynamic values)
+- Zod validates environment variables at build time
+- EAS Secrets for sensitive values (never in repo)
+
+**See:** [07_environment-configuration.mdc](./07_environment-configuration.mdc) for full details
+
+---
+
+## 14. Version Control & Collaboration
+
+### Git Hooks: Husky + lint-staged
+
+**Required packages:**
+```json
+{
+  "husky": "^9.0.0",
+  "lint-staged": "^15.0.0"
+}
+```
+
+**Pre-commit checks:**
+- ESLint
+- Prettier
+- TypeScript type check
+- GraphQL codegen check (ensure generated files current)
+
+**Pre-push checks:**
+- Jest tests
+
+**See:** [14_ci-cd-requirements.mdc](./14_ci-cd-requirements.mdc) for full details
+
+---
+
+## 15. Dependency Management
+
+### Rules
+
+**Adding new dependencies:**
+
+1. Check if existing dependency solves the problem
+2. Evaluate bundle size impact (use `npx bundlephobia <package>`)
+3. Verify React Native compatibility
+4. Check maintenance status (last updated, GitHub activity)
+5. Prefer TypeScript-first libraries
+6. Document the decision in PR description
+
+**Forbidden:**
+- Installing "nice to have" dependencies
+- Duplicate libraries solving the same problem
+- Unmaintained packages (no updates in 1+ year)
+- Dependencies without TypeScript support
+
+**When unsure:** Ask before installing
+
+---
+
+## 16. Package Manager
+
+### Decision: npm (default)
+
+**Rationale:**
+- Ships with Node.js (zero setup)
+- Expo documentation defaults to npm
+- Sufficient for project needs
+
+**Lockfile:** `package-lock.json` (must be committed)
+
+**Alternatives allowed if team prefers:**
+- Yarn 3+ (zero-installs with PnP)
+- pnpm (disk space savings)
+
+**If switching:** Document in README, commit lockfile, update CI
+
+---
+
+## 17. Forbidden Libraries & Patterns
+
+The following are **explicitly forbidden** without written approval:
+
+### State Management
+- ❌ Redux / Redux Toolkit
+- ❌ MobX
+- ❌ Zustand
+- ❌ Recoil
+- ❌ Jotai
+
+**Why:** Project uses local state + URQL cache (see [02_development_governance.mdc](./02_development_governance.mdc))
+
+### GraphQL Clients
+- ❌ Apollo Client
+- ❌ Relay
+
+**Why:** URQL selected (lightweight, sufficient)
+
+### UI Component Libraries
+- ❌ React Native Paper
+- ❌ React Native Elements
+- ❌ NativeBase
+
+**Why:** Build custom components with NativeWind (avoid heavy abstraction)
+
+### Navigation
+- ❌ React Navigation standalone (without Expo Router)
+
+**Why:** Expo Router provides cross-platform routing
+
+---
+
+## 18. When to Ask Before Adding a Dependency
+
+Ask the user/team before adding:
+
+1. Any state management library
+2. Alternative GraphQL client
+3. UI component library
+4. Alternative navigation system
+5. Build tool changes (Metro, Webpack)
+6. Testing framework changes
+7. Any package > 100KB
+8. Any package solving a problem already solved
+
+---
+
+## 19. Technology Review Cadence
+
+**Quarterly review:**
+- Evaluate if chosen technologies still serve project goals
+- Check for major version updates requiring migration
+- Assess bundle size impact of dependencies
+- Review for deprecated packages
+
+**Upgrade policy:**
+- Security updates: immediate
+- Minor versions: within 2 weeks
+- Major versions: planned migration with testing
+
+---
+
+## 20. Summary Table
+
+| Category | Technology | Version | Status |
+|----------|-----------|---------|--------|
+| GraphQL Client | URQL | ^4.0.0 | ✅ Locked |
+| Navigation | Expo Router | ~3.5.0 | ✅ Locked |
+| Styling | NativeWind | ^4.0.0 | ✅ Locked |
+| Forms | React Hook Form | ^7.51.0 | ✅ Locked |
+| Validation | Zod | ^3.22.0 | ✅ Locked |
+| Codegen | GraphQL Code Generator | ^5.0.0 | ✅ Locked |
+| Icons | Expo Vector Icons | ^14.0.0 | ✅ Locked |
+| Build | EAS Build/Update | Latest | ✅ Locked |
+| i18n | None (v1), i18next (future) | - | 📋 Planned |
+| Testing | Jest + RTL + MSW | See 04 | ✅ Locked |
+| Language | TypeScript | ~5.3.0 | ✅ Locked |
+| Linting | ESLint | ^8.57.0 | ✅ Locked |
+| Formatting | Prettier | ^3.2.0 | ✅ Locked |
+| Git Hooks | Husky + lint-staged | ^9.0.0 | ✅ Locked |
+
+---
+
+## Final Note
+
+> **These decisions are locked for v1.**
+>
+> Changing core technology (GraphQL client, navigation, styling) mid-project is costly and risky.
+>
+> If a genuine need arises to change a locked decision:
+> 1. Document the specific problem the current choice cannot solve
+> 2. Provide evidence (not just preference)
+> 3. Estimate migration cost
+> 4. Get explicit approval from the team
+>
+> **Preference is not a reason to change.**

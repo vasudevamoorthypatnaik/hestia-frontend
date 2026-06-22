@@ -1,0 +1,718 @@
+---
+description: Accessibility standards — WCAG 2.1 Level AA, screen readers, keyboard navigation, mobile & web
+alwaysApply: true
+---
+
+# Accessibility Standards
+
+**Role Perspective:** Senior Accessibility Engineer
+**Standard:** WCAG 2.1 Level AA
+**Scope:** iOS, Android, Web
+**Philosophy:** Accessible by default, not as an afterthought
+
+---
+
+## Core Principle
+
+> **Accessibility is a product requirement, not a nice-to-have.**
+>
+> Every feature must be usable by people with disabilities, including those using screen readers, keyboard navigation, and other assistive technologies.
+
+---
+
+## 1. Target Standard
+
+**Required:** WCAG 2.1 Level AA compliance
+
+**Applies to:**
+- ✅ Mobile apps (iOS VoiceOver, Android TalkBack)
+- ✅ Web app (keyboard navigation, screen readers)
+- ✅ All features, not just "public-facing" pages
+
+**Why Level AA:**
+- Industry standard for mobile and web apps
+- Legally required in many jurisdictions (ADA, Section 508, AODA)
+- Covers most common accessibility needs
+
+**Not targeting Level AAA** (stricter, often not practical for all content)
+
+---
+
+## 2. Screen Reader Support
+
+### 2.1 iOS VoiceOver
+
+**Required for all interactive elements:**
+
+```tsx
+import { View, Text, Pressable } from 'react-native'
+
+<Pressable
+  accessible={true}
+  accessibilityLabel="Submit RSVP"
+  accessibilityHint="Submits your RSVP response"
+  accessibilityRole="button"
+>
+  <Text>Submit</Text>
+</Pressable>
+```
+
+**Rules:**
+- `accessibilityLabel`: What the element is (noun)
+- `accessibilityHint`: What it does (verb)
+- `accessibilityRole`: Semantic role (button, link, header, etc.)
+
+---
+
+### 2.2 Android TalkBack
+
+**Same API as iOS (React Native abstracts this):**
+
+```tsx
+<Pressable
+  accessible={true}
+  accessibilityLabel="Accept invitation"
+  accessibilityRole="button"
+>
+  <Icon name="check" />
+</Pressable>
+```
+
+**Why label is critical:**
+- Icon-only buttons have no text for screen readers
+- TalkBack would announce "Unlabeled button" without label
+
+---
+
+### 2.3 Web Screen Readers (NVDA, JAWS, VoiceOver macOS)
+
+**React Native Web translates to semantic HTML:**
+
+```tsx
+// Becomes <button aria-label="Submit RSVP" aria-describedby="hint">
+<Pressable
+  accessibilityLabel="Submit RSVP"
+  accessibilityHint="Submits your RSVP response"
+  accessibilityRole="button"
+/>
+```
+
+**Test with:**
+- VoiceOver (macOS): Cmd + F5
+- NVDA (Windows): Free, open-source
+- JAWS (Windows): Industry standard
+
+---
+
+## 3. Accessibility Props (React Native)
+
+### 3.1 Required Props for Interactive Elements
+
+**All buttons, links, inputs MUST have:**
+
+| Prop | Purpose | Example |
+|------|---------|---------|
+| `accessible` | Mark as accessible element | `true` |
+| `accessibilityLabel` | What it is | "Submit RSVP" |
+| `accessibilityRole` | Semantic role | "button" |
+| `accessibilityHint` | What it does (optional but recommended) | "Submits your response" |
+
+---
+
+### 3.2 Semantic Roles
+
+**Use correct role for each element:**
+
+```tsx
+// Button
+<Pressable accessibilityRole="button" />
+
+// Link (navigation)
+<Pressable accessibilityRole="link" />
+
+// Heading
+<Text accessibilityRole="header" />
+
+// Image (decorative)
+<Image accessibilityRole="image" accessibilityLabel="Event photo" />
+
+// Image (decorative only, hide from screen reader)
+<Image accessibilityRole="none" />
+```
+
+**Common roles:**
+- `button` — Triggers an action
+- `link` — Navigates to another screen
+- `header` — Section heading
+- `image` — Meaningful images
+- `imagebutton` — Button that's an image
+- `search` — Search input
+- `none` — Decorative element (hidden from screen readers)
+
+---
+
+### 3.3 Grouping Related Elements
+
+**Use `accessibilityRole="group"` for related content:**
+
+```tsx
+<View accessibilityRole="group" accessibilityLabel="Guest count">
+  <Text>Adults: {adults}</Text>
+  <Text>Kids: {kids}</Text>
+</View>
+```
+
+**Why:** Screen reader announces "Guest count group: Adults 2, Kids 1" as one unit.
+
+---
+
+### 3.4 State Communication
+
+**Announce dynamic state changes:**
+
+```tsx
+<Pressable
+  accessibilityLabel={isLoading ? 'Submitting RSVP' : 'Submit RSVP'}
+  accessibilityState={{ busy: isLoading, disabled: !canSubmit }}
+  disabled={!canSubmit || isLoading}
+>
+  <Text>{isLoading ? 'Submitting...' : 'Submit'}</Text>
+</Pressable>
+```
+
+**`accessibilityState` options:**
+- `disabled: boolean`
+- `selected: boolean`
+- `busy: boolean` (loading)
+- `checked: boolean | 'mixed'` (checkboxes)
+- `expanded: boolean` (collapsible sections)
+
+---
+
+## 4. Touch Target Sizes
+
+### 4.1 Minimum Size (Mobile)
+
+**Required:** 44x44 points (iOS HIG), 48x48 dp (Android Material)
+
+**Enforce with NativeWind:**
+
+```tsx
+<Pressable className="min-w-[44px] min-h-[44px] flex items-center justify-center">
+  <Icon name="close" size={20} />
+</Pressable>
+```
+
+**Why:** Fingers are less precise than mouse pointers. Small targets frustrate users.
+
+---
+
+### 4.2 Spacing Between Targets
+
+**Minimum:** 8px between interactive elements
+
+```tsx
+<View className="gap-2">
+  {/* gap-2 = 8px spacing */}
+  <Button>Accept</Button>
+  <Button>Decline</Button>
+</View>
+```
+
+---
+
+## 5. Color Contrast
+
+### 5.1 Text Contrast
+
+**Required ratios (WCAG AA):**
+
+- **Normal text** (< 18pt): 4.5:1 minimum
+- **Large text** (≥ 18pt or ≥ 14pt bold): 3:1 minimum
+- **UI components** (buttons, inputs): 3:1 minimum
+
+**Tools:**
+- WebAIM Contrast Checker: https://webaim.org/resources/contrastchecker/
+- Figma plugins: "Contrast", "Stark"
+
+**Example:**
+```tsx
+// ✅ Good: #333333 on #FFFFFF = 12.6:1
+<Text className="text-gray-900 bg-white">High contrast</Text>
+
+// ❌ Bad: #CCCCCC on #FFFFFF = 1.6:1 (fails AA)
+<Text className="text-gray-300 bg-white">Low contrast</Text>
+```
+
+---
+
+### 5.2 Non-Text Contrast
+
+**Interactive elements (buttons, inputs, icons):**
+- 3:1 minimum contrast with background
+
+**Example:**
+```tsx
+// ✅ Good: Border visible against background
+<View className="border-2 border-gray-700 bg-white" />
+
+// ❌ Bad: Border too light
+<View className="border border-gray-200 bg-white" />
+```
+
+---
+
+### 5.3 Color-Blind Friendly Design
+
+**Do NOT rely on color alone to convey information:**
+
+```tsx
+// ❌ Bad: Only color indicates success/error
+<Text className="text-green-600">Success</Text>
+<Text className="text-red-600">Error</Text>
+
+// ✅ Good: Icon + color + text
+<View className="flex-row items-center gap-2">
+  <Icon name="check-circle" color="green" />
+  <Text className="text-green-600">Success</Text>
+</View>
+
+<View className="flex-row items-center gap-2">
+  <Icon name="alert-circle" color="red" />
+  <Text className="text-red-600">Error</Text>
+</View>
+```
+
+---
+
+## 6. Keyboard Navigation (Web)
+
+### 6.1 Focus Order
+
+**Ensure logical tab order:**
+
+- Top to bottom
+- Left to right
+- Follows visual layout
+
+**React Native Web handles this automatically if using semantic roles.**
+
+---
+
+### 6.2 Focus Indicators
+
+**All interactive elements must show focus state:**
+
+```tsx
+<Pressable
+  className="p-4"
+  style={({ focused }) => ({
+    outline: focused ? '2px solid blue' : 'none',
+    outlineOffset: 2,
+  })}
+>
+  <Text>Button</Text>
+</Pressable>
+```
+
+**Or with NativeWind (web focus styles):**
+
+```tsx
+<Pressable className="p-4 focus:ring-2 focus:ring-blue-500">
+  <Text>Button</Text>
+</Pressable>
+```
+
+---
+
+### 6.3 Keyboard Shortcuts
+
+**Common shortcuts should work:**
+
+- `Enter` / `Space` — Activate button
+- `Esc` — Close modal
+- `Tab` — Navigate forward
+- `Shift + Tab` — Navigate backward
+
+**React Native Web handles Enter/Space automatically for buttons.**
+
+**For custom shortcuts:**
+
+```tsx
+import { useEffect } from 'react'
+import { Platform } from 'react-native'
+
+if (Platform.OS === 'web') {
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        handleClose()
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [])
+}
+```
+
+---
+
+## 7. Form Accessibility
+
+### 7.1 Input Labels
+
+**All inputs MUST have labels:**
+
+```tsx
+<View>
+  <Text accessibilityRole="header">Email Address</Text>
+  <TextInput
+    accessibilityLabel="Email address"
+    accessibilityHint="Enter your email for the invitation"
+    placeholder="name@example.com"
+  />
+</View>
+```
+
+---
+
+### 7.2 Error Messaging
+
+**Errors must be announced to screen readers:**
+
+```tsx
+<View>
+  <TextInput
+    value={email}
+    accessibilityLabel="Email address"
+    accessibilityErrorMessage={errors.email}
+    accessibilityInvalid={!!errors.email}
+  />
+  {errors.email && (
+    <Text
+      accessibilityRole="alert"
+      className="text-red-600"
+    >
+      {errors.email}
+    </Text>
+  )}
+</View>
+```
+
+**Why `accessibilityRole="alert"`:**
+- Screen readers announce immediately
+- User knows validation failed
+
+---
+
+### 7.3 Required Fields
+
+**Indicate required fields clearly:**
+
+```tsx
+<View>
+  <Text>
+    Email <Text className="text-red-600">*</Text>
+  </Text>
+  <TextInput
+    accessibilityLabel="Email address, required"
+    accessibilityRequired={true}
+  />
+</View>
+```
+
+---
+
+## 8. Images & Icons
+
+### 8.1 Meaningful Images
+
+**Provide descriptive labels:**
+
+```tsx
+<Image
+  source={{ uri: event.imageUrl }}
+  accessibilityLabel={`Photo of ${event.name}`}
+  accessibilityRole="image"
+/>
+```
+
+---
+
+### 8.2 Decorative Images
+
+**Hide from screen readers:**
+
+```tsx
+<Image
+  source={require('./assets/decoration.png')}
+  accessibilityRole="none"
+  accessible={false}
+/>
+```
+
+---
+
+### 8.3 Icon Buttons
+
+**Always provide labels:**
+
+```tsx
+<Pressable
+  accessibilityLabel="Close"
+  accessibilityRole="button"
+>
+  <Icon name="close" />
+</Pressable>
+```
+
+---
+
+## 9. Modals & Overlays
+
+### 9.1 Focus Management
+
+**When modal opens:**
+1. Move focus to modal
+2. Trap focus within modal
+3. Return focus to trigger element on close
+
+```tsx
+import { useEffect, useRef } from 'react'
+
+export function Modal({ isOpen, onClose }: ModalProps) {
+  const modalRef = useRef<View>(null)
+
+  useEffect(() => {
+    if (isOpen && Platform.OS === 'web') {
+      // Focus modal on open
+      modalRef.current?.focus()
+    }
+  }, [isOpen])
+
+  return (
+    <View
+      ref={modalRef}
+      accessibilityViewIsModal={true}  // Traps screen reader focus
+      accessibilityLabel="Invitation details"
+    >
+      {/* Modal content */}
+      <Pressable
+        accessibilityLabel="Close modal"
+        onPress={onClose}
+      >
+        <Icon name="close" />
+      </Pressable>
+    </View>
+  )
+}
+```
+
+---
+
+### 9.2 Announcing Modal Content
+
+**Use `accessibilityLiveRegion` for dynamic content:**
+
+```tsx
+<View accessibilityLiveRegion="polite">
+  <Text>Your RSVP has been submitted!</Text>
+</View>
+```
+
+**Live region types:**
+- `polite` — Announce when screen reader is idle
+- `assertive` — Interrupt and announce immediately
+
+---
+
+## 10. Testing Checklist
+
+### 10.1 Manual Testing (Required)
+
+**iOS:**
+- [ ] Enable VoiceOver (Settings → Accessibility → VoiceOver)
+- [ ] Navigate through app using swipe gestures
+- [ ] Activate elements with double-tap
+- [ ] Verify all labels are meaningful
+- [ ] Check focus order is logical
+
+**Android:**
+- [ ] Enable TalkBack (Settings → Accessibility → TalkBack)
+- [ ] Navigate and test similarly to iOS
+
+**Web:**
+- [ ] Navigate using Tab key only
+- [ ] Verify all interactive elements are reachable
+- [ ] Check focus indicators are visible
+- [ ] Test with screen reader (VoiceOver, NVDA)
+
+---
+
+### 10.2 Automated Testing
+
+**Accessibility linting:**
+
+```bash
+npm install --save-dev eslint-plugin-jsx-a11y
+```
+
+**.eslintrc.js:**
+```javascript
+module.exports = {
+  plugins: ['jsx-a11y'],
+  extends: ['plugin:jsx-a11y/recommended'],
+}
+```
+
+**Common errors caught:**
+- Missing `accessibilityLabel` on buttons
+- Low contrast text
+- Missing form labels
+
+---
+
+### 10.3 Color Contrast Testing
+
+**Tools:**
+- Chrome DevTools → Lighthouse → Accessibility audit
+- Axe DevTools (browser extension)
+- WebAIM Contrast Checker
+
+---
+
+## 11. Common Violations & Fixes
+
+### 11.1 Icon-Only Buttons
+
+**❌ Violation:**
+```tsx
+<Pressable onPress={handleClose}>
+  <Icon name="close" />
+</Pressable>
+```
+
+**✅ Fix:**
+```tsx
+<Pressable
+  accessibilityLabel="Close"
+  accessibilityRole="button"
+  onPress={handleClose}
+>
+  <Icon name="close" />
+</Pressable>
+```
+
+---
+
+### 11.2 Unlabeled Inputs
+
+**❌ Violation:**
+```tsx
+<TextInput placeholder="Email" />
+```
+
+**✅ Fix:**
+```tsx
+<View>
+  <Text>Email Address</Text>
+  <TextInput
+    accessibilityLabel="Email address"
+    placeholder="Email"
+  />
+</View>
+```
+
+---
+
+### 11.3 Low Contrast
+
+**❌ Violation:**
+```tsx
+<Text className="text-gray-400 bg-white">Important message</Text>
+```
+
+**✅ Fix:**
+```tsx
+<Text className="text-gray-900 bg-white">Important message</Text>
+```
+
+---
+
+### 11.4 Non-Semantic Markup
+
+**❌ Violation:**
+```tsx
+<View onPress={handleClick}>
+  <Text>Submit</Text>
+</View>
+```
+
+**✅ Fix:**
+```tsx
+<Pressable
+  accessibilityRole="button"
+  accessibilityLabel="Submit"
+  onPress={handleClick}
+>
+  <Text>Submit</Text>
+</Pressable>
+```
+
+---
+
+## 12. Accessibility in CI/CD
+
+**Pre-commit checks:**
+- ESLint with jsx-a11y rules
+- TypeScript (catches missing accessibility props if typed)
+
+**PR requirements:**
+- Manual testing with screen reader (documented in PR)
+- Lighthouse accessibility score > 90 (web)
+
+**See:** [14_ci-cd-requirements.mdc](./14_ci-cd-requirements.mdc) for automation details.
+
+---
+
+## 13. Resources
+
+**Official Guidelines:**
+- WCAG 2.1: https://www.w3.org/WAI/WCAG21/quickref/
+- iOS Human Interface Guidelines: https://developer.apple.com/design/human-interface-guidelines/accessibility
+- Android Accessibility: https://developer.android.com/guide/topics/ui/accessibility
+- React Native Accessibility: https://reactnative.dev/docs/accessibility
+
+**Tools:**
+- WebAIM Contrast Checker: https://webaim.org/resources/contrastchecker/
+- Axe DevTools: https://www.deque.com/axe/devtools/
+- NVDA (free screen reader): https://www.nvaccess.org/
+
+---
+
+## 14. Summary Checklist
+
+Before shipping a feature:
+
+- [ ] All interactive elements have `accessibilityLabel`
+- [ ] Semantic roles assigned (`button`, `link`, `header`)
+- [ ] Touch targets minimum 44x44pt (mobile)
+- [ ] Text contrast ratio ≥ 4.5:1
+- [ ] Color not sole indicator of meaning
+- [ ] Forms have labels and error announcements
+- [ ] Tested with VoiceOver (iOS) and TalkBack (Android)
+- [ ] Tested with keyboard navigation (web)
+- [ ] Focus indicators visible (web)
+- [ ] ESLint jsx-a11y passes
+
+---
+
+## Final Note
+
+> **Accessibility is not optional.**
+>
+> It's a legal requirement, ethical obligation, and product quality standard.
+> Fixing accessibility issues after launch is 10x harder than building it in from the start.
+
+**When in doubt:** Test with a screen reader. If you can't use the app with VoiceOver, neither can your users.

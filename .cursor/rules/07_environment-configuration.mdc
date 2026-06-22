@@ -1,0 +1,598 @@
+---
+description: Environment configuration — Expo, env vars, build-time vs runtime, type-safe config
+alwaysApply: true
+---
+
+# Environment Configuration (Expo + React Native)
+
+**Role Perspective:** Senior DevOps Engineer + Platform Engineer
+**Scope:** Type-safe, secure environment configuration for Expo
+**Philosophy:** Explicit config, zero secrets in repo, validated at build time
+
+---
+
+## Core Principles
+
+1. **Never hardcode environment-specific values**
+2. **All secrets managed outside the repository**
+3. **Type-safe access to environment variables**
+4. **Build-time validation catches config errors early**
+5. **Different configs for dev, staging, production**
+
+---
+
+## 1. Configuration File Structure
+
+### 1.1 Required Files
+
+```
+/
+├── app.config.ts          ← Main Expo config (TypeScript, not JSON)
+├── .env.development       ← Development environment variables
+├── .env.production        ← Production environment variables
+├── .env.example           ← Template (committed to repo)
+├── .gitignore             ← Must ignore .env.* (except .env.example)
+└── src/
+    └── shared/
+        └── config/
+            ├── env.ts     ← Type-safe env access
+            └── env.schema.ts  ← Zod validation schema
+```
+
+### 1.2 Why `app.config.ts` instead of `app.json`
+
+**Required:** Use `app.config.ts` (TypeScript), not `app.json`
+
+**Rationale:**
+- Allows dynamic configuration based on environment
+- Type safety and autocomplete
+- Can compute values (e.g., version from package.json)
+- Can use environment variables
+- Better for multi-environment setup
+
+---
+
+## 2. Environment Variable Naming
+
+### 2.1 Expo Public Variables
+
+**Rule:** All client-side environment variables MUST use the `EXPO_PUBLIC_` prefix
+
+**Why:**
+- Expo only exposes variables with this prefix to the app
+- Prevents accidental secret exposure
+- Clear distinction between build-time and runtime vars
+
+**Pattern:**
+```bash
+# ✅ Correct (will be available in app)
+EXPO_PUBLIC_API_URL=https://api.example.com/graphql
+EXPO_PUBLIC_APP_ENV=development
+
+# ❌ Wrong (will NOT be available in app)
+API_URL=https://api.example.com/graphql
+APP_ENV=development
+```
+
+---
+
+### 2.2 Naming Convention
+
+**Format:** `EXPO_PUBLIC_<FEATURE>_<DETAIL>`
+
+**Examples:**
+```bash
+# API configuration
+EXPO_PUBLIC_API_URL=https://api.hestia.com/graphql
+EXPO_PUBLIC_API_TIMEOUT=30000
+
+# Feature flags
+EXPO_PUBLIC_FEATURE_DARK_MODE=true
+EXPO_PUBLIC_FEATURE_ANALYTICS=false
+
+# App metadata
+EXPO_PUBLIC_APP_ENV=development
+EXPO_PUBLIC_APP_VERSION=1.0.0
+```
+
+**Forbidden:**
+- Generic names like `URL`, `KEY`, `VALUE`
+- Unclear abbreviations
+- Missing `EXPO_PUBLIC_` prefix for client variables
+
+---
+
+### 2.3 Build-Time vs Runtime Variables
+
+**Build-time (used during `expo build` or `eas build`):**
+- Baked into the JavaScript bundle
+- Cannot change after build
+- Examples: API URLs, feature flags, build environment
+
+**Runtime (accessed when app runs):**
+- Expo Config (`app.config.ts`)
+- Expo Constants (`expo-constants`)
+- Not dynamically changeable (requires rebuild)
+
+**Important:** React Native/Expo does NOT support true runtime env vars like web apps. All config is build-time.
+
+---
+
+## 3. Environment Files
+
+### 3.1 `.env.development`
+
+```bash
+# Development environment
+EXPO_PUBLIC_API_URL=http://localhost:8080/graphql
+EXPO_PUBLIC_APP_ENV=development
+EXPO_PUBLIC_FEATURE_ANALYTICS=false
+```
+
+**When used:** Local development (`npm start`)
+
+---
+
+### 3.2 `.env.production`
+
+```bash
+# Production environment
+EXPO_PUBLIC_API_URL=https://api.hestia.com/graphql
+EXPO_PUBLIC_APP_ENV=production
+EXPO_PUBLIC_FEATURE_ANALYTICS=true
+```
+
+**When used:** Production builds (`eas build --profile production`)
+
+---
+
+### 3.3 `.env.example` (committed to repo)
+
+```bash
+# Copy this file to .env.development and .env.production
+# DO NOT commit actual .env files
+
+# API Configuration
+EXPO_PUBLIC_API_URL=https://api.example.com/graphql
+EXPO_PUBLIC_API_TIMEOUT=30000
+
+# App Environment
+EXPO_PUBLIC_APP_ENV=development
+
+# Feature Flags
+EXPO_PUBLIC_FEATURE_ANALYTICS=false
+```
+
+**Purpose:**
+- Documents required environment variables
+- Template for new developers
+- Committed to version control
+
+---
+
+### 3.4 `.gitignore` (CRITICAL)
+
+**Required entries:**
+```
+# Environment files (NEVER commit these)
+.env
+.env.development
+.env.production
+.env.local
+.env.*.local
+
+# Exception: template is committed
+!.env.example
+```
+
+**Why:** Prevents accidental secret commits
+
+---
+
+## 4. Type-Safe Environment Access
+
+### 4.1 Environment Schema (`src/shared/config/env.schema.ts`)
+
+**Required:** Validate all environment variables with Zod
+
+```typescript
+import { z } from 'zod'
+
+// Define the schema for environment variables
+export const envSchema = z.object({
+  // API Configuration
+  EXPO_PUBLIC_API_URL: z.string().url(),
+  EXPO_PUBLIC_API_TIMEOUT: z.string().transform(Number).pipe(z.number().positive()),
+
+  // App Environment
+  EXPO_PUBLIC_APP_ENV: z.enum(['development', 'staging', 'production']),
+
+  // Feature Flags
+  EXPO_PUBLIC_FEATURE_ANALYTICS: z
+    .string()
+    .transform((val) => val === 'true')
+    .pipe(z.boolean()),
+})
+
+// Infer TypeScript type from schema
+export type Env = z.infer<typeof envSchema>
+```
+
+**Benefits:**
+- Compile-time type safety
+- Runtime validation (catches missing/invalid vars at build)
+- Automatic type inference
+- Clear documentation of required variables
+
+---
+
+### 4.2 Environment Access Module (`src/shared/config/env.ts`)
+
+```typescript
+import Constants from 'expo-constants'
+import { envSchema } from './env.schema'
+
+// Parse and validate environment variables
+const parseEnv = () => {
+  const rawEnv = {
+    EXPO_PUBLIC_API_URL: process.env.EXPO_PUBLIC_API_URL,
+    EXPO_PUBLIC_API_TIMEOUT: process.env.EXPO_PUBLIC_API_TIMEOUT,
+    EXPO_PUBLIC_APP_ENV: process.env.EXPO_PUBLIC_APP_ENV,
+    EXPO_PUBLIC_FEATURE_ANALYTICS: process.env.EXPO_PUBLIC_FEATURE_ANALYTICS,
+  }
+
+  const result = envSchema.safeParse(rawEnv)
+
+  if (!result.success) {
+    console.error('❌ Invalid environment variables:')
+    console.error(result.error.flatten().fieldErrors)
+    throw new Error('Invalid environment configuration')
+  }
+
+  return result.data
+}
+
+// Export validated, type-safe environment
+export const env = parseEnv()
+
+// Helper: Check if running in production
+export const isProduction = env.EXPO_PUBLIC_APP_ENV === 'production'
+export const isDevelopment = env.EXPO_PUBLIC_APP_ENV === 'development'
+
+// Expo app config values (from app.config.ts)
+export const appConfig = {
+  version: Constants.expoConfig?.version ?? '1.0.0',
+  name: Constants.expoConfig?.name ?? 'Hestia',
+}
+```
+
+**Usage in app:**
+```typescript
+import { env } from '@/shared/config/env'
+
+const client = createClient({
+  url: env.EXPO_PUBLIC_API_URL,  // ✅ Type-safe, validated
+})
+```
+
+---
+
+## 5. Expo Config (`app.config.ts`)
+
+### 5.1 Structure
+
+```typescript
+import { ExpoConfig, ConfigContext } from 'expo/config'
+
+export default ({ config }: ConfigContext): ExpoConfig => {
+  const isProduction = process.env.EXPO_PUBLIC_APP_ENV === 'production'
+
+  return {
+    ...config,
+    name: isProduction ? 'Hestia' : 'Hestia (Dev)',
+    slug: 'hestia',
+    version: '1.0.0',
+    orientation: 'portrait',
+    icon: './assets/icon.png',
+    userInterfaceStyle: 'automatic',
+    splash: {
+      image: './assets/splash.png',
+      resizeMode: 'contain',
+      backgroundColor: '#ffffff',
+    },
+    ios: {
+      bundleIdentifier: isProduction ? 'app.justhestia.ios' : 'app.justhestia.ios.dev',
+      supportsTablet: true,
+      infoPlist: {
+        NSCameraUsageDescription: 'Allow Hestia to access your camera for profile photos',
+      },
+    },
+    android: {
+      package: isProduction ? 'app.justhestia.ios' : 'app.justhestia.ios.dev',
+      adaptiveIcon: {
+        foregroundImage: './assets/adaptive-icon.png',
+        backgroundColor: '#ffffff',
+      },
+    },
+    web: {
+      favicon: './assets/favicon.png',
+      bundler: 'metro',
+    },
+    plugins: [
+      'expo-router',
+      [
+        'expo-build-properties',
+        {
+          ios: {
+            useFrameworks: 'static',
+          },
+        },
+      ],
+    ],
+    extra: {
+      // Available via Constants.expoConfig.extra
+      eas: {
+        projectId: 'YOUR_EAS_PROJECT_ID',
+      },
+    },
+  }
+}
+```
+
+**Key points:**
+- Different bundle IDs for dev/production (allows installing both)
+- Dynamic app name shows which build you're running
+- Access via `Constants.expoConfig`
+
+---
+
+## 6. EAS Secrets (Sensitive Values)
+
+### 6.1 What ARE NOT Secrets (Safe in .env files)
+
+- ✅ API URLs (public endpoints)
+- ✅ Feature flags
+- ✅ App environment (dev/staging/prod)
+- ✅ Timeout values, retry counts
+
+These can go in `.env.production` (though NOT committed, use `.env.example`)
+
+---
+
+### 6.2 What ARE Secrets (MUST use EAS Secrets)
+
+- ❌ API keys
+- ❌ OAuth client secrets
+- ❌ Third-party service tokens (Sentry, analytics)
+- ❌ Signing certificates
+- ❌ Database credentials
+
+**Never put these in .env files or source code**
+
+---
+
+### 6.3 Using EAS Secrets
+
+**Set a secret:**
+```bash
+eas secret:create --scope project --name SENTRY_DSN --value "https://abc123@sentry.io/456"
+```
+
+**Access in app.config.ts:**
+```typescript
+export default ({ config }: ConfigContext): ExpoConfig => ({
+  ...config,
+  extra: {
+    sentryDsn: process.env.SENTRY_DSN,  // Available during EAS build only
+  },
+})
+```
+
+**Access in app:**
+```typescript
+import Constants from 'expo-constants'
+
+const sentryDsn = Constants.expoConfig?.extra?.sentryDsn
+```
+
+---
+
+## 7. Environment-Specific Builds with EAS
+
+### 7.1 `eas.json` Configuration
+
+```json
+{
+  "build": {
+    "development": {
+      "env": {
+        "EXPO_PUBLIC_APP_ENV": "development"
+      },
+      "developmentClient": true,
+      "distribution": "internal",
+      "ios": {
+        "simulator": true
+      }
+    },
+    "preview": {
+      "env": {
+        "EXPO_PUBLIC_APP_ENV": "staging"
+      },
+      "distribution": "internal"
+    },
+    "production": {
+      "env": {
+        "EXPO_PUBLIC_APP_ENV": "production"
+      }
+    }
+  }
+}
+```
+
+**Commands:**
+```bash
+eas build --profile development  # Uses dev env
+eas build --profile production   # Uses prod env
+```
+
+---
+
+## 8. Environment Loading Priority
+
+**Order (highest to lowest priority):**
+
+1. Environment variables set in `eas.json` (for EAS builds)
+2. `.env.production` or `.env.development` (based on `NODE_ENV`)
+3. `process.env` (system environment variables)
+4. Defaults in `app.config.ts`
+
+---
+
+## 9. Accessing Config in Different Contexts
+
+### 9.1 In Application Code
+
+```typescript
+import { env } from '@/shared/config/env'
+
+// ✅ Type-safe, validated
+const apiUrl = env.EXPO_PUBLIC_API_URL
+```
+
+---
+
+### 9.2 In `app.config.ts`
+
+```typescript
+// ✅ Direct access to process.env
+const apiUrl = process.env.EXPO_PUBLIC_API_URL
+```
+
+---
+
+### 9.3 In Tests
+
+```typescript
+// Mock environment in test setup
+process.env.EXPO_PUBLIC_API_URL = 'http://localhost:8080/graphql'
+process.env.EXPO_PUBLIC_APP_ENV = 'development'
+```
+
+---
+
+## 10. Common Patterns
+
+### 10.1 Conditional Features Based on Environment
+
+```typescript
+import { env, isProduction } from '@/shared/config/env'
+
+if (!isProduction) {
+  // Enable dev tools only in development
+  import('./devtools').then((module) => module.setupDevtools())
+}
+```
+
+---
+
+### 10.2 Environment-Specific API URLs
+
+```typescript
+import { env } from '@/shared/config/env'
+
+const client = createClient({
+  url: env.EXPO_PUBLIC_API_URL,
+  requestPolicy: env.EXPO_PUBLIC_APP_ENV === 'development' ? 'network-only' : 'cache-first',
+})
+```
+
+---
+
+## 11. Debugging Configuration Issues
+
+### 11.1 Check Loaded Environment
+
+```typescript
+import Constants from 'expo-constants'
+
+console.log('Expo Config:', Constants.expoConfig)
+console.log('Manifest:', Constants.manifest)
+```
+
+---
+
+### 11.2 Verify Environment Variables
+
+Add to `App.tsx` (development only):
+
+```typescript
+if (__DEV__) {
+  console.log('Environment:', {
+    API_URL: process.env.EXPO_PUBLIC_API_URL,
+    APP_ENV: process.env.EXPO_PUBLIC_APP_ENV,
+  })
+}
+```
+
+---
+
+## 12. Migration Checklist (For New Projects)
+
+- [ ] Create `app.config.ts` (not `app.json`)
+- [ ] Create `.env.example` (commit to repo)
+- [ ] Create `.env.development` (do NOT commit)
+- [ ] Create `.env.production` (do NOT commit)
+- [ ] Add `.env.*` to `.gitignore` (except `.env.example`)
+- [ ] Create `src/shared/config/env.schema.ts` (Zod schema)
+- [ ] Create `src/shared/config/env.ts` (validated export)
+- [ ] Update `eas.json` with build profiles
+- [ ] Document required env vars in README
+- [ ] Set EAS Secrets for sensitive values
+
+---
+
+## 13. Security Checklist
+
+- [ ] No secrets in `.env` files committed to repo
+- [ ] All `.env` files ignored in `.gitignore`
+- [ ] Sensitive values use EAS Secrets
+- [ ] Environment schema validates at build time
+- [ ] No API keys, tokens, or passwords in source code
+- [ ] Different bundle IDs for dev/production (prevents overwriting)
+
+---
+
+## 14. Forbidden Patterns
+
+❌ **DO NOT:**
+
+- Commit `.env` files with real values to version control
+- Hardcode API URLs directly in code
+- Store secrets in `app.config.ts` or any source file
+- Use environment variables without the `EXPO_PUBLIC_` prefix (client-side)
+- Skip validation (always use Zod schema)
+- Guess at environment variable names (document in `.env.example`)
+
+---
+
+## 15. Summary
+
+**Configuration Flow:**
+
+1. Define env vars in `.env.development` / `.env.production`
+2. Create Zod schema in `env.schema.ts`
+3. Validate and export in `env.ts`
+4. Import type-safe `env` object throughout app
+5. Use EAS Secrets for sensitive values
+6. Configure build profiles in `eas.json`
+
+**Result:**
+- Type-safe config access
+- Build-time validation (fail fast)
+- No secrets in repo
+- Clear documentation
+- Environment-specific builds
+
+---
+
+**Next Steps:** See [06_graphql-integration.mdc](./06_graphql-integration.mdc) for using environment config with URQL client.

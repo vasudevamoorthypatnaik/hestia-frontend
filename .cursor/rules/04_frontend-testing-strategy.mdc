@@ -1,0 +1,848 @@
+---
+description: Frontend testing strategy — RTL, Jest, MSW; local tests only; validate user-visible behavior
+alwaysApply: true
+---
+
+# Frontend Testing Strategy (Local-Only)
+
+**Role Perspective:** Senior Staff Testing Engineer
+**Scope:** LOCAL TESTS ONLY
+**Primary Goal:** Validate user-visible behavior with high confidence, zero hallucination, and low flakiness
+
+---
+
+## 0. Technology Stack (NON-NEGOTIABLE)
+
+Cursor MUST assume the following stack unless explicitly told otherwise:
+
+* **Framework:** React
+* **Language:** TypeScript (**MANDATORY**)
+* **Test Runner:** Jest
+* **Component / Integration Testing:** React Testing Library (RTL)
+* **Network Mocking:** MSW (Mock Service Worker)
+* **End-to-End / Smoke Tests:** Playwright (minimal usage)
+
+If any tool, version, or responsibility is unclear → **STOP AND ASK**.
+
+---
+
+## 1. Core Principles (NON-NEGOTIABLE)
+
+1. Test **what users experience**, not how code is written
+2. Integration tests > unit tests for UI
+3. Mock the **network**, not components
+4. Success, error, and edge cases are all required
+5. Never invent behavior — derive it or ask
+
+Violating these principles produces misleading tests.
+
+---
+
+## 2. Source of Truth for Tests (CRITICAL)
+
+All expectations, mock data, and assertions MUST be derived from one of:
+
+1. Backend GraphQL schema
+2. Generated TypeScript types (codegen)
+3. Explicit API / product documentation
+4. Existing, trusted tests
+
+If none apply → **ASK**.
+
+Cursor MUST NOT invent:
+
+* API shapes
+* Error responses
+* Optional vs required fields
+
+---
+
+## 3. What to Test (Scope & Priorities)
+
+### Questions you MUST answer before writing a test
+
+* What user behavior is this test protecting?
+* Is this a critical flow (login, core workflow, key dashboard action)?
+* Is this new behavior or a bug fix (regression required)?
+* Is this intentionally *out of scope* (third-party UI, trivial presentational code)?
+
+### Required clarity
+
+* List of critical flows for this app
+* Policy: new behavior → new test
+* Policy: bug fix → regression test
+
+If importance is unclear → **ASK**.
+
+---
+
+## 3.1 Test Structure, Location & Naming (CRITICAL FOR CONSISTENCY)
+
+### Where test files live
+
+Default rules (unless the repo explicitly states otherwise):
+
+* Component tests live **next to the component**:
+
+  * `ComponentName.tsx`
+  * `ComponentName.test.tsx`
+* Feature-level tests may live under a feature folder:
+
+  * `features/orders/OrderList.tsx`
+  * `features/orders/OrderList.test.tsx`
+
+Avoid deep, global `__tests__/` folders unless the project explicitly uses them.
+
+---
+
+### How tests are grouped
+
+* Prefer grouping by **feature or user-facing behavior**, not by technical detail
+* A single test file may contain multiple `describe` blocks representing scenarios
+
+Valid grouping examples:
+
+* "OrderList – when data loads successfully"
+* "OrderList – when API returns an error"
+
+Avoid grouping by internal implementation (e.g. hooks, state variables).
+
+---
+
+### Naming conventions (MANDATORY)
+
+#### `describe` blocks
+
+* Top-level `describe` → Component or feature name
+* Nested `describe` → scenario or user action
+
+Examples:
+
+* `describe('OrderList', () => { ... })`
+* `describe('when the user refreshes the page', () => { ... })`
+
+#### `it` / `test` blocks
+
+* Must describe **observable behavior**
+* Use language like:
+
+  * "shows loading indicator while data is fetching"
+  * "displays error message when API fails"
+
+Avoid:
+
+* Method names
+* Implementation details
+* Vague phrases like "works correctly"
+
+---
+
+### Shared test utilities
+
+You MUST know where shared helpers live:
+
+* `test-utils/` → custom `render()` with providers (router, theme, store)
+* `mocks/` → MSW handlers and mock data
+* `setupTests.ts` → global test setup (MSW, jest-dom, global mocks)
+
+Rules:
+
+* Always use shared `render()` utilities
+* Do NOT re-create providers in individual tests
+* Do NOT duplicate helpers that already exist
+
+If unsure whether a helper exists → **ASK**.
+
+---
+
+### Drift-guard tests for parallel helper pairs (MANDATORY when pair exists)
+
+Some modules intentionally maintain **parallel helper pairs** — e.g. localized vs non-localized variants, sync vs async, web vs native, with-context vs without-context. When such a pair exists, two patterns are required to keep them aligned over time:
+
+**1. Mirror bug fixes.** When fixing a bug in one helper of a pair, fix the same class of bug in the other half — even if only one helper was exercised by the failing test. Symmetry is load-bearing; agents that fix only one half create silent drift that surfaces months later.
+
+**2. Pin equivalence with a drift-guard test.** Add an assertion that forces the two helpers to produce equivalent output on a representative input. Example from `src/shared/utils/__tests__/graphqlErrors.test.ts`:
+
+```ts
+it('parseGraphQLError and parseGraphQLErrorLocalized agree on WAF 429 (graphQLErrors path)', () => {
+  const wafErr = makeWafRateLimitGraphQLError() // mirrors captcha-waf-429.spec.ts shape
+  const identityT = (k: string) => k
+  // Non-localized returns hardcoded English; localized returns the catalog key.
+  // The hardcoded English must match the en.ts catalog value at all times.
+  expect(parseGraphQLError(wafErr)).toBe('Too many requests. Please try again later.')
+  expect(parseGraphQLErrorLocalized(wafErr, identityT)).toBe('error.rate_limited')
+  expect(parseGraphQLError(wafErr)).toBe(en['error.rate_limited'])
+})
+```
+
+**Why this matters:** without the equivalence pin, an agent can fix one helper, leave the other broken, and ship the asymmetry. The drift-guard turns the asymmetry into a failing test the next time CI runs.
+
+**Existing examples in this repo:**
+* `src/shared/utils/__tests__/graphqlErrors.test.ts` — pins `parseGraphQLError` vs `parseGraphQLErrorLocalized` parallel structure (both `networkError 429` AND `graphQLErrors RATE_LIMITED` branches).
+
+When you introduce a new parallel-helper pair, add a drift-guard test in the same PR.
+
+---
+
+## 4. Testing Levels (How to Choose)
+
+### Unit Tests (LIMITED USE)
+
+**Use when:**
+
+* Pure utility functions
+* Reducers
+* Pure hooks (no UI, no network)
+
+**Do NOT use when:**
+
+* UI rendering is involved
+* Behavior depends on API data
+
+---
+
+### Component Integration Tests (PRIMARY)
+
+**Use when:**
+
+* UI + API + state interaction
+* Conditional rendering
+* Loading / error / empty states
+
+This is the **default and preferred** level.
+
+---
+
+### End-to-End Tests (MINIMAL)
+
+**Use when:**
+
+* Business-critical user journeys
+* Smoke-level confidence only
+
+Rules:
+
+* Very few tests
+* Stable selectors only
+* No business-logic assertions
+
+---
+
+## 5. Mocking & Test Doubles
+
+### What to Mock
+
+* Backend APIs
+* Analytics / telemetry
+* Feature flags
+* Auth providers
+
+### What NOT to Mock
+
+* Our own components
+* Our own business logic
+* Pure utility functions
+
+### Choosing the Right Mock
+
+* **MSW** → integration tests (UI + API)
+* **jest.mock(module)** → pure unit tests only
+
+If unsure which to use → **ASK**.
+
+---
+
+## 6. MSW (Mock Service Worker) — REQUIRED FOR INTEGRATION TESTS
+
+### 6.1 What MSW Is
+
+* Intercepts real `fetch` / `XHR` calls
+* Operates at the **network layer**
+* UI behaves as if talking to a real backend
+
+---
+
+### 6.2 Handler Location & Lifecycle
+
+You MUST know:
+
+* Where handlers are defined (e.g. `mocks/handlers.ts`)
+* Where MSW is started/stopped (e.g. `setupTests.ts`)
+
+Standard lifecycle:
+
+* `server.listen()` → before all tests
+* `server.resetHandlers()` → after each test
+* `server.close()` → after all tests
+
+Never let handlers leak between tests.
+
+---
+
+### 6.3 Scenario-Based Handlers (MANDATORY)
+
+Handlers MUST exist for:
+
+* Success (happy path)
+* Empty response
+* Validation error
+* Authorization error (401/403)
+* Server error (500)
+* Network error / timeout
+
+Default handlers = happy path.
+Override per test using `server.use(...)`.
+
+If a scenario is undefined → **ASK**.
+
+---
+
+### 6.4 Realism vs Simplicity
+
+Rules:
+
+* Match real API **shape** for fields the UI uses
+* Unused fields may be omitted
+* Do NOT attempt to fully reimplement the backend
+
+MSW mocks should be **realistic, not exhaustive**.
+
+---
+
+### 6.5 Wire shapes for backend-boundary errors (MANDATORY)
+
+When a test mocks a response from a **backend-boundary system** — AWS WAF, CloudFront, rate limiters, CAPTCHA gates, payment-provider rejections, OAuth provider failures — the mock body MUST mirror the **real wire shape** verbatim from an existing reference spec or fixture. **Never invent a synthetic shape.**
+
+**Why:** the producer (WAF, CDN, OAuth provider, etc.) makes specific Content-Type and body-structure choices that determine how the client SDK routes the response. A synthetic shape with the wrong Content-Type silently routes to a different branch in the client and HIDES routing bugs in your code.
+
+**Canonical example — AWS WAF 429.** The real WAF response is:
+```
+Status: 429
+Content-Type: application/json
+Body: {"errors":[{"message":"Too many requests. Please try again later.","extensions":{"code":"RATE_LIMITED"}}]}
+```
+
+URQL parses this as `error.graphQLErrors[0]`, NOT `error.networkError`. A synthetic mock with `Content-Type: text/plain` would route to `networkError` and pass tests that don't exercise the real production path. See `13_error-handling-patterns.mdc` §3.3 for the routing rule.
+
+**Reference fixtures in this repo:**
+* AWS WAF 429 (JSON body): `e2e/web/captcha-waf-429.spec.ts:20-22` (canonical body shape)
+* CAPTCHA gate failure: `e2e/web/captcha-*.spec.ts`
+
+**Workflow when adding a new boundary mock:**
+1. Find a reference spec/fixture that already mocks this boundary. Copy the body shape verbatim.
+2. If no reference fixture exists, add one FIRST (a real recorded response or a documented contract from the boundary's docs), then link it from here.
+3. Do NOT trim, summarize, or "simplify" the boundary shape — the routing in the client depends on the exact `Content-Type` + body structure.
+
+**Real incident (June 2026, login-i18n-en-es iter-3 → iter-4):** an initial test for AC #8 used a synthetic `text/plain` 429 (routed to `networkError`) and looked fine in isolation. The real AWS WAF uses `application/json` (routed to `graphQLErrors`). The product code only handled the `networkError` branch and silently leaked English text to Spanish users in production. The iter-3 e2e test that mirrored the real WAF shape from `captcha-waf-429.spec.ts` caught the bug cleanly.
+
+---
+
+## 7. Assertions & What Makes a Good Test
+
+### Query Priority (MANDATORY ORDER)
+
+1. `getByRole`
+2. `getByLabelText`
+3. `getByText`
+4. `getByTestId` (last resort)
+
+### Assertion Rules
+
+* Assert **user-visible outcomes**
+* One primary behavior per test
+* Async UI → use `findBy*` or RTL async helpers
+
+Avoid:
+
+* Snapshot-only tests
+* Class-name selectors
+* Internal state inspection
+
+---
+
+## 8. Test Data & Fixtures
+
+### Data Rules
+
+* Prefer shared fixtures or factories
+* Use deterministic data
+* Cover empty, error, and edge cases explicitly
+
+Do NOT:
+
+* Use random data without approval
+* Invent data shapes
+
+---
+
+## 9. Async, Timers & Flakiness
+
+Rules:
+
+* Prefer `findBy*` over `waitFor`
+* Avoid fixed delays
+* Fake timers only when component truly depends on time
+
+Flaky test = bug in test or code. Never mask it.
+
+---
+
+## 10. Accessibility & Testing
+
+Tests SHOULD:
+
+* Use role- and label-based queries
+* Validate keyboard navigation where applicable
+
+Accessibility-friendly tests are preferred.
+
+---
+
+## 11. Maintaining & Debugging Tests
+
+### When a Test Fails
+
+1. Did behavior change intentionally?
+2. Is the test asserting the right thing?
+3. Is the test brittle or over-specified?
+4. Only then consider implementation issues
+
+Rules:
+
+* Do NOT delete tests casually
+* Do NOT update snapshots blindly
+* `.only` / `.skip` are forbidden in committed code
+
+If ownership is unclear → **ASK**.
+
+---
+
+## 12. Cursor Operating Rules (CRITICAL)
+
+Cursor MUST:
+
+* Never modify production code to satisfy tests
+* Never weaken assertions to make tests pass
+* Always derive expectations from declared sources
+* Ask when behavior, API shape, or intent is unclear
+
+Cursor MUST NOT:
+
+* Invent UX behavior
+* Guess API responses
+* Bypass shared test utilities
+
+Ambiguity → **STOP AND ASK**.
+
+---
+
+## 13. Definition of a Good Frontend Test
+
+A good frontend test:
+
+* Fails when UX breaks
+* Covers success **and** failure paths
+* Survives refactors
+* Uses realistic, typed mock data
+
+If these are not true, the test is incorrect.
+
+---
+
+## 14. Worked Examples (REFERENCE ONLY — DO NOT COPY BLINDLY)
+
+This section provides **illustrative examples** to help entry-level engineers understand how the rules above translate into real tests.
+
+These examples do **not** introduce new rules and do **not** override any guidance above.
+
+---
+
+### 14.1 Example: Component Integration Test (Happy Path)
+
+**Scenario**: A dashboard shows a list of orders after fetching data from the API.
+
+**File structure**
+
+```
+features/orders/OrderList.tsx
+features/orders/OrderList.test.tsx
+```
+
+**Test structure (conceptual)**
+
+* Top-level `describe`: component name
+* Nested `describe`: scenario
+* Assertions: user-visible behavior only
+
+```ts
+describe('OrderList', () => {
+  describe('when the API returns orders successfully', () => {
+    it('renders the list of orders', async () => {
+      render(<OrderList />)
+
+      expect(await screen.findByRole('list')).toBeInTheDocument()
+      expect(screen.getByText('Order #123')).toBeInTheDocument()
+    })
+  })
+})
+```
+
+Why this is good:
+
+* Uses integration level (UI + API)
+* Relies on MSW default success handler
+* Asserts visible output only
+
+---
+
+### 14.2 Example: Error Scenario Using MSW Override
+
+**Scenario**: API returns a server error.
+
+```ts
+describe('OrderList', () => {
+  describe('when the API returns a server error', () => {
+    it('shows an error message to the user', async () => {
+      server.use(mockOrdersServerError())
+
+      render(<OrderList />)
+
+      expect(await screen.findByText(/something went wrong/i)).toBeInTheDocument()
+    })
+  })
+})
+```
+
+Why this is good:
+
+* Overrides MSW handler for a single test
+* Explicitly tests an error path
+* Does not modify production code
+
+---
+
+### 14.3 Example: What NOT to Do (Anti-Pattern)
+
+```ts
+it('works correctly', () => {
+  jest.mock('../api/orders')
+  expect(true).toBe(true)
+})
+```
+
+Why this is bad:
+
+* No user behavior asserted
+* Mocks implementation details
+* Test would pass even if UI is broken
+
+---
+
+### 14.4 Example: Naming & Grouping Pattern
+
+```ts
+describe('LoginForm', () => {
+  describe('when the user submits valid credentials', () => {
+    it('redirects to the dashboard', async () => {
+      // user-visible assertion
+    })
+  })
+
+  describe('when the API returns 401', () => {
+    it('shows an authentication error message', async () => {
+      // error handling assertion
+    })
+  })
+})
+```
+
+Why this matters:
+
+* Reads like a specification
+* Groups by behavior, not implementation
+* Easy to extend with new scenarios
+
+---
+
+### 14.5 Example: When to STOP and ASK
+
+You MUST stop and ask if:
+
+* API response shape is unclear
+* Error behavior is undefined
+* Required scenario handler does not exist
+* You feel tempted to mock a component instead of the API
+
+Asking early prevents incorrect tests.
+
+---
+
+## 15. Dark Mode Testing (MANDATORY)
+
+Per governance rule 10.1 (02_development_governance.mdc), **all components must support both light and dark themes**.
+
+### Unit Test Pattern
+
+```ts
+describe('Dark Mode Support', () => {
+  it('should render without errors in both themes', () => {
+    // Unit tests verify component renders
+    // Actual theme switching verified in Playwright E2E
+    render(<MyComponent>Content</MyComponent>)
+    expect(screen.getByText('Content')).toBeTruthy()
+  })
+})
+```
+
+**Why E2E for theme verification?**
+- NativeWind applies `dark:` classes at runtime based on `colorScheme`
+- Unit tests can't verify actual theme class application
+- Playwright tests verify visual theme changes work correctly
+
+### E2E Test Pattern
+
+```ts
+test('should work in dark mode', async ({ page }) => {
+  await page.goto('/page')
+
+  const themeToggle = page.getByTestId('theme-toggle')
+  if (await themeToggle.isVisible()) {
+    await themeToggle.click()
+    await page.waitForTimeout(300) // Theme transition
+
+    // Component should still be functional
+    await expect(page.getByText('Content')).toBeVisible()
+  }
+})
+```
+
+**Required dark mode classes (from Rule 10.1):**
+- Background: `dark:bg-*`
+- Text: `dark:text-*`
+- Borders: `dark:border-*`
+- Icons: Use `useTheme()` hook for dynamic colors
+
+---
+
+## 16. Error Boundary Testing
+
+Per governance rule 15 (02_development_governance.mdc), error boundaries are required at app and feature levels.
+
+### What Error Boundaries Catch
+
+**DO catch (render-time errors):**
+- Component render exceptions
+- Hook errors during render
+- Unexpected runtime failures
+
+**DO NOT catch (expected errors):**
+- API errors (handle in hooks)
+- Form validation errors (handle in state)
+- Network timeouts (handle with error states)
+
+### Unit Test Pattern
+
+Error boundaries are **class components** and tested differently:
+
+```ts
+describe('ErrorBoundary', () => {
+  it('should catch render errors and show fallback', () => {
+    const ThrowError = () => {
+      throw new Error('Test error')
+    }
+
+    render(
+      <ErrorBoundary level="component">
+        <ThrowError />
+      </ErrorBoundary>
+    )
+
+    expect(screen.getByText(/something went wrong/i)).toBeTruthy()
+  })
+})
+```
+
+### E2E Verification
+
+```ts
+test('should handle error boundary gracefully', async ({ page }) => {
+  const pageErrors: string[] = []
+  page.on('pageerror', (error) => pageErrors.push(error.message))
+
+  await page.goto('/feature-route')
+  await page.waitForLoadState('networkidle')
+
+  // Page should not white-screen
+  await expect(page.locator('body')).toBeVisible()
+
+  // No uncaught errors
+  expect(pageErrors).toHaveLength(0)
+})
+```
+
+**Error boundary levels:**
+- `level="app"` - Catches catastrophic failures, shows generic fallback
+- `level="feature"` - Isolates feature crashes, shows feature-specific fallback
+- `level="component"` - Catches component-specific errors
+
+---
+
+## 17. React Native Web — E2E Selector Pitfalls
+
+When writing Playwright E2E tests for React Native Web (Expo), be aware of these selector issues:
+
+### `accessibilityRole="header"` does not always map to `role="heading"`
+
+React Native's `accessibilityRole="header"` on `<Text>` may not render as an HTML `<h1>`–`<h6>` on web. Prefer `getByText()` over `getByRole('heading')` for React Native Web components.
+
+### Required field labels include a nested `*` asterisk
+
+`FormField` renders labels like `<Text>Date<Text> *</Text></Text>`. On web, `getByText('Date', { exact: true })` may fail because the rendered text is `"Date *"`. Use regex patterns instead:
+
+```ts
+await expect(page.getByText(/^Date\b/).first()).toBeVisible()
+```
+
+### Duplicate text from labels and hints
+
+When a `FormField` label text also appears in its hint (e.g., "Email Addresses" label + "Enter email addresses..." hint), `getByText('Email Addresses')` resolves to multiple elements. Use `{ exact: true }` or `getByRole` with a specific role to disambiguate:
+
+```ts
+await expect(page.getByText('Email Addresses', { exact: true })).toBeVisible()
+```
+
+### Dialog testing: `page.on('dialog')` vs `page.waitForEvent('dialog')`
+
+**Anti-pattern:** Registering a passive listener that silently passes when no dialog fires:
+
+```ts
+// BAD — test passes even if no dialog appears
+page.on('dialog', async (dialog) => {
+  expect(dialog.message()).toContain('Success')
+  await dialog.accept()
+})
+await page.getByRole('button', { name: 'Delete' }).click()
+```
+
+**Correct pattern:** Use `waitForEvent('dialog')` which actually waits and fails if no dialog fires:
+
+```ts
+// GOOD — test fails if dialog doesn't appear within timeout
+const dialogPromise = page.waitForEvent('dialog')
+await page.getByRole('button', { name: 'Delete' }).click()
+const dialog = await dialogPromise
+expect(dialog.message()).toContain('permanently delete')
+await dialog.accept()
+```
+
+**Note:** Since `Alert.alert()` is a no-op on React Native Web (see `10_cross-platform-patterns.mdc` § 2.6), you MUST use `showAlert()` for dialogs to work in E2E tests.
+
+### GraphQL mock drift — enumerate every selected field
+
+When mocking GraphQL responses in Playwright specs via `page.route('**/graphql', ...)`, the mock object MUST include every field the `.graphql` query selects — even nullable ones. Missing fields surface as `undefined` in downstream components and selectors fail silently (no GraphQL error is thrown).
+
+**Symptom:** Playwright reports "element not found" on a selector that targets a label computed from the missing field (e.g., `getByLabel('Cancel this event')` not found because `eventDetails.canCancel` is `undefined`, so the button never renders).
+
+**Diagnostic pattern (mechanical):**
+
+1. Read the `.graphql` query file (e.g., `src/features/dashboard/api/queries.graphql`).
+2. Enumerate every selected field.
+3. Compare against the mock object literal in the spec.
+4. Add missing fields with realistic types (use `null` for optional/nullable; reasonable defaults for required).
+
+**Empirical example (June 2026, INV-LOCAL-E2E-FIX):** The `HostDashboard` query selects 13 fields, but most mocks omitted 3-5 of the recently-added ones (`hasOptionalLink`, `linkName`, `myRole`, `primaryHostFirstName`). A targeted fix to 6 web specs + 5 mobile specs unblocked dashboard rendering. The `EventDetails` query selects ~50 fields, including critical permission gates (`canEdit`, `canCancel`, `canPermanentDelete`, `canManageCoHosts`) that determine which buttons render. Without `canCancel: true` in the mock, the "Cancel Event" button is conditionally skipped at `EventDetailsScreen.tsx:567` and `getByLabel('Cancel this event')` fails.
+
+This is the most common drift class when product schemas evolve over months while specs stay static. Always treat the `.graphql` file as the single source of truth.
+
+### Click-stability race on React Native Web
+
+Playwright's "element was detached from the DOM, retrying" → "element is not stable" class of failures on RNW (especially when clicking links/cards inside a `SectionList`) is its own debugging category. It is NOT a selector mismatch — the locator resolves to the right element, then the element re-renders during the click attempt.
+
+Common causes:
+- Re-render triggered by `SectionList`/`FlatList` virtualization window adjustments
+- Loading skeleton replaced by real card during the click window
+- Race between mocked and real GraphQL responses when `storageState` retains a valid auth token (real query fires alongside the mock and resolves out-of-order)
+- Focus-triggered refetch (`refetchOnFocus`-style hooks)
+
+**Diagnosis requires** either Playwright trace inspection (`npx playwright test <spec> --trace on`) or live browser DevTools to isolate the re-render trigger. Do NOT speculatively add `force: true` — that masks a potentially-real product defect.
+
+### General guidance
+
+* Use `getByText` with `{ exact: true }` or regex for ambiguous text
+* Use `.first()` when multiple matches are expected and you only need to verify existence
+* Use `getByRole('button', { name: '...' })` for buttons (React Native `Pressable` with `accessibilityRole="button"` maps correctly)
+
+### React Native Web — Pressable click event sequence (INV-133)
+
+**Playwright's `.click()` does NOT reliably trigger React Native Web `Pressable.onPress` on deployed builds.** This is a Playwright testing artifact, NOT a product bug (Linear INV-133 closed as "not a bug"). When writing or modifying any E2E spec that exercises a `Pressable` (any button, dismiss control, link, card tap, theme toggle, login/logout/dismiss action), you MUST use the project's helper rather than calling `.click()` directly.
+
+**Use the existing project helper. DO NOT create a new one.**
+
+```ts
+// ❌ WRONG — synthetic click; may silently no-op on deployed builds
+await page.getByRole('button', { name: 'Delete' }).click()
+await dismiss.click()
+
+// ✅ CORRECT — uses e2e/web/helpers/pressable-click.ts
+import { pressableClick } from './helpers/pressable-click'
+await pressableClick(page.getByRole('button', { name: 'Delete' }))
+await pressableClick(dismiss)
+```
+
+**Why:** RNW's responder event system requires the full `mousedown → mouseup → click` DOM event sequence with `bubbles: true`. Playwright's synthetic `.click()` doesn't dispatch all three events in the order RNW expects on the deployed build (works fine on Metro/dev because Metro handles events differently). The helper conditionally dispatches the raw event sequence only when running against a deployed `BASE_URL`; locally it transparently falls through to `.click()` so dev velocity is unchanged.
+
+**Surface coverage — every Pressable interaction:** This rule applies to dismiss `×` controls, submit buttons, login/logout actions, navigation taps, theme toggles, severity styling clicks, admin form `Save/Publish` buttons, list-row actions (`Duplicate`/`Publish`/`Unpublish`/`Delete`), and anything else that renders as `<Pressable>` (including `accessibilityRole="button"` Text components). Mixed `.click()` + `pressableClick()` calls in one spec are an anti-pattern — pick one (the helper) and use it consistently for all Pressable taps.
+
+**Existing reference implementations:** At least 10 specs already use this pattern correctly — `admin-page.spec.ts`, `admin-test-users.spec.ts`, `auth-login.spec.ts`, `auth-logout.spec.ts`, `auth-refresh.spec.ts`, `auth-session-persistence.spec.ts`, `avatar-dropdown.spec.ts`, `cohost-acceptance-gaps.spec.ts`, `cohost-dashboard.spec.ts`, `cohost-mutations.spec.ts`. Mirror their import/usage style when retrofitting new specs.
+
+**Cross-reference:** This rule was previously documented in `10_cross-platform-patterns.mdc § 17` (Playwright MCP + RNW Production Builds) but is RELOCATED here because it is fundamentally a testing concern — an agent writing E2E tests would naturally consult `04_frontend-testing-strategy.mdc`, not the cross-platform-patterns doc. A back-reference stub is kept in `10` for discoverability.
+
+---
+
+## 18. Triaging Failing E2E Specs (Decision Tree)
+
+When an E2E spec fails, do NOT immediately edit the spec or the production code. Work through these four named patterns in order. Most failures fit one of them.
+
+### 18.1 Is it mock-drift?
+
+**Symptom:** Spec asserts a field that the GraphQL mock doesn't return, or vice versa. Often surfaces after a schema change in the backend repo.
+
+**Triage:** Compare the spec's mocked response shape against the current generated types in `src/__generated__/graphql.ts`. If they diverge, the mock is stale.
+
+**Fix:** Update the mock to match the schema. Do NOT change product code — the schema is source of truth (see §2).
+
+### 18.2 Is it silent-error-sink?
+
+**Symptom:** A user action (modal confirm, form submit) does nothing visible; no thrown error, no toast, no navigation. The spec times out waiting for an effect that never fires.
+
+**Triage:** Check whether the handler wraps the callback in an animation/transition that swallows the call when the source state changes before the animation completes. The canonical antipattern is `startFadeOut(() => onConfirm(...))` inside a modal — when `visible` flips to `false` mid-animation the callback never fires.
+
+**Fix:** Invoke the user-intent callback synchronously. Let the animation play independently. See `useModalAnimation.ts` JSDoc for the contract.
+
+### 18.3 Is it tab-navigation drift?
+
+**Symptom:** Spec navigates to a tab/section that has been moved, renamed, or merged. Selector still finds an element but it's on the wrong tab.
+
+**Triage:** Open the route the spec targets and confirm the IA matches what the spec expects. Tab order changes silently break specs that assume position.
+
+**Fix:** Re-anchor on stable selectors (role + accessible name) rather than position. Update the spec to the current IA in place — do NOT add a `.skip()`.
+
+### 18.4 Is it env-flag drift?
+
+**Symptom:** Spec passes locally but fails in CI / deployed builds (or vice versa). An `EXPO_PUBLIC_*` flag has a different value in one environment than the other.
+
+**Triage:** Before declaring this a "force multiplier" that explains many failures at once, **apply the consumer-trace gate** (§18.5). If the consumer has a library-invariant guard (see `13_error-handling-patterns.mdc` § 12 — Library Invariant Guards), the env flag absence may be neutralised and the failure is something else.
+
+**Fix:** Document the flag in `.env.example`. Add a CI parity assertion if recurrence is likely.
+
+### 18.5 The consumer-trace gate (force-multiplier validation)
+
+Before you declare a shared variable / shared mock / shared selector a "force multiplier" (i.e. one fix that resolves N failing specs), you MUST trace every consumer of that value and verify two things:
+
+1. **Does the failure mode actually propagate to spec-level failure?** A shared variable may appear to be at fault but the consumer has a fallback that masks its absence. Example: `useAppleSignIn.ts:147` does `const safeRedirectUri = appleRedirectUri || AuthSession.makeRedirectUri()` — an empty env var here cannot cause spec failure because the fallback satisfies the library invariant before the gate check.
+
+2. **Is the only failing assertion render-level, or behavior-level?** If specs only assert rendering, the env flag has no path to break them. Behavior assertions (round-trips, navigation, network calls) are where env drift propagates.
+
+If either answer rules out the force-multiplier hypothesis, **report "hypothesis negative" and move on** — that is a high-value execute outcome. Do NOT write a speculative fix.
+
+> Empirical justification: in the `make-e2e-test-work-locally` MAD pipeline, one iteration produced a 16-spec yield from a single env-flag fix; the next iteration attempted the same approach on a different env flag and the consumer trace returned "negative" because of the library-invariant-guard fallback pattern. Skipping the trace would have produced a wasted speculative commit. This rule reflects the CLAUDE.md "No Assumptions When Debugging — Confirm Facts First" non-negotiable applied to E2E spec triage.

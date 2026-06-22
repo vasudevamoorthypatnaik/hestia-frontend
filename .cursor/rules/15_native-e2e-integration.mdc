@@ -1,0 +1,312 @@
+---
+description: Native E2E integration — Maestro framework, test groups, pipeline integration, platform-specific patterns
+alwaysApply: true
+---
+
+# Native E2E Integration
+
+**Role Perspective:** Senior Staff Mobile QA Engineer
+**Scope:** Native E2E tests on iOS Simulator + Android Emulator via Maestro
+**Primary Goal:** Validate native-only behavior that Playwright (web) cannot cover
+
+---
+
+## 0. When Native Tests Are Required (Decision Matrix)
+
+| Change Type | Native Required? | Platforms | Groups |
+|---|---|---|---|
+| Native-only code (push notifications, biometrics, deep links, app lifecycle) | **YES** | Both | E (mobile-specific) + relevant feature group |
+| Shared RN logic (components, hooks, screens used on all platforms) | **YES if UX-critical** | Both | Feature-specific group (A-D) |
+| Platform-specific UX (swipe-back, keyboard avoidance, scroll performance) | **YES** | Platform-specific | E |
+| Pure web code (S3/CloudFront deploy, SEO meta tags, web-only CSS) | **NO** | N/A | N/A |
+| GraphQL/API changes (queries, mutations, schema) | **YES if UI affected** | Both | Feature-specific group |
+| NativeWind/styling changes | **Conditional** — YES if touch targets or layout affected | Both | Feature-specific group |
+
+**Rule of thumb:** If the change touches anything under `react-native`, `expo-*`, or platform-specific code paths, native tests are required.
+
+---
+
+## 1. Test Infrastructure
+
+### 1.1 Framework: Maestro
+
+Maestro is the native E2E test framework. It drives real iOS Simulator and Android Emulator instances.
+
+- **Maestro CLI:** Install via `brew install maestro` (macOS) or `curl -Ls 'https://get.maestro.mobile.dev' | bash`
+- **Flow files:** `.maestro/flows/` — YAML-based test definitions
+- **Config files:** `.maestro/config.yaml` (iOS), `.maestro/config.android.yaml` (Android)
+
+### 1.2 Test Groups (native-test-groups.json)
+
+Tests are organized into 5 groups (A-E) defined in `scripts/e2e/config/native-test-groups.json`:
+
+| Group | Name | Mutates Data | Reset After | Flows |
+|---|---|---|---|---|
+| **A** | auth | No | No | forgot-password, login-validation, login, logout, register-validation, register |
+| **B** | event-crud | Yes | Yes | create-event, delete-event, edit-event, settings, theme-toggle |
+| **C** | rsvp | Yes | Yes | rsvp-flow, rsvp-submit, send-invitations |
+| **D** | navigation-ui | No | No | status-filter |
+| **E** | mobile-specific | No | No | app-lifecycle, deep-link, keyboard-avoidance, scroll-performance, swipe-back |
+
+**Mutating groups** (B, C) automatically reset fixture data after execution to avoid cross-group contamination.
+
+### 1.3 Runner Script: native-e2e-runner.sh
+
+`scripts/e2e/native-e2e-runner.sh` orchestrates the full native E2E lifecycle:
+
+1. Fetches fixture secret from AWS SSM
+2. Auto-discovers DEV AWS EC2 URL (or accepts `--api-url`)
+3. Health-checks backend at EC2:8080
+4. Builds app via EAS (`e2e-dev` profile) if no cached build exists
+5. Boots simulator/emulator, installs app
+6. Seeds fixture data, runs Maestro flows group-by-group
+7. Resets fixtures after mutating groups
+8. Writes results to `native-e2e-results.json`
+
+**Exit codes:**
+
+| Code | Meaning |
+|---|---|
+| 0 | All tests passed |
+| 1 | Test failure(s) |
+| 2 | Backend unavailable |
+| 3 | Emulator/simulator unavailable |
+| 5 | Config/seed error |
+
+---
+
+## 2. Integration with c_feature Pipeline
+
+### Phase 4 (E2E Prep) Outputs
+
+When native tests are required, Phase 4 must produce:
+
+```
+native_required: true
+platforms: [ios, android]   # or just [ios] / [android]
+groups: [A, B, E]           # which test groups to run
+```
+
+Use the decision matrix (Section 0) to determine these values.
+
+### Phase 5 (Local E2E)
+
+Run native tests in parallel with Playwright web tests:
+
+```bash
+# Native (separate terminal / background)
+npm run test:native
+
+# Or platform-specific
+npm run test:native:ios
+npm run test:native:android
+```
+
+Native and Playwright runners use **separate concurrency locks** (see Section 7) and can execute simultaneously.
+
+### Phase 7 (DEV AWS E2E)
+
+After deploy, run native tests against DEV AWS:
+
+```bash
+# Runner auto-discovers EC2 URL via AWS tag lookup
+npm run test:native
+
+# Or specify URL explicitly
+./scripts/e2e/native-e2e-runner.sh --platform both --api-url http://ec2-X-X-X-X.compute-1.amazonaws.com:8080
+```
+
+---
+
+## 3. CloudFront Fixture Limitation (CRITICAL)
+
+**CloudFront only proxies the `/graphql` path to EC2.** Fixture controller endpoints (`/api/test/fixtures/*`) are NOT in CloudFront behaviors, so requests via CloudFront return 403.
+
+The native-e2e-runner **must talk to EC2:8080 directly** for:
+
+- Fixture seeding (`/api/test/fixtures/seed`)
+- Fixture cleanup (`/api/test/fixtures/cleanup`)
+- Health checks (`/actuator/health`)
+
+The runner auto-discovers the EC2 URL via AWS tag lookup:
+
+```bash
+aws ec2 describe-instances \
+  --filters "Name=tag:Name,Values=hestia-dev-ec2" "Name=instance-state-name,Values=running" \
+  --query 'Reservations[0].Instances[0].PublicDnsName'
+```
+
+**Never hardcode EC2 instance IDs** — they rotate on stop/start. Always discover by tag.
+
+---
+
+## 4. Deep Link Scheme
+
+The deep link scheme used in Maestro flows **must match** `app.config.ts`:
+
+```typescript
+// app.config.ts
+scheme: 'justhestia'
+```
+
+Maestro deep link flows use: `justhestia://invitation/{invitationId}`
+
+The invitation ID is captured from fixture seed output and passed to Maestro via environment variable (see Section 5).
+
+---
+
+## 5. Maestro Environment Variables
+
+The runner extracts dynamic values from fixture seed output and passes them to Maestro:
+
+| Variable | Source | Used By |
+|---|---|---|
+| `MAESTRO_INVITATION_ID` | First PENDING invitation UUID from seed output (`e2e-guest-1@test.com`) | `deep-link.yaml`, `rsvp-flow.yaml` |
+
+**Pattern in Maestro flows:**
+
+```yaml
+- openLink: "justhestia://invitation/${MAESTRO_INVITATION_ID}"
+```
+
+**Pattern in runner:**
+
+```bash
+maestro test --env "MAESTRO_INVITATION_ID=${MAESTRO_INVITATION_ID}" flow.yaml
+```
+
+If the invitation ID cannot be extracted from seed output, the runner logs a warning and deep link flows may fail.
+
+---
+
+## 6. Platform Overrides
+
+Platform-specific overrides are defined in `native-test-groups.json` under `platformOverrides`:
+
+```json
+{
+  "E": {
+    "name": "mobile-specific",
+    "platformOverrides": {
+      "android": {
+        "skip": ["swipe-back.yaml"]
+      }
+    }
+  }
+}
+```
+
+**Current overrides:**
+
+| Platform | Group | Skipped Flow | Reason |
+|---|---|---|---|
+| Android | E (mobile-specific) | `swipe-back.yaml` | Android uses system back button, not iOS swipe-back gesture |
+
+The runner automatically filters skipped flows per-platform before execution.
+
+---
+
+## 7. Parallel Execution & Concurrency Locks
+
+Native and Playwright E2E runners use **separate lock files** to prevent multiple instances of the same runner type while allowing cross-runner parallelism:
+
+| Runner | Lock File | Purpose |
+|---|---|---|
+| Playwright (web) | `/tmp/e2e-runner.lock` | Prevents concurrent Playwright runs |
+| Maestro (native) | `/tmp/maestro-e2e-runner.lock` | Prevents concurrent Maestro runs |
+
+**Why separate locks:** Both runners share the same fixture data namespace on the backend. Two Maestro runners would corrupt each other's fixture state. But Playwright (web) and Maestro (native) can run in parallel because they exercise different build artifacts against the same backend.
+
+Lock files store the PID of the running process. Stale locks (dead PID) are automatically cleaned up.
+
+---
+
+## 8. NPM Scripts
+
+All native E2E scripts are defined in `package.json`:
+
+| Script | Command | Purpose |
+|---|---|---|
+| `test:native` | `--platform both` | Run all native tests on iOS + Android |
+| `test:native:ios` | `--platform ios` | Run native tests on iOS only |
+| `test:native:android` | `--platform android` | Run native tests on Android only |
+| `test:native:build` | `--build-only --platform both` | Build app for both platforms (no tests) |
+| `test:native:build:ios` | `--build-only --platform ios` | Build app for iOS only |
+| `test:native:build:android` | `--build-only --platform android` | Build app for Android only |
+
+**Additional runner flags (direct invocation):**
+
+```bash
+# Rebuild app even if cached build exists
+./scripts/e2e/native-e2e-runner.sh --platform ios --rebuild
+
+# Dry run (validate config without executing)
+./scripts/e2e/native-e2e-runner.sh --dry-run
+
+# Run specific flows only
+./scripts/e2e/native-e2e-runner.sh --platform ios --flows auth/login.yaml
+
+# Specify backend URL explicitly
+./scripts/e2e/native-e2e-runner.sh --platform both --api-url http://localhost:8080
+```
+
+---
+
+## 9. Build Management
+
+### EAS Profile
+
+Native E2E builds use the `e2e-dev` EAS profile with `--local` flag (builds on your Mac, not EAS cloud):
+
+```bash
+npx eas-cli build --profile e2e-dev --platform ios --local
+```
+
+### Build Caching
+
+- Builds are cached in `.e2e-builds/{ios,android}/`
+- `build-metadata.json` records git hash and build date
+- Runner warns if cached build is stale (different git hash than HEAD)
+- Use `--rebuild` to force a fresh build
+
+### Build Staleness Detection
+
+The runner compares the cached build's git hash against current HEAD:
+
+```
+WARNING: Build is stale (built from abc1234, current HEAD is def5678)
+  Run with --rebuild to create a fresh build.
+```
+
+---
+
+## 10. Emulator Health Recovery
+
+If a Maestro flow fails, the runner checks emulator/simulator health:
+
+- **iOS:** Verifies simulator is still `Booted` via `xcrun simctl list`
+- **Android:** Verifies `sys.boot_completed == 1` via `adb shell`
+
+If the emulator has crashed, the runner automatically:
+
+1. Reboots the simulator/emulator
+2. Reinstalls the app
+3. Re-seeds fixture data
+4. Continues with remaining flows
+
+This prevents a single crash from failing all subsequent test groups.
+
+---
+
+## Key Files
+
+| File | Purpose |
+|---|---|
+| `scripts/e2e/native-e2e-runner.sh` | Main orchestration script |
+| `scripts/e2e/config/native-test-groups.json` | Test group definitions (A-E) |
+| `.maestro/flows/` | Maestro flow YAML files |
+| `.maestro/config.yaml` | Maestro config for iOS |
+| `.maestro/config.android.yaml` | Maestro config for Android |
+| `.e2e-builds/` | Cached EAS builds (gitignored) |
+| `.e2e-results/` | Test results and screenshots (gitignored) |
+| `native-e2e-results.json` | Summary results file |

@@ -1,0 +1,732 @@
+---
+description: CI/CD requirements — pre-commit hooks, automated checks, PR requirements, GitHub Actions
+alwaysApply: true
+---
+
+# CI/CD Requirements
+
+**Role Perspective:** Senior DevOps Engineer + Platform Lead
+**Philosophy:** Catch issues early, automate everything, fast feedback
+**Goal:** Prevent broken code from reaching main branch
+
+---
+
+## Core Principles
+
+1. **Fail fast** — Errors caught locally before pushing
+2. **Automated enforcement** — Tooling, not reviewers, catches style issues
+3. **Fast feedback** — CI completes in < 5 minutes
+4. **No manual gates** — If tests pass, code can merge
+5. **Zero tolerance** — Failing checks block merge
+
+---
+
+## 1. Pre-Commit Hooks (Local)
+
+### 1.1 Setup: Husky + lint-staged
+
+**Install:**
+```bash
+npm install --save-dev husky lint-staged
+npx husky install
+```
+
+**Configure:** `.husky/pre-commit`
+```bash
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+npx lint-staged
+```
+
+**Configure:** `package.json`
+```json
+{
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "eslint --fix",
+      "prettier --write",
+      "bash -c 'tsc --noEmit'"
+    ],
+    "*.{json,md,yml,yaml}": [
+      "prettier --write"
+    ],
+    "**/*.graphql": [
+      "npm run codegen:check"
+    ]
+  }
+}
+```
+
+**What runs on commit:**
+1. **ESLint** — Catches code issues, auto-fixes where possible
+2. **Prettier** — Formats code consistently
+3. **TypeScript** — Type checks (no build, just validation)
+4. **GraphQL codegen check** — Ensures generated files are current
+
+---
+
+### 1.2 Pre-Push Hook (Optional, Recommended)
+
+**Purpose:** Run tests before pushing (slower, so not pre-commit)
+
+**Configure:** `.husky/pre-push`
+```bash
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+npm run test -- --watchAll=false --bail
+```
+
+**Why pre-push, not pre-commit:**
+- Tests can be slow (especially integration tests)
+- Commits should be fast
+- Push is the last chance before CI
+
+---
+
+## 2. Required Scripts (`package.json`)
+
+```json
+{
+  "scripts": {
+    "lint": "eslint . --ext .ts,.tsx --max-warnings=0",
+    "lint:fix": "eslint . --ext .ts,.tsx --fix",
+    "format": "prettier --write \"**/*.{ts,tsx,json,md,yml,yaml}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,json,md,yml,yaml}\"",
+    "typecheck": "tsc --noEmit",
+    "test": "jest",
+    "test:coverage": "jest --coverage",
+    "codegen": "graphql-codegen --config codegen.yml",
+    "codegen:watch": "graphql-codegen --config codegen.yml --watch",
+    "codegen:check": "graphql-codegen --config codegen.yml --check",
+    "validate": "npm run lint && npm run typecheck && npm run test -- --watchAll=false && npm run codegen:check"
+  }
+}
+```
+
+**`validate` script:** Runs all checks (used in CI)
+
+---
+
+## 3. ESLint Configuration
+
+### 3.1 Required Rules
+
+**.eslintrc.js:**
+```javascript
+module.exports = {
+  root: true,
+  extends: [
+    'expo',
+    'plugin:@typescript-eslint/recommended',
+    'plugin:react-hooks/recommended',
+    'plugin:jsx-a11y/recommended',
+    'prettier', // Must be last (disables conflicting rules)
+  ],
+  plugins: ['@typescript-eslint', 'react-hooks', 'jsx-a11y'],
+  parser: '@typescript-eslint/parser',
+  parserOptions: {
+    project: './tsconfig.json',
+  },
+  rules: {
+    // TypeScript
+    '@typescript-eslint/no-explicit-any': 'error',
+    '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+    '@typescript-eslint/explicit-module-boundary-types': 'off',
+
+    // React Hooks
+    'react-hooks/rules-of-hooks': 'error',
+    'react-hooks/exhaustive-deps': 'warn',
+
+    // React Native / Expo
+    'no-console': ['warn', { allow: ['warn', 'error'] }],
+
+    // Accessibility
+    'jsx-a11y/accessible-emoji': 'error',
+    'jsx-a11y/alt-text': 'error',
+    'jsx-a11y/anchor-has-content': 'error',
+  },
+  overrides: [
+    {
+      // Relax rules for test files
+      files: ['**/*.test.ts', '**/*.test.tsx'],
+      rules: {
+        '@typescript-eslint/no-explicit-any': 'off',
+      },
+    },
+  ],
+}
+```
+
+**Key points:**
+- `no-explicit-any`: error — Forces proper typing
+- `max-warnings=0` in npm script — Warnings block merge
+- Accessibility rules enforced
+
+---
+
+## 4. Prettier Configuration
+
+**.prettierrc:**
+```json
+{
+  "semi": false,
+  "singleQuote": true,
+  "trailingComma": "es5",
+  "printWidth": 100,
+  "tabWidth": 2,
+  "useTabs": false,
+  "arrowParens": "always"
+}
+```
+
+**.prettierignore:**
+```
+node_modules/
+.expo/
+.expo-shared/
+dist/
+build/
+coverage/
+__generated__/
+*.lock
+```
+
+**Why Prettier:**
+- No bikeshedding over code style
+- Auto-formatting on save
+- Consistent formatting across team
+
+---
+
+## 5. TypeScript Configuration
+
+**tsconfig.json:**
+```json
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    }
+  },
+  "include": ["src/**/*", "app/**/*", "*.ts", "*.tsx"],
+  "exclude": ["node_modules", "dist", "build", "coverage"]
+}
+```
+
+**Key settings:**
+- `strict: true` — All strict checks enabled
+- `noUncheckedIndexedAccess` — Prevents `undefined` bugs in array access
+- Path aliases (`@/`) for cleaner imports
+
+---
+
+## 6. GitHub Actions CI Pipeline
+
+### 6.1 Workflow File
+
+**.github/workflows/ci.yml:**
+```yaml
+name: CI
+
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [main, develop]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Prettier check
+        run: npm run format:check
+
+      - name: GraphQL codegen check
+        run: npm run codegen:check
+
+      - name: Run tests
+        run: npm run test -- --watchAll=false --coverage
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./coverage/coverage-final.json
+
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Setup Expo
+        uses: expo/expo-github-action@v8
+        with:
+          expo-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build web
+        run: npx expo export:web
+
+      - name: Archive build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: web-build
+          path: dist/
+```
+
+**What this checks:**
+1. **Lint** — ESLint passes
+2. **Type check** — No TypeScript errors
+3. **Format** — Code is formatted with Prettier
+4. **Codegen** — Generated GraphQL files are current
+5. **Tests** — All tests pass, coverage uploaded
+6. **Build** — App builds successfully (web)
+
+---
+
+### 6.2 Branch Protection Rules
+
+**Configure on GitHub:**
+
+- [ ] **Require status checks to pass before merging**
+  - `validate` job
+  - `build` job
+- [ ] **Require branches to be up to date before merging**
+- [ ] **Require linear history** (no merge commits, use rebase or squash)
+- [ ] **Do not allow bypassing the above settings**
+- [ ] **Require pull request before merging** (no direct commits to main)
+
+**Result:** Broken code cannot reach main branch
+
+---
+
+## 7. Pull Request Requirements
+
+### 7.1 PR Template
+
+**.github/pull_request_template.md:**
+```markdown
+## Description
+
+[Describe what this PR does]
+
+## Type of Change
+
+- [ ] Bug fix
+- [ ] New feature
+- [ ] Refactoring
+- [ ] Documentation update
+- [ ] Dependency update
+
+## Checklist
+
+- [ ] Tests pass locally (`npm run validate`)
+- [ ] TypeScript compiles without errors
+- [ ] ESLint shows no warnings
+- [ ] Code is formatted with Prettier
+- [ ] New features have tests
+- [ ] Accessibility tested (VoiceOver/TalkBack if UI changes)
+- [ ] GraphQL codegen is up to date
+- [ ] No console.log statements in committed code
+- [ ] Environment variables documented (if added)
+
+## Testing
+
+[Describe how this was tested]
+
+## Screenshots (if UI changes)
+
+[Add screenshots]
+
+## Related Issues
+
+Closes #[issue number]
+```
+
+**Enforces:**
+- Checklist completion
+- Testing description
+- Issue linkage
+
+---
+
+### 7.2 Automated PR Checks
+
+**GitHub Actions can add:**
+- **Bundle size check** (warn if bundle grows >10%)
+- **Dependency review** (block PRs with vulnerable deps)
+- **Label enforcement** (require `feature`, `bug`, or `docs` label)
+
+---
+
+## 8. Testing Requirements
+
+### 8.1 Coverage Thresholds
+
+**jest.config.js:**
+```javascript
+module.exports = {
+  coverageThreshold: {
+    global: {
+      branches: 70,
+      functions: 70,
+      lines: 70,
+      statements: 70,
+    },
+  },
+}
+```
+
+**What this means:**
+- PRs that drop coverage below 70% fail CI
+- Encourages comprehensive testing
+
+---
+
+### 8.2 Required Tests
+
+**For new features:**
+- [ ] Component integration tests (RTL)
+- [ ] Happy path
+- [ ] Error states
+- [ ] Loading states
+- [ ] Edge cases
+
+**For bug fixes:**
+- [ ] Regression test (reproduces bug, proves fix)
+
+**See:** [04_frontend-testing-strategy.mdc](./04_frontend-testing-strategy.mdc)
+
+---
+
+## 9. Automated Dependency Updates
+
+### 9.1 Dependabot Configuration
+
+**.github/dependabot.yml:**
+```yaml
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "team-leads"
+    labels:
+      - "dependencies"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+```
+
+**What this does:**
+- Weekly checks for dependency updates
+- Creates PRs automatically
+- Limits to 5 open PRs at a time
+
+**Security updates:** Immediate PRs for vulnerabilities
+
+---
+
+## 10. Release Management
+
+### 10.1 Versioning Strategy
+
+**Follow Semantic Versioning:**
+- **MAJOR** (1.0.0 → 2.0.0): Breaking changes
+- **MINOR** (1.0.0 → 1.1.0): New features, backward-compatible
+- **PATCH** (1.0.0 → 1.0.1): Bug fixes
+
+**Version location:** `package.json` + `app.config.ts`
+
+**Update process:**
+```bash
+npm version patch  # or minor, or major
+git push --follow-tags
+```
+
+---
+
+### 10.2 Changelog Generation
+
+**Use Conventional Commits:**
+
+**Commit message format:**
+```
+<type>(<scope>): <subject>
+
+<body>
+
+<footer>
+```
+
+**Examples:**
+```
+feat(rsvp): add guest count picker
+fix(auth): resolve token refresh race condition
+docs(readme): update setup instructions
+chore(deps): bump expo to 51.0.0
+```
+
+**Types:**
+- `feat` — New feature
+- `fix` — Bug fix
+- `docs` — Documentation
+- `chore` — Maintenance (deps, config)
+- `refactor` — Code refactoring
+- `test` — Adding tests
+- `perf` — Performance improvement
+
+**Tool:** `standard-version` for automated changelog
+
+```bash
+npm install --save-dev standard-version
+```
+
+**package.json:**
+```json
+{
+  "scripts": {
+    "release": "standard-version"
+  }
+}
+```
+
+**Usage:**
+```bash
+npm run release  # Bumps version, updates CHANGELOG.md, creates git tag
+```
+
+---
+
+## 11. Deployment Pipeline (Separate from CI)
+
+**CI:** Validate code quality (on every PR)
+**CD:** Deploy to environments (on merge to specific branches)
+
+**Trigger:** Merge to `main` or `develop`
+
+**EAS Build + Deploy:**
+```yaml
+# .github/workflows/deploy.yml
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy-preview:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: expo/expo-github-action@v8
+      - run: npm ci
+      - run: eas build --profile preview --platform all --non-interactive
+      - run: eas submit --platform ios --latest
+```
+
+**See:** [08_mobile-deployment.mdc](./08_mobile-deployment.mdc) for full deployment strategy.
+
+---
+
+## 12. Performance & Bundle Size Checks
+
+### 12.1 Bundle Size Monitoring
+
+**GitHub Action:**
+```yaml
+- name: Analyze bundle size
+  run: npx expo export:web --dump-sourcemap
+
+- name: Check bundle size
+  run: |
+    SIZE=$(du -sh dist | cut -f1)
+    echo "Bundle size: $SIZE"
+    # Fail if bundle > 5MB (example threshold)
+```
+
+**Tools:**
+- `@expo/webpack-config` — Bundler
+- `source-map-explorer` — Visualize bundle composition
+
+---
+
+## 13. Security Scanning
+
+### 13.1 Dependency Vulnerability Scan
+
+**Run on every PR:**
+```yaml
+- name: Audit dependencies
+  run: npm audit --audit-level=moderate
+```
+
+**Fails if:**
+- Moderate or higher vulnerabilities found
+- Must fix or document accepted risk
+
+---
+
+### 13.2 Secret Scanning
+
+**GitHub Advanced Security:**
+- Scans commits for leaked secrets
+- Blocks commits containing API keys, tokens
+- Alerts on detection
+
+**Alternative:** `truffleHog`, `gitleaks`
+
+---
+
+## 14. Local Development Commands
+
+**Before committing:**
+```bash
+npm run validate  # Runs all checks (lint, typecheck, test, codegen)
+```
+
+**Quick checks:**
+```bash
+npm run lint:fix        # Fix linting issues
+npm run format          # Format code
+npm run typecheck       # Type check
+npm run test            # Run tests
+npm run codegen         # Update generated GraphQL types
+```
+
+---
+
+## 15. Enforcement Summary
+
+| Check | Pre-Commit | Pre-Push | CI | Blocks Merge |
+|-------|------------|----------|-----|--------------|
+| ESLint | ✅ | - | ✅ | ✅ |
+| Prettier | ✅ | - | ✅ | ✅ |
+| TypeScript | ✅ | - | ✅ | ✅ |
+| GraphQL codegen | ✅ | - | ✅ | ✅ |
+| Tests | - | ✅ | ✅ | ✅ |
+| Coverage | - | - | ✅ | ⚠️ (warn only) |
+| Build | - | - | ✅ | ✅ |
+| Dependency audit | - | - | ✅ | ✅ |
+
+---
+
+## 16. Skipping Hooks (Discouraged)
+
+**Emergency bypass:**
+```bash
+git commit --no-verify  # Skip pre-commit hooks
+git push --no-verify    # Skip pre-push hooks
+```
+
+**❌ DO NOT use unless:**
+- Reverting a broken commit
+- Emergency hotfix (and CI still runs)
+
+**Rule:** CI is the final authority. If CI fails, code doesn't merge.
+
+---
+
+## 17. Setup Checklist
+
+For new repositories:
+
+- [ ] Install Husky (`npx husky install`)
+- [ ] Configure lint-staged in `package.json`
+- [ ] Create `.husky/pre-commit` hook
+- [ ] Create `.husky/pre-push` hook (optional)
+- [ ] Add `.github/workflows/ci.yml`
+- [ ] Configure branch protection rules
+- [ ] Add PR template
+- [ ] Set up Dependabot
+- [ ] Configure test coverage thresholds
+- [ ] Add deployment workflow (if needed)
+- [ ] Test hooks work: `git commit` should run checks
+
+---
+
+## 18. Debugging CI Failures
+
+**CI failed, but works locally:**
+
+1. **Check Node version:** CI uses Node 20, are you on the same?
+2. **Clear cache:** `npm ci` (not `npm install`) ensures clean install
+3. **Check environment:** Missing `EXPO_PUBLIC_*` vars in CI?
+4. **Check lockfile:** Is `package-lock.json` committed?
+
+**Common fixes:**
+```bash
+# Match CI environment
+nvm use 20
+rm -rf node_modules package-lock.json
+npm install
+npm run validate
+```
+
+---
+
+## 19. Continuous Improvement
+
+**Quarterly review:**
+- Are checks too slow? (>5 min CI is painful)
+- Are checks catching real bugs?
+- Any false positives annoying developers?
+- New tools available? (Biome, oxlint)
+
+**Goal:** Fast, accurate feedback that developers trust.
+
+---
+
+## Final Note
+
+> **CI/CD is a safety net, not a barrier.**
+>
+> These checks exist to catch mistakes before users see them.
+> If checks feel burdensome, the checks are wrong — not the developers.
+>
+> Fast feedback + clear error messages = happy developers.

@@ -1,0 +1,37 @@
+---
+description: PR/code review standards — find issues, severity levels, merge statement
+alwaysApply: true
+---
+
+# PR Review Standards
+
+When the user asks for a **review** of a PR (or code review), follow these standards.
+
+## 1. Actively look for issues
+
+- **Do not** only summarize what the PR does.
+- **Do** look for: bugs, logic errors, edge cases, security issues (e.g. IDOR, validation gaps), consistency with API/contracts, missing error handling, double-submit or race conditions, stale data / cache issues, accessibility or UX gaps.
+- Prefer reviewing the actual diff and key code paths, not just the PR description.
+
+## 2. Group findings by severity
+
+Categorize every finding into one of:
+
+| Severity   | Meaning |
+|-----------|--------|
+| **Critical** | Must fix before merge (e.g. data loss, security hole, wrong behaviour in main path). |
+| **High**     | Should fix before merge (e.g. clear bug, broken flow, missing auth check). |
+| **Medium**   | Should address soon (e.g. confusing UX, stale data risk, incomplete handling). |
+| **Low**      | Nice to have (e.g. dead code, docs, minor UX, nits). |
+
+In the review comment, present findings in that order: Critical → High → Medium → Low, with clear headings.
+
+## 3. Merge statement
+
+- **If there are no Critical or High issues:** Add an explicit sentence such as:  
+  **"No Critical or High issues found. PR is good to merge (Medium/Low can be follow-ups if desired)."**
+- **If there are Critical or High issues:** State clearly that the PR should not be merged until those are fixed (or downgraded with justification).
+
+## 4. Format
+
+Keep the review comment structured: short intro (what was reviewed), then findings by severity, then the merge statement, then optional summary table.

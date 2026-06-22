@@ -1,0 +1,706 @@
+---
+description: Cross-platform patterns — explicitly allowed platform divergence, responsive design, Platform.select usage
+alwaysApply: true
+---
+
+# Cross-Platform Patterns (Allowed Divergence)
+
+**Role Perspective:** Senior Mobile + Web Engineer
+**Scope:** When and how platform-specific code is acceptable
+**Philosophy:** Maximize code sharing, minimize platform forks, explicit over implicit
+
+---
+
+## Core Principle
+
+> **Default to shared code. Platform-specific behavior must be explicit, minimal, justified, and documented.**
+
+This document clarifies what platform divergence is **allowed** and **expected** while maintaining a single codebase.
+
+---
+
+## 1. What MUST Be Shared (Zero Divergence)
+
+The following **must behave identically** across iOS, Android, and Web:
+
+- ✅ **Business logic** — Data transformations, validation rules, state management
+- ✅ **API interactions** — GraphQL queries, mutations, error handling
+- ✅ **Data flow** — Props, state updates, data processing
+- ✅ **Feature behavior** — What features do, workflows, user journeys
+- ✅ **Validation rules** — Form validation, input constraints
+- ✅ **Navigation flow** — Screen order, conditional navigation
+
+**Violation of this rule is considered a bug.**
+
+---
+
+## 2. What MAY Differ (Allowed Divergence)
+
+The following **may differ** across platforms when necessary:
+
+### 2.1 Navigation UI Patterns ✅ EXPLICITLY ALLOWED
+
+**Mobile (iOS/Android):**
+- Bottom tab navigation
+- Stack-based navigation
+- Modal presentations
+- Swipe gestures
+
+**Web:**
+- Top header navigation
+- Sidebar navigation
+- Breadcrumbs
+- Hover-based menus
+
+**Example:**
+```typescript
+// app/_layout.tsx (Expo Router)
+import { Platform } from 'react-native'
+
+export default function RootLayout() {
+  if (Platform.OS === 'web') {
+    return <WebNavigationLayout />
+  }
+
+  return <MobileNavigationLayout />
+}
+```
+
+**Justification:** Navigation patterns are platform conventions. Users expect different UIs.
+
+---
+
+### 2.2 Layout Density ✅ EXPLICITLY ALLOWED
+
+**Mobile:**
+- Single-column layouts
+- Full-width components
+- Larger touch targets (44x44pt minimum)
+
+**Tablet/Desktop:**
+- Multi-column layouts
+- Constrained content width
+- Denser information display
+
+**Example with NativeWind:**
+```tsx
+<View className="w-full md:w-1/2 lg:w-1/3">
+  {/* Full-width on mobile, narrower on larger screens */}
+</View>
+```
+
+**Breakpoints (Tailwind/NativeWind):**
+- `sm`: 640px
+- `md`: 768px
+- `lg`: 1024px
+- `xl`: 1280px
+- `2xl`: 1536px
+
+---
+
+### 2.3 Interaction Patterns ✅ EXPLICITLY ALLOWED
+
+**Touch (Mobile):**
+- Tap gestures
+- Long-press actions
+- Swipe to dismiss
+
+**Mouse/Keyboard (Web):**
+- Hover effects
+- Click vs. touch
+- Keyboard shortcuts
+- Focus outlines
+
+**Example:**
+```tsx
+<Pressable
+  className="p-4"
+  // Hover effect on web only
+  style={({ pressed, hovered }) => ({
+    backgroundColor: Platform.OS === 'web' && hovered ? '#f0f0f0' : 'white',
+  })}
+>
+  <Text>Button</Text>
+</Pressable>
+```
+
+---
+
+### 2.4 Typography Scaling ✅ EXPLICITLY ALLOWED
+
+**Mobile:**
+- Larger base font sizes (readability on small screens)
+- System font scaling (accessibility)
+
+**Web:**
+- Standard web font sizes
+- CSS media query scaling
+
+**Example:**
+```tsx
+<Text className="text-base md:text-sm">
+  {/* 16px on mobile, 14px on desktop */}
+</Text>
+```
+
+---
+
+### 2.5 Safe Area Handling ✅ EXPLICITLY ALLOWED
+
+**iOS:**
+- Notch awareness
+- Safe area insets
+
+**Android:**
+- Status bar overlap
+- Navigation bar
+
+**Web:**
+- No safe area concerns
+
+**Example:**
+```tsx
+import { SafeAreaView } from 'react-native-safe-area-context'
+
+// Mobile: Respect safe areas
+export function MobileLayout({ children }: { children: React.ReactNode }) {
+  return <SafeAreaView edges={['top', 'bottom']}>{children}</SafeAreaView>
+}
+
+// Web: No safe areas needed
+export function WebLayout({ children }: { children: React.ReactNode }) {
+  return <View>{children}</View>
+}
+```
+
+### 2.6 Dialog & Alert Patterns ✅ EXPLICITLY ALLOWED
+
+**`react-native-web` exports a no-op `Alert.alert()`** — the class is `class Alert { static alert() {} }`. Any `Alert.alert()` call with a buttons array (for confirmation dialogs) silently does nothing on web: callbacks never fire, no dialog appears.
+
+**Solution:** Use a cross-platform wrapper utility instead of `Alert.alert()` directly:
+
+```typescript
+// src/shared/utils/alert.ts
+import { Alert, Platform } from 'react-native'
+
+export function showAlert(title: string, message?: string, buttons?: AlertButton[]) {
+  if (Platform.OS !== 'web') {
+    Alert.alert(title, message, buttons)
+    return
+  }
+  const fullMessage = message ? `${title}\n\n${message}` : title
+  if (!buttons || buttons.length <= 1) {
+    window.alert(fullMessage)
+    buttons?.[0]?.onPress?.()
+    return
+  }
+  // Multi-button: use window.confirm()
+  const cancelButton = buttons.find((b) => b.style === 'cancel')
+  const actionButton = buttons.find((b) => b.style !== 'cancel') ?? buttons[buttons.length - 1]
+  const confirmed = window.confirm(fullMessage)
+  if (confirmed) actionButton?.onPress?.()
+  else cancelButton?.onPress?.()
+}
+```
+
+**Rule:** Never use `Alert.alert()` directly in screens or components. Always use `showAlert()` from the shared utility.
+
+---
+
+## 3. Platform-Specific File Extensions
+
+### 3.1 When to Use `.native.tsx` / `.web.tsx`
+
+**Allowed cases:**
+
+1. **UI primitives** — When component must use different platform APIs
+2. **Navigation layouts** — Different nav patterns (tabs vs. header)
+3. **Platform-specific features** — Camera, push notifications, file access
+
+**Pattern:**
+```
+features/
+└── invitation/
+    └── components/
+        ├── ShareButton.tsx          ← Shared logic
+        ├── ShareButton.native.tsx   ← Mobile implementation
+        └── ShareButton.web.tsx      ← Web implementation
+```
+
+**Import stays platform-agnostic:**
+```typescript
+import { ShareButton } from './ShareButton'  // Metro resolves .native or .web
+```
+
+---
+
+### 3.2 What NOT to Fork
+
+**Forbidden file splits:**
+
+❌ Entire screens (business logic diverges)
+❌ GraphQL queries (API contract must be identical)
+❌ Validation logic (rules must match)
+❌ State management (behavior must match)
+
+**If you're tempted to fork these:** Reconsider your design.
+
+---
+
+## 4. Platform.select() Usage
+
+### 4.1 Allowed Uses
+
+**Small, localized differences:**
+
+```typescript
+import { Platform } from 'react-native'
+
+const styles = {
+  container: {
+    paddingTop: Platform.select({
+      ios: 20,
+      android: 24,
+      web: 16,
+    }),
+  },
+}
+```
+
+**Platform-specific behavior:**
+
+```typescript
+const shareUrl = Platform.select({
+  ios: 'https://apps.apple.com/app/hestia/...',
+  android: 'https://play.google.com/store/apps/details?id=...',
+  web: 'https://hestia.com',
+})
+```
+
+---
+
+### 4.2 Forbidden Uses
+
+❌ **Business logic:**
+```typescript
+// ❌ WRONG
+const validationRule = Platform.select({
+  ios: (val) => val.length > 5,
+  android: (val) => val.length > 3,  // Different rules!
+})
+```
+
+❌ **Feature flags by platform:**
+```typescript
+// ❌ WRONG
+const showFeature = Platform.select({
+  ios: true,
+  android: false,  // Feature parity broken
+})
+```
+
+---
+
+## 5. Responsive Design Patterns
+
+### 5.1 Breakpoint-Based Layouts (NativeWind)
+
+**Pattern:**
+```tsx
+<View className="flex-col md:flex-row">
+  {/* Stack on mobile, row on desktop */}
+  <View className="w-full md:w-1/2">
+    <LeftPanel />
+  </View>
+  <View className="w-full md:w-1/2">
+    <RightPanel />
+  </View>
+</View>
+```
+
+---
+
+### 5.2 Conditional Rendering Based on Screen Size
+
+```typescript
+import { useWindowDimensions } from 'react-native'
+
+export function ResponsiveLayout() {
+  const { width } = useWindowDimensions()
+  const isDesktop = width >= 1024
+
+  return (
+    <View>
+      {isDesktop ? <DesktopNav /> : <MobileNav />}
+      <Content />
+    </View>
+  )
+}
+```
+
+---
+
+### 5.3 Touch Target Sizes
+
+**Mobile minimum:** 44x44 points (iOS HIG, Android Material)
+
+```tsx
+<Pressable className="min-w-[44px] min-h-[44px]">
+  <Icon name="close" />
+</Pressable>
+```
+
+**Web:** Can be smaller (mouse precision > finger precision)
+
+---
+
+## 6. Platform-Specific Modules
+
+### 6.1 Camera Access
+
+**Mobile:** Use `expo-camera`
+**Web:** Use HTML `<input type="file" accept="image/*" capture="camera" />`
+
+**Pattern:**
+```typescript
+// features/profile/components/CameraButton.native.tsx
+import { Camera } from 'expo-camera'
+
+export function CameraButton() {
+  // Native camera implementation
+}
+```
+
+```typescript
+// features/profile/components/CameraButton.web.tsx
+export function CameraButton() {
+  return <input type="file" accept="image/*" capture="camera" />
+}
+```
+
+---
+
+### 6.2 Push Notifications
+
+**Mobile:** `expo-notifications`
+**Web:** Web Push API
+
+**Implementation:** Platform-specific files
+
+---
+
+### 6.3 Clipboard
+
+**Cross-platform:** Use `expo-clipboard` (works on all platforms)
+
+```typescript
+import * as Clipboard from 'expo-clipboard'
+
+const handleCopy = async () => {
+  await Clipboard.setStringAsync('https://hestia.com/event/123')
+}
+```
+
+---
+
+## 7. Styling Differences
+
+### 7.1 Shadows
+
+**iOS:**
+```tsx
+<View
+  style={{
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  }}
+/>
+```
+
+**Android:**
+```tsx
+<View style={{ elevation: 4 }} />
+```
+
+**Web:**
+```tsx
+<View style={{ boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }} />
+```
+
+**NativeWind handles this automatically:**
+```tsx
+<View className="shadow-md">
+  {/* Cross-platform shadow */}
+</View>
+```
+
+---
+
+### 7.2 Fonts
+
+**Mobile:** Requires `expo-font` and explicit loading
+
+```typescript
+import { useFonts } from 'expo-font'
+
+useFonts({
+  'Inter-Regular': require('./assets/fonts/Inter-Regular.ttf'),
+})
+```
+
+**Web:** Can use `@font-face` in CSS
+
+**Recommended:** Use system fonts where possible
+
+```typescript
+const fontFamily = Platform.select({
+  ios: 'System',
+  android: 'Roboto',
+  web: 'system-ui, -apple-system, sans-serif',
+})
+```
+
+---
+
+## 8. Keyboard Handling
+
+### 8.1 Keyboard Avoidance (Mobile)
+
+**Problem:** Virtual keyboard covers input fields
+
+**Solution:**
+```tsx
+import { KeyboardAvoidingView, Platform } from 'react-native'
+
+<KeyboardAvoidingView
+  behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+  className="flex-1"
+>
+  <Input />
+</KeyboardAvoidingView>
+```
+
+**Web:** No keyboard avoidance needed (keyboard doesn't cover viewport)
+
+---
+
+### 8.2 Keyboard Dismissal
+
+**Mobile:**
+```tsx
+import { Keyboard } from 'react-native'
+
+const handleSubmit = () => {
+  Keyboard.dismiss()
+  // Submit form
+}
+```
+
+**Web:** Not needed
+
+**Pattern:**
+```typescript
+const dismissKeyboard = Platform.OS !== 'web' ? Keyboard.dismiss : () => {}
+```
+
+---
+
+## 9. Web-Specific Patterns
+
+### 9.1 SEO Meta Tags (Expo Router)
+
+**Only on web:**
+
+```tsx
+// app/invitation/[id].tsx
+import { Head } from 'expo-router'
+
+export default function InvitationScreen() {
+  return (
+    <>
+      <Head>
+        <title>Invitation to {event.name}</title>
+        <meta property="og:title" content={event.name} />
+        <meta property="og:image" content={event.imageUrl} />
+      </Head>
+      <Content />
+    </>
+  )
+}
+```
+
+**Mobile:** Head component does nothing (no-op)
+
+---
+
+### 9.2 URL Routing
+
+**Web:** Uses browser history API
+**Mobile:** Uses in-memory navigation stack
+
+**Expo Router abstracts this—same API works on all platforms.**
+
+---
+
+## 10. Mobile-Specific Patterns
+
+### 10.1 Pull-to-Refresh
+
+**Mobile:**
+```tsx
+import { RefreshControl, ScrollView } from 'react-native'
+
+<ScrollView
+  refreshControl={
+    <RefreshControl refreshing={loading} onRefresh={refetch} />
+  }
+>
+  <Content />
+</ScrollView>
+```
+
+**Web:** Typically use a refresh button instead
+
+---
+
+### 10.2 Haptic Feedback
+
+**Mobile:**
+```typescript
+import * as Haptics from 'expo-haptics'
+
+const handlePress = () => {
+  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+  // Action
+}
+```
+
+**Web:** No haptic feedback
+
+---
+
+## 11. Testing Platform-Specific Code
+
+### 11.1 Mocking Platform
+
+```typescript
+import { Platform } from 'react-native'
+
+jest.mock('react-native/Libraries/Utilities/Platform', () => ({
+  OS: 'ios', // or 'android', 'web'
+  select: jest.fn((obj) => obj.ios),
+}))
+```
+
+---
+
+### 11.2 Testing Both Platforms
+
+```typescript
+describe('ShareButton', () => {
+  it('uses native share on mobile', () => {
+    jest.spyOn(Platform, 'OS', 'get').mockReturnValue('ios')
+    // Test mobile behavior
+  })
+
+  it('uses web share API on web', () => {
+    jest.spyOn(Platform, 'OS', 'get').mockReturnValue('web')
+    // Test web behavior
+  })
+})
+```
+
+---
+
+## 12. Decision Tree: Should I Use Platform-Specific Code?
+
+**Question 1:** Does the feature behavior differ?
+- **Yes** → ❌ Reconsider design (behavior must be consistent)
+- **No** → Continue
+
+**Question 2:** Is it a UI/UX platform convention (nav patterns, touch targets)?
+- **Yes** → ✅ Platform-specific code allowed
+- **No** → Continue
+
+**Question 3:** Does it use a platform-specific API (camera, notifications)?
+- **Yes** → ✅ Use `.native` / `.web` files
+- **No** → Continue
+
+**Question 4:** Is it a small styling difference (shadows, fonts)?
+- **Yes** → ✅ Use `Platform.select()` or NativeWind
+- **No** → Continue
+
+**Question 5:** Is it truly unavoidable?
+- **Yes** → ✅ Document why, use platform-specific code
+- **No** → ❌ Keep it shared
+
+---
+
+## 13. Documentation Requirement
+
+**For all platform-specific code, add a comment:**
+
+```typescript
+// Platform-specific: iOS navigation uses tabs, web uses header
+// Reason: Platform convention, better UX
+if (Platform.OS === 'web') {
+  return <WebHeader />
+}
+return <MobileTabs />
+```
+
+**Why:**
+- Prevents future "refactoring" to remove platform logic
+- Clarifies intent for other developers
+- Justifies the divergence
+
+---
+
+## 14. Forbidden Patterns
+
+❌ **DO NOT:**
+
+- Fork entire screens by platform
+- Implement different business logic per platform
+- Use different validation rules
+- Create separate feature flows
+- Diverge API calls by platform
+- Make features available on only one platform (without approval)
+
+---
+
+## 15. Summary Table
+
+| Aspect | Shared | Mobile-Specific | Web-Specific |
+|--------|--------|-----------------|--------------|
+| Business logic | ✅ | ❌ | ❌ |
+| API calls | ✅ | ❌ | ❌ |
+| Validation | ✅ | ❌ | ❌ |
+| Navigation UI | ❌ | Bottom tabs | Header/sidebar |
+| Layout density | Responsive | Single-column | Multi-column |
+| Touch targets | 44x44pt | ✅ | Smaller OK |
+| Hover effects | ❌ | ❌ | ✅ |
+| Keyboard handling | ❌ | Avoidance needed | Not needed |
+| Pull-to-refresh | ❌ | ✅ | Button preferred |
+| Haptic feedback | ❌ | ✅ | ❌ |
+| Safe areas | ❌ | ✅ | ❌ |
+| SEO meta tags | ❌ | ❌ | ✅ |
+
+---
+
+## 16. Final Note
+
+> **When in doubt, default to shared code.**
+>
+> Platform-specific code is a trade-off: better UX vs. higher maintenance cost.
+> Only diverge when the UX benefit clearly justifies the complexity.
+
+**Before adding platform-specific code:** Ask yourself if a shared implementation would suffice.
+
+---
+
+## 17. Playwright MCP + React Native Web Production Builds (INV-133)
+
+> **MOVED:** The full INV-133 rule (RNW Pressable click event sequence + `pressableClick` helper) now lives in **`04_frontend-testing-strategy.mdc § 17.x — React Native Web — Pressable click event sequence (INV-133)`** alongside the other E2E selector pitfalls. An agent writing or auditing E2E specs would naturally consult `04` (the testing-strategy doc); keeping the rule there is more discoverable than burying it in cross-platform-patterns. This stub is retained for back-compat — if you arrived here from a bookmark or grep result, see `04 § 17` for the authoritative rule and the helper-import pattern.

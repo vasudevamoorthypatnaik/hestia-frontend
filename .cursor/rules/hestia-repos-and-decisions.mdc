@@ -1,0 +1,28 @@
+---
+description: Hestia project structure, repo boundaries, and decision-making—ask when ambiguous
+alwaysApply: true
+---
+
+# Hestia Project: Repos and Decisions
+
+## Decision making
+
+- **When there is ambiguity in decision making: ask the user. Do not guess or hallucinate.**
+
+## Repo boundaries
+
+This workspace involves two **independent Git repos**:
+
+### Frontend
+
+- **Location**: `hestia-frontend` (repo root).
+- **Scope**: All frontend changes (UI, client code, frontend config, etc.).
+- **Rules**: Follow all rules under `.cursor/rules/` in the **hestia_frontend** repo.
+
+### Backend
+
+- **Location**: `hestia-backend` (repo root).
+- **Scope**: All backend changes (APIs, services, server config, etc.).
+- **Rules**: Follow all rules under `.cursor/rules/` in the **hestia_backend** repo.
+
+When editing, work in the correct repo for the change type and respect each repo’s own cursor rules.

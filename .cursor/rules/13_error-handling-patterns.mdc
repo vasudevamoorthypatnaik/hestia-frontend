@@ -1,0 +1,920 @@
+---
+description: Error handling patterns — user-facing messages, GraphQL errors, network failures, retry strategies
+alwaysApply: true
+---
+
+# Error Handling Patterns
+
+**Role Perspective:** Senior SRE + UX Engineer
+**Philosophy:** Fail gracefully, communicate clearly, log thoroughly, never swallow errors
+**Goal:** Users understand what went wrong and what to do next
+
+---
+
+## Core Principles
+
+1. **Users see friendly messages** (never raw technical errors)
+2. **Developers see detailed logs** (for debugging)
+3. **Expected errors are handled explicitly** (validation, business logic)
+4. **Unexpected errors are caught by error boundaries** (render crashes)
+5. **Network errors are retried intelligently** (exponential backoff)
+
+---
+
+## 1. Error Categories
+
+### 1.1 User Errors (Expected)
+
+**Definition:** User-caused, recoverable, actionable
+
+**Examples:**
+- Invalid email format
+- Missing required fields
+- Weak password
+- RSVP deadline passed
+
+**Handling:**
+- Show inline error message
+- Explain what's wrong
+- Tell user how to fix it
+- Never blame the user
+
+**Pattern:**
+```tsx
+if (!email.includes('@')) {
+  return { error: 'Please enter a valid email address' }
+}
+```
+
+---
+
+### 1.2 Business Logic Errors (Expected)
+
+**Definition:** Backend rejects request due to business rules
+
+**Examples:**
+- "You've already RSVP'd to this event"
+- "Guest limit exceeded"
+- "Event registration has closed"
+
+**Handling:**
+- Extract user-friendly message from backend
+- Show in toast or modal
+- Provide alternative action if possible
+
+**Pattern:**
+```typescript
+if (error.graphQLErrors[0]?.extensions?.code === 'ALREADY_RSVP') {
+  showToast('You have already responded to this invitation')
+}
+```
+
+---
+
+### 1.3 Network Errors (Transient)
+
+**Definition:** Network connectivity issues
+
+**Examples:**
+- No internet connection
+- Server unreachable
+- Request timeout
+
+**Handling:**
+- Show generic message
+- Offer retry button
+- Auto-retry with backoff (for reads, not writes)
+
+**Pattern:**
+```typescript
+if (error.networkError) {
+  return 'Unable to connect. Please check your internet connection and try again.'
+}
+```
+
+---
+
+### 1.4 Server Errors (Unexpected)
+
+**Definition:** Backend crashed or returned 500
+
+**Examples:**
+- Database connection failed
+- Unhandled exception
+- Service unavailable
+
+**Handling:**
+- Show generic error message
+- Log detailed error for debugging
+- Report to error tracking (Sentry)
+- Don't expose internal details to user
+
+**Pattern:**
+```typescript
+if (error.graphQLErrors.some(e => e.extensions?.code === 'INTERNAL_SERVER_ERROR')) {
+  logToSentry(error)
+  return 'Something went wrong on our end. Please try again later.'
+}
+```
+
+---
+
+### 1.5 Authentication Errors
+
+**Definition:** Token expired, invalid, or missing
+
+**Examples:**
+- "Unauthenticated"
+- "Token expired"
+- "Invalid session"
+
+**Handling:**
+- Attempt token refresh automatically
+- If refresh fails, redirect to login
+- Show message: "Your session has expired. Please log in again."
+
+**See:** [09_authentication-security.mdc](./09_authentication-security.mdc) for auth error handling.
+
+---
+
+## 2. User-Facing Error Messages
+
+### 2.1 Error Message Dictionary (Per-Feature)
+
+**Location:** `features/<feature>/errors.ts`
+
+**Pattern:**
+```typescript
+export const InvitationErrors = {
+  // User errors
+  INVALID_GUEST_COUNT: 'Guest count must be between 0 and 10',
+  RSVP_DEADLINE_PASSED: 'The RSVP deadline for this event has passed',
+
+  // Business logic errors
+  ALREADY_RESPONDED: 'You have already responded to this invitation',
+  EVENT_FULL: 'This event has reached its guest capacity',
+
+  // Generic errors
+  NETWORK_ERROR: 'Unable to connect. Please check your internet connection.',
+  SERVER_ERROR: 'Something went wrong. Please try again later.',
+  UNKNOWN_ERROR: 'An unexpected error occurred. Please try again.',
+} as const
+```
+
+**Usage:**
+```typescript
+import { InvitationErrors } from './errors'
+
+showToast(InvitationErrors.ALREADY_RESPONDED)
+```
+
+**Benefits:**
+- Centralized message management
+- Easy to update wording
+- Consistency across features
+- i18n-ready (when needed)
+
+---
+
+### 2.2 Writing Good Error Messages
+
+**Good error messages are:**
+1. **Clear** — User understands what went wrong
+2. **Actionable** — User knows how to fix it
+3. **Friendly** — Non-technical, non-blaming
+4. **Specific** — Not "Error occurred"
+
+**Examples:**
+
+❌ **Bad:**
+```
+Error: Validation failed
+Error
+Something went wrong
+Failed to submit
+```
+
+✅ **Good:**
+```
+Please enter a valid email address
+Your password must be at least 8 characters
+This event is no longer accepting RSVPs
+Unable to submit. Please try again.
+```
+
+---
+
+### 2.3 Error Message Components
+
+**Pattern:**
+```tsx
+export function ErrorMessage({ message }: { message: string }) {
+  if (!message) return null
+
+  return (
+    <View className="flex-row items-start gap-2 p-3 bg-red-50 rounded-lg">
+      <Icon name="alert-circle" color="red" size={20} />
+      <Text className="flex-1 text-red-800" accessibilityRole="alert">
+        {message}
+      </Text>
+    </View>
+  )
+}
+```
+
+**Accessibility:**
+- `accessibilityRole="alert"` — Screen reader announces immediately
+- Icon + color + text (not color alone)
+
+---
+
+## 3. GraphQL Error Handling
+
+### 3.1 Parsing GraphQL Errors
+
+**Utility:** `src/shared/errors/parseGraphQLError.ts`
+
+```typescript
+import { CombinedError } from 'urql'
+
+export function parseGraphQLError(error: CombinedError | undefined): string {
+  if (!error) return 'An unknown error occurred'
+
+  // Network error (no internet, server unreachable)
+  if (error.networkError) {
+    return 'Unable to connect. Please check your internet connection.'
+  }
+
+  // GraphQL errors (backend returned errors)
+  if (error.graphQLErrors.length > 0) {
+    const firstError = error.graphQLErrors[0]
+
+    // Check for user-friendly message from backend
+    const userMessage = firstError.extensions?.userMessage as string | undefined
+    if (userMessage) {
+      return userMessage
+    }
+
+    // Map error codes to user messages
+    const code = firstError.extensions?.code as string | undefined
+    switch (code) {
+      case 'UNAUTHENTICATED':
+        return 'Your session has expired. Please log in again.'
+      case 'FORBIDDEN':
+        return 'You do not have permission to perform this action.'
+      case 'NOT_FOUND':
+        return 'The requested resource was not found.'
+      case 'VALIDATION_ERROR':
+        return firstError.message // Backend provides user-friendly validation messages
+      case 'ALREADY_EXISTS':
+        return 'This record already exists.'
+      default:
+        // Log unexpected error codes
+        console.error('[GraphQL Error]:', code, firstError.message)
+        return 'Something went wrong. Please try again.'
+    }
+  }
+
+  // Fallback
+  return 'Something went wrong. Please try again.'
+}
+```
+
+**Usage:**
+```typescript
+const [result] = useSubmitRsvpMutation()
+
+if (result.error) {
+  const errorMessage = parseGraphQLError(result.error)
+  showToast(errorMessage)
+}
+```
+
+---
+
+### 3.3 Backend-Boundary 429 Routing (WAF / CDN / Reverse Proxy)
+
+When AWS WAF, CloudFront, or any reverse proxy rejects a request at the edge, the response's **Content-Type** — not the 429 status — determines where URQL routes it in `CombinedError`:
+
+| Response shape | URQL routes to |
+|---|---|
+| `text/plain` body (or any unparseable body) | `error.networkError` with `.status === 429` |
+| `application/json` body shaped `{"errors":[{...,"extensions":{"code":"RATE_LIMITED"}}]}` | `error.graphQLErrors[0]` (NOT `networkError`) |
+
+**Rule:** Any parser that handles rate-limit errors (especially for localization) MUST check BOTH branches symmetrically:
+
+```typescript
+// Inside parseGraphQLError / parseGraphQLErrorLocalized:
+
+// Branch 1 — text/plain or unparseable WAF response
+if (error.networkError && (error.networkError as any).status === 429) {
+  return t('error.rate_limited')
+}
+
+// Branch 2 — JSON-bodied WAF response (most common in production)
+if (error.graphQLErrors.length > 0) {
+  const firstError = error.graphQLErrors[0]
+  if (firstError.extensions?.code === 'RATE_LIMITED') {
+    return t('error.rate_limited')
+  }
+  // ... rest of graphQLErrors handling
+}
+```
+
+**Why this matters:** Handling only `networkError.status` silently leaks the WAF's English string to users in non-English locales — the parser falls through to `firstError.message` which is the WAF's hardcoded English text. This was the iter-3 → iter-4 incident on the login-i18n feature (June 2026).
+
+**Reference fixture:** `e2e/web/captcha-waf-429.spec.ts` documents the real AWS WAF 429 JSON-body shape. Mirror it exactly when writing tests — never invent a synthetic shape (see `04_frontend-testing-strategy.mdc` §6.5).
+
+**Mirror the fix in parallel helpers.** If the codebase has both `parseGraphQLError` (no-`t`) and `parseGraphQLErrorLocalized` (with-`t`), fix BOTH branches in BOTH helpers symmetrically and pin the equivalence with a drift-guard test (see `04_frontend-testing-strategy.mdc` §3.1 "Drift-guard tests for parallel helper pairs").
+
+---
+
+### 3.4 Extracting Field-Specific Errors
+
+**Backend pattern (GraphQL extensions):**
+```json
+{
+  "errors": [
+    {
+      "message": "Validation failed",
+      "extensions": {
+        "code": "VALIDATION_ERROR",
+        "fieldErrors": {
+          "email": "Email is required",
+          "password": "Password must be at least 8 characters"
+        }
+      }
+    }
+  ]
+}
+```
+
+**Frontend parser:**
+```typescript
+export function extractFieldErrors(error: CombinedError | undefined): Record<string, string> {
+  if (!error?.graphQLErrors) return {}
+
+  const firstError = error.graphQLErrors[0]
+  const fieldErrors = firstError.extensions?.fieldErrors as Record<string, string> | undefined
+
+  return fieldErrors ?? {}
+}
+```
+
+**Usage in forms:**
+```tsx
+const [result, submitRsvp] = useSubmitRsvpMutation()
+
+const fieldErrors = extractFieldErrors(result.error)
+
+<TextInput
+  value={email}
+  onChangeText={setEmail}
+  error={fieldErrors.email}
+/>
+```
+
+---
+
+## 4. Form Validation Errors
+
+### 4.1 Client-Side Validation (Zod + React Hook Form)
+
+**Pattern:**
+```typescript
+import { z } from 'zod'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useForm } from 'react-hook-form'
+
+const rsvpSchema = z.object({
+  email: z.string().email('Please enter a valid email address'),
+  adults: z.number().min(0, 'Cannot be negative').max(10, 'Maximum 10 adults'),
+  kids: z.number().min(0, 'Cannot be negative').max(10, 'Maximum 10 kids'),
+})
+
+export function RsvpForm() {
+  const { control, handleSubmit, formState: { errors } } = useForm({
+    resolver: zodResolver(rsvpSchema),
+  })
+
+  return (
+    <View>
+      <Controller
+        control={control}
+        name="email"
+        render={({ field }) => (
+          <View>
+            <TextInput
+              value={field.value}
+              onChangeText={field.onChange}
+            />
+            {errors.email && (
+              <Text className="text-red-600" accessibilityRole="alert">
+                {errors.email.message}
+              </Text>
+            )}
+          </View>
+        )}
+      />
+    </View>
+  )
+}
+```
+
+**Benefits:**
+- Immediate feedback (no network request)
+- Type-safe error messages
+- Consistent validation across forms
+
+---
+
+### 4.2 Avoiding State Race Conditions in Async Error Handling
+
+**Problem:** When a hook updates error state asynchronously and a component immediately checks that state, the component may read stale state before re-render occurs.
+
+**Anti-Pattern:**
+```typescript
+// Hook
+const checkPermission = async () => {
+  const result = await requestPermission()
+  if (!result.granted) {
+    setPermissionDenied(true) // State update
+  }
+}
+
+// Component
+const handleAction = async () => {
+  await checkPermission()
+
+  // ❌ BUG: permissionDenied is stale (still false)
+  if (permissionDenied) {
+    showError('Permission denied')
+  }
+}
+```
+
+**Correct Pattern:** Return error info directly, don't rely on state propagation
+
+```typescript
+// Hook returns result immediately
+const checkPermission = async (): Promise<{ granted: boolean, error?: string }> => {
+  const result = await requestPermission()
+
+  if (!result.granted) {
+    setPermissionDenied(true) // Update state for UI
+    return { granted: false, error: 'Permission denied' }
+  }
+
+  return { granted: true }
+}
+
+// Component uses returned value
+const handleAction = async () => {
+  const { granted, error } = await checkPermission()
+
+  if (error) {
+    showError(error) // ✅ Immediate error handling
+    return
+  }
+
+  // Continue with granted permission
+}
+```
+
+**Why this matters:**
+- Async functions should return their results/errors directly
+- State is for UI rendering, not inter-function communication
+- Avoids timing-dependent bugs
+
+---
+
+### 4.3 Service-Layer Validation Ordering (Backend)
+
+**Problem:** When a service method conflates "no data found" with "unauthorized access," legitimate scenarios (e.g., a new draft event with zero invitations) can be blocked.
+
+**Anti-Pattern:**
+```java
+// ❌ BUG: empty list means BOTH "no invitations yet" AND "wrong host"
+List<Invitation> invitations = repo.findByEventIdAndHostId(eventId, hostId);
+if (invitations.isEmpty()) {
+    throw new IllegalArgumentException("No invitations found"); // Blocks drafts!
+}
+```
+
+**Correct Pattern:** Validate existence and ownership *before* fetching dependent data:
+
+```java
+// ✅ Separate concerns: existence → ownership → data fetch
+Event event = eventRepo.findById(eventId)
+    .orElseThrow(() -> new IllegalArgumentException("Event not found"));
+
+if (!event.hostId().equals(hostId)) {
+    throw new IllegalArgumentException("Event does not belong to host");
+}
+
+// Empty list is now a valid state (new/draft event)
+List<Invitation> invitations = repo.findByEventIdAndHostId(eventId, hostId);
+```
+
+**Why this matters:**
+- Don't use data absence as an authorization check — separate the concerns
+- Empty collections are valid states for newly created resources
+- Clear, distinct error messages help debugging (not found vs. unauthorized vs. empty)
+
+---
+
+## 5. Toast/Snackbar for Transient Errors
+
+### 5.1 Toast Component
+
+**Implementation:**
+```tsx
+// features/shared/components/Toast.tsx
+import { useEffect } from 'react'
+import { View, Text, Animated } from 'react-native'
+
+export function Toast({ message, duration = 3000 }: ToastProps) {
+  const opacity = useRef(new Animated.Value(0)).current
+
+  useEffect(() => {
+    Animated.sequence([
+      Animated.timing(opacity, { toValue: 1, duration: 200 }),
+      Animated.delay(duration),
+      Animated.timing(opacity, { toValue: 0, duration: 200 }),
+    ]).start()
+  }, [message])
+
+  if (!message) return null
+
+  return (
+    <Animated.View
+      style={{ opacity }}
+      className="absolute bottom-20 self-center bg-gray-900 px-4 py-3 rounded-lg"
+    >
+      <Text className="text-white">{message}</Text>
+    </Animated.View>
+  )
+}
+```
+
+**Usage:**
+```typescript
+const [toastMessage, setToastMessage] = useState('')
+
+const handleSubmit = async () => {
+  const result = await submitRsvp({ input: data })
+
+  if (result.error) {
+    setToastMessage(parseGraphQLError(result.error))
+  } else {
+    setToastMessage('RSVP submitted successfully!')
+  }
+}
+
+return (
+  <>
+    <Form onSubmit={handleSubmit} />
+    <Toast message={toastMessage} />
+  </>
+)
+```
+
+---
+
+## 6. Error Boundaries (Render Failures)
+
+### 6.1 App-Level Error Boundary
+
+**Location:** `app/_layout.tsx` or `App.tsx`
+
+**Purpose:** Catch unexpected render crashes
+
+```tsx
+import { Component } from 'react'
+
+class AppErrorBoundary extends Component<
+  { children: React.ReactNode },
+  { hasError: boolean }
+> {
+  state = { hasError: false }
+
+  static getDerivedStateFromError() {
+    return { hasError: true }
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error('[App Error Boundary]:', error, errorInfo)
+    // Report to Sentry
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <View className="flex-1 items-center justify-center p-4">
+          <Text className="text-xl font-bold mb-2">Something went wrong</Text>
+          <Text className="text-gray-600 text-center mb-4">
+            We're sorry for the inconvenience. Please restart the app.
+          </Text>
+          <Button onPress={() => this.setState({ hasError: false })}>
+            Try Again
+          </Button>
+        </View>
+      )
+    }
+
+    return this.props.children
+  }
+}
+```
+
+---
+
+### 6.2 Feature-Level Error Boundaries
+
+**Location:** `features/<feature>/components/ErrorBoundary.tsx`
+
+**Purpose:** Isolate feature failures
+
+```tsx
+class InvitationErrorBoundary extends Component {
+  // ... same pattern
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <View className="p-4">
+          <Text>Unable to load invitation details</Text>
+          <Button onPress={() => router.back()}>Go Back</Button>
+        </View>
+      )
+    }
+
+    return this.props.children
+  }
+}
+
+// Wrap feature screens
+<InvitationErrorBoundary>
+  <InvitationViewScreen />
+</InvitationErrorBoundary>
+```
+
+---
+
+## 7. Retry Strategies
+
+### 7.1 Exponential Backoff
+
+**Pattern:**
+```typescript
+async function retryWithBackoff<T>(
+  fn: () => Promise<T>,
+  maxRetries = 3,
+  initialDelay = 1000
+): Promise<T> {
+  let lastError: Error
+
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      return await fn()
+    } catch (error) {
+      lastError = error as Error
+      const delay = initialDelay * Math.pow(2, attempt)
+      await new Promise(resolve => setTimeout(resolve, delay))
+    }
+  }
+
+  throw lastError!
+}
+```
+
+**Usage:**
+```typescript
+const fetchInvitation = async () => {
+  return retryWithBackoff(
+    () => client.query({ query: GetInvitationDocument, variables: { id } }),
+    3 // Max 3 retries
+  )
+}
+```
+
+**When to use:**
+- Read operations (queries)
+- Network errors (not business logic errors)
+
+**When NOT to use:**
+- Write operations (mutations) — risk of duplicate submissions
+- User-caused errors (validation)
+
+---
+
+### 7.2 URQL Retry Exchange
+
+**Automatic retry for network failures:**
+
+```typescript
+import { retryExchange } from '@urql/exchange-retry'
+
+const urqlClient = createClient({
+  exchanges: [
+    retryExchange({
+      initialDelayMs: 1000,
+      maxDelayMs: 15000,
+      randomDelay: true,
+      maxNumberAttempts: 3,
+      retryIf: (error) => {
+        // Only retry network errors, not GraphQL errors
+        return !!error.networkError
+      },
+    }),
+    // ... other exchanges
+  ],
+})
+```
+
+---
+
+## 8. Logging & Error Reporting
+
+### 8.1 Development Logging
+
+```typescript
+if (__DEV__) {
+  console.error('[Error]:', error)
+  console.error('[Stack]:', error.stack)
+}
+```
+
+---
+
+### 8.2 Production Error Reporting (Sentry)
+
+**Setup:**
+```typescript
+import * as Sentry from 'sentry-expo'
+
+Sentry.init({
+  dsn: env.EXPO_PUBLIC_SENTRY_DSN,
+  environment: env.EXPO_PUBLIC_APP_ENV,
+  enableInExpoDevelopment: false,
+})
+```
+
+**Usage:**
+```typescript
+try {
+  await submitRsvp()
+} catch (error) {
+  Sentry.captureException(error, {
+    extra: {
+      eventId,
+      userId,
+    },
+  })
+
+  // Still show user-friendly message
+  showToast('Unable to submit RSVP. Please try again.')
+}
+```
+
+**What to log:**
+- Unexpected errors (not validation errors)
+- Network failures (after retries exhausted)
+- Render crashes (from error boundaries)
+
+**What NOT to log:**
+- PII (emails, names, addresses)
+- Passwords or tokens
+- Expected business logic errors
+
+---
+
+## 9. Offline Handling
+
+### 9.1 Detect Connectivity
+
+```typescript
+import NetInfo from '@react-native-community/netinfo'
+
+export function useNetworkStatus() {
+  const [isOnline, setIsOnline] = useState(true)
+
+  useEffect(() => {
+    const unsubscribe = NetInfo.addEventListener(state => {
+      setIsOnline(state.isConnected ?? false)
+    })
+
+    return unsubscribe
+  }, [])
+
+  return isOnline
+}
+```
+
+**Usage:**
+```tsx
+export function App() {
+  const isOnline = useNetworkStatus()
+
+  if (!isOnline) {
+    return <OfflineBanner />
+  }
+
+  return <MainApp />
+}
+```
+
+---
+
+## 10. Error Handling Checklist
+
+For every feature:
+
+- [ ] User errors show inline messages
+- [ ] Network errors offer retry
+- [ ] GraphQL errors are parsed for user-friendly messages
+- [ ] Error messages are clear and actionable
+- [ ] Errors are logged for debugging (Sentry in production)
+- [ ] No raw error messages shown to users
+- [ ] Error boundaries wrap features
+- [ ] Forms validate client-side before submission
+- [ ] Accessibility: errors announced to screen readers
+- [ ] No PII in error logs
+
+---
+
+## 11. Summary
+
+**Error handling layers:**
+
+1. **Client-side validation** — Catch user errors before submission (Zod)
+2. **GraphQL error parsing** — Extract user messages from backend errors
+3. **Network retry** — Auto-retry transient failures (URQL retry exchange)
+4. **Error boundaries** — Catch render crashes (app-level + feature-level)
+5. **Error reporting** — Log to Sentry (production only, no PII)
+6. **Library invariant guards** — Provide fallbacks before third-party gate checks (see §12)
+
+**User experience:**
+- Clear, friendly error messages
+- Actionable guidance
+- Retry mechanisms for network errors
+- Graceful degradation (errors don't crash the app)
+
+---
+
+## 12. Library Invariant Guards (Fallbacks Before Gate Checks)
+
+When integrating a third-party library (auth SDKs, `expo-auth-session`, payment SDKs, push providers) that throws on empty or missing constructor inputs, do NOT let an empty env var reach the library. Instead, pass a platform-appropriate fallback BEFORE your own application-level gate check.
+
+### Why this pattern exists
+
+Two checks happen in OAuth-style flows:
+
+1. **Library invariant check** — the SDK throws if a required input (redirect URI, client ID) is empty or malformed. This is enforced by the library itself, before your code can react.
+2. **Application gate check** — your hook decides whether to allow the user to invoke the action ("is OAuth configured? if not, render the button disabled").
+
+If the env var is empty and you pass it straight through, the library throws BEFORE the application gate can render a graceful disabled state. The result looks like an env-var bug but is really an ordering bug.
+
+### Canonical pattern
+
+```typescript
+// ✅ CORRECT — library invariant always satisfied; app gate runs cleanly
+const safeRedirectUri = appleRedirectUri || AuthSession.makeRedirectUri()
+// ^ library now gets a valid URI no matter what
+
+const isConfigured = Boolean(appleServiceId && appleRedirectUri)
+if (!isConfigured) {
+  // Render disabled button, telemetry, etc.
+  return { signIn: noop, isAvailable: false }
+}
+```
+
+```typescript
+// ❌ WRONG — empty string reaches library, library throws before gate runs
+const request = AuthSession.useAuthRequest({
+  redirectUri: appleRedirectUri,  // empty string here = library throws
+  clientId: appleServiceId,
+})
+```
+
+### When to apply
+
+- OAuth / social sign-in hooks (Apple, Google, GitHub, etc.)
+- Push notification token registration where the SDK requires a `projectId`
+- Payment SDK initialisation (Stripe, RevenueCat) where missing API key throws
+- Any `useAuthRequest`, `useAuthSession`, or `init(...)` call from a third-party library that does NOT itself accept undefined as a valid "feature off" signal
+
+### When NOT to apply
+
+- When the library natively supports `undefined` / `null` as "feature disabled" — let the library do its job.
+- When the fallback would be unsafe (e.g. a placeholder API key that could accidentally authenticate to a real endpoint). In those cases the app gate must run BEFORE the library is even imported (dynamic import behind the gate).
+
+### Test implications
+
+This pattern is what makes the consumer-trace gate (`04_frontend-testing-strategy.mdc` §18.5) work. E2E specs that only assert rendering of the disabled button will pass even with the env var missing, because the fallback satisfies the library invariant and the app gate disables the feature cleanly. Do not "fix" specs by setting the env var without first confirming the consumer doesn't already have a guard.
+
+> Empirical justification: `useAppleSignIn.ts:147` uses `const safeRedirectUri = appleRedirectUri || AuthSession.makeRedirectUri()`. During the `make-e2e-test-work-locally` MAD pipeline, this guard neutralised an `EXPO_PUBLIC_APPLE_REDIRECT_URI` drift between `.env.example` and `.env.frontend.dev` — no spec broke, even though the env var was effectively absent in some environments. The pattern is what made an apparent "force multiplier" hypothesis return as "hypothesis negative" during the consumer trace.
+
+---
+
+**Related:** See [06_graphql-integration.mdc](./06_graphql-integration.mdc) for URQL error handling configuration.
