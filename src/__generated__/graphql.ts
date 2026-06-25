@@ -17,9 +17,140 @@ export type Scalars = {
   Float: { input: number; output: number; }
 };
 
+export type CalendarEvent = {
+  __typename?: 'CalendarEvent';
+  allDay: Scalars['Boolean']['output'];
+  colorHex: Scalars['String']['output'];
+  /** ISO date of the occurrence. */
+  date: Scalars['String']['output'];
+  /** 1=Mon .. 7=Sun for the occurrence. */
+  dayOfWeek: Scalars['Int']['output'];
+  /** ISO-8601 instant for the end, null when allDay/open-ended. */
+  end?: Maybe<Scalars['String']['output']>;
+  id: Scalars['ID']['output'];
+  /** True when this event needs a responsible adult but has none. */
+  isCoverageGap: Scalars['Boolean']['output'];
+  location?: Maybe<Scalars['String']['output']>;
+  needsDriver: Scalars['Boolean']['output'];
+  /** Whom the event is about (color comes from the primary owner). */
+  ownerMembers: Array<HouseholdMember>;
+  /** Which adult is responsible for logistics; null => coverage gap when a driver is needed. */
+  responsibleMember?: Maybe<HouseholdMember>;
+  /** ISO-8601 instant for the start, null when allDay. */
+  start?: Maybe<Scalars['String']['output']>;
+  /** Backend-formatted label, e.g. '4:00 – 5:30', '9:00', 'All day'. */
+  timeLabel: Scalars['String']['output'];
+  title: Scalars['String']['output'];
+};
+
+export type CalendarPeriod = {
+  __typename?: 'CalendarPeriod';
+  /** ISO date of the last day in the window. */
+  end: Scalars['String']['output'];
+  /** Human label, e.g. 'Jun 23 – 29, 2026' or 'Thursday June 26'. */
+  label: Scalars['String']['output'];
+  /** DAY or WEEK. */
+  range: CalendarRange;
+  /** ISO date (yyyy-MM-dd) of the first day in the window. */
+  start: Scalars['String']['output'];
+  timezone: Scalars['String']['output'];
+};
+
+export type CalendarPeriodInput = {
+  /** ISO date (yyyy-MM-dd) anchoring the window; the server resolves the window in the household tz. */
+  anchor: Scalars['String']['input'];
+  range: CalendarRange;
+};
+
+export type CalendarRange =
+  | 'DAY'
+  | 'WEEK';
+
+export type ConnectedAccount = {
+  __typename?: 'ConnectedAccount';
+  id: Scalars['ID']['output'];
+  label: Scalars['String']['output'];
+  provider: Scalars['String']['output'];
+  status: SyncStatus;
+  statusLabel: Scalars['String']['output'];
+};
+
+export type CoverageGap = {
+  __typename?: 'CoverageGap';
+  eventId: Scalars['ID']['output'];
+  /** Full sentence, e.g. "Fri 3:30 — Maya's pickup has no responsible adult." */
+  label: Scalars['String']['output'];
+  /** Compact label, e.g. 'Fri 3:30 — Maya pickup unassigned'. */
+  shortLabel: Scalars['String']['output'];
+};
+
+export type CreateCalendarEventInput = {
+  allDay: Scalars['Boolean']['input'];
+  /** ISO date (yyyy-MM-dd) the event occurs on. */
+  date: Scalars['String']['input'];
+  /** 24h 'HH:mm', optional. */
+  endTime?: InputMaybe<Scalars['String']['input']>;
+  location?: InputMaybe<Scalars['String']['input']>;
+  needsDriver: Scalars['Boolean']['input'];
+  /** ≥1 owner member id. */
+  ownerMemberIds: Array<Scalars['ID']['input']>;
+  /** Responsible adult member id; null => Unassigned (coverage gap if a driver is needed). */
+  responsibleMemberId?: InputMaybe<Scalars['ID']['input']>;
+  /** 24h 'HH:mm', null when allDay. */
+  startTime?: InputMaybe<Scalars['String']['input']>;
+  title: Scalars['String']['input'];
+};
+
+export type CreateCalendarEventPayload = {
+  __typename?: 'CreateCalendarEventPayload';
+  event: CalendarEvent;
+};
+
 export type HealthStatus = {
   __typename?: 'HealthStatus';
   status: Scalars['String']['output'];
+};
+
+export type Household = {
+  __typename?: 'Household';
+  id: Scalars['ID']['output'];
+  name: Scalars['String']['output'];
+  timezone: Scalars['String']['output'];
+};
+
+export type HouseholdCalendar = {
+  __typename?: 'HouseholdCalendar';
+  connectedAccounts: Array<ConnectedAccount>;
+  coverageGaps: Array<CoverageGap>;
+  events: Array<CalendarEvent>;
+  household: Household;
+  load: WeeklyLoad;
+  members: Array<HouseholdMember>;
+  period: CalendarPeriod;
+};
+
+export type HouseholdMember = {
+  __typename?: 'HouseholdMember';
+  /** Age label for children (e.g. '8'), null for adults. */
+  ageLabel?: Maybe<Scalars['String']['output']>;
+  /** Authoritative per-person color (e.g. '#C4603D'). */
+  colorHex: Scalars['String']['output'];
+  displayName: Scalars['String']['output'];
+  id: Scalars['ID']['output'];
+  /** Single-letter avatar initial. */
+  initial: Scalars['String']['output'];
+  /** True for adults who can be a responsible adult. */
+  isResponsibleCapable: Scalars['Boolean']['output'];
+  kind: MemberKind;
+  role: MemberRole;
+};
+
+export type LoadEntry = {
+  __typename?: 'LoadEntry';
+  count: Scalars['Int']['output'];
+  member: HouseholdMember;
+  /** Share of the responsible-event total, 0–100. */
+  percent: Scalars['Int']['output'];
 };
 
 /** Input for the login mutation (email + password). */
@@ -44,8 +175,19 @@ export type LogoutPayload = {
   success: Scalars['Boolean']['output'];
 };
 
+export type MemberKind =
+  | 'ADULT'
+  | 'CHILD';
+
+export type MemberRole =
+  | 'ADMIN'
+  | 'MEMBER'
+  | 'NONE';
+
 export type Mutation = {
   __typename?: 'Mutation';
+  /** Create a calendar event in the authenticated user's household (HES-CAL). */
+  createCalendarEvent: CreateCalendarEventPayload;
   /** Authenticate with email + password. */
   login: LoginPayload;
   /** Log out the current session (idempotent). */
@@ -54,6 +196,11 @@ export type Mutation = {
   refreshToken: RefreshTokenPayload;
   /** Register a new user. */
   registerUser: RegisterUserPayload;
+};
+
+
+export type MutationCreateCalendarEventArgs = {
+  input: CreateCalendarEventInput;
 };
 
 
@@ -75,8 +222,15 @@ export type Query = {
   __typename?: 'Query';
   /** Health check for monitoring. */
   health: HealthStatus;
+  /** The authenticated user's household calendar for the requested period (HES-CAL). */
+  householdCalendar: HouseholdCalendar;
   /** The authenticated user, or null when unauthenticated (paused on the frontend without a token). */
   me?: Maybe<User>;
+};
+
+
+export type QueryHouseholdCalendarArgs = {
+  period: CalendarPeriodInput;
 };
 
 /** Input for the refreshToken mutation. */
@@ -108,6 +262,10 @@ export type RegisterUserPayload = {
   userId: Scalars['ID']['output'];
 };
 
+export type SyncStatus =
+  | 'DISCONNECTED'
+  | 'SYNCED';
+
 /** The authenticated user profile. */
 export type User = {
   __typename?: 'User';
@@ -116,6 +274,14 @@ export type User = {
   id: Scalars['ID']['output'];
   lastName?: Maybe<Scalars['String']['output']>;
   preferredLanguage: Scalars['String']['output'];
+};
+
+export type WeeklyLoad = {
+  __typename?: 'WeeklyLoad';
+  entries: Array<LoadEntry>;
+  /** Optional nudge, e.g. 'Pallavi is carrying a bit more this week.' */
+  summaryLabel?: Maybe<Scalars['String']['output']>;
+  total: Scalars['Int']['output'];
 };
 
 export type LoginMutationVariables = Exact<{
@@ -143,6 +309,20 @@ export type LogoutMutationVariables = Exact<{ [key: string]: never; }>;
 
 
 export type LogoutMutation = { __typename?: 'Mutation', logout: { __typename?: 'LogoutPayload', success: boolean } };
+
+export type CreateCalendarEventMutationVariables = Exact<{
+  input: CreateCalendarEventInput;
+}>;
+
+
+export type CreateCalendarEventMutation = { __typename?: 'Mutation', createCalendarEvent: { __typename?: 'CreateCalendarEventPayload', event: { __typename?: 'CalendarEvent', id: string, title: string, start?: string | null, end?: string | null, allDay: boolean, timeLabel: string, dayOfWeek: number, date: string, colorHex: string, location?: string | null, needsDriver: boolean, isCoverageGap: boolean, ownerMembers: Array<{ __typename?: 'HouseholdMember', id: string, displayName: string, initial: string, colorHex: string }>, responsibleMember?: { __typename?: 'HouseholdMember', id: string, displayName: string, initial: string, colorHex: string } | null } } };
+
+export type HouseholdCalendarQueryVariables = Exact<{
+  period: CalendarPeriodInput;
+}>;
+
+
+export type HouseholdCalendarQuery = { __typename?: 'Query', householdCalendar: { __typename?: 'HouseholdCalendar', household: { __typename?: 'Household', id: string, name: string, timezone: string }, period: { __typename?: 'CalendarPeriod', range: CalendarRange, start: string, end: string, label: string, timezone: string }, members: Array<{ __typename?: 'HouseholdMember', id: string, displayName: string, initial: string, colorHex: string, kind: MemberKind, role: MemberRole, isResponsibleCapable: boolean, ageLabel?: string | null }>, events: Array<{ __typename?: 'CalendarEvent', id: string, title: string, start?: string | null, end?: string | null, allDay: boolean, timeLabel: string, dayOfWeek: number, date: string, colorHex: string, location?: string | null, needsDriver: boolean, isCoverageGap: boolean, ownerMembers: Array<{ __typename?: 'HouseholdMember', id: string, displayName: string, initial: string, colorHex: string }>, responsibleMember?: { __typename?: 'HouseholdMember', id: string, displayName: string, initial: string, colorHex: string } | null }>, coverageGaps: Array<{ __typename?: 'CoverageGap', eventId: string, label: string, shortLabel: string }>, load: { __typename?: 'WeeklyLoad', total: number, summaryLabel?: string | null, entries: Array<{ __typename?: 'LoadEntry', count: number, percent: number, member: { __typename?: 'HouseholdMember', id: string, displayName: string, initial: string, colorHex: string } }> }, connectedAccounts: Array<{ __typename?: 'ConnectedAccount', id: string, provider: string, label: string, status: SyncStatus, statusLabel: string }> } };
 
 export type MeQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -199,6 +379,126 @@ export const LogoutDocument = gql`
 
 export function useLogoutMutation() {
   return Urql.useMutation<LogoutMutation, LogoutMutationVariables>(LogoutDocument);
+};
+export const CreateCalendarEventDocument = gql`
+    mutation CreateCalendarEvent($input: CreateCalendarEventInput!) {
+  createCalendarEvent(input: $input) {
+    event {
+      id
+      title
+      start
+      end
+      allDay
+      timeLabel
+      dayOfWeek
+      date
+      colorHex
+      location
+      needsDriver
+      isCoverageGap
+      ownerMembers {
+        id
+        displayName
+        initial
+        colorHex
+      }
+      responsibleMember {
+        id
+        displayName
+        initial
+        colorHex
+      }
+    }
+  }
+}
+    `;
+
+export function useCreateCalendarEventMutation() {
+  return Urql.useMutation<CreateCalendarEventMutation, CreateCalendarEventMutationVariables>(CreateCalendarEventDocument);
+};
+export const HouseholdCalendarDocument = gql`
+    query HouseholdCalendar($period: CalendarPeriodInput!) {
+  householdCalendar(period: $period) {
+    household {
+      id
+      name
+      timezone
+    }
+    period {
+      range
+      start
+      end
+      label
+      timezone
+    }
+    members {
+      id
+      displayName
+      initial
+      colorHex
+      kind
+      role
+      isResponsibleCapable
+      ageLabel
+    }
+    events {
+      id
+      title
+      start
+      end
+      allDay
+      timeLabel
+      dayOfWeek
+      date
+      colorHex
+      location
+      needsDriver
+      isCoverageGap
+      ownerMembers {
+        id
+        displayName
+        initial
+        colorHex
+      }
+      responsibleMember {
+        id
+        displayName
+        initial
+        colorHex
+      }
+    }
+    coverageGaps {
+      eventId
+      label
+      shortLabel
+    }
+    load {
+      total
+      summaryLabel
+      entries {
+        member {
+          id
+          displayName
+          initial
+          colorHex
+        }
+        count
+        percent
+      }
+    }
+    connectedAccounts {
+      id
+      provider
+      label
+      status
+      statusLabel
+    }
+  }
+}
+    `;
+
+export function useHouseholdCalendarQuery(options: Omit<Urql.UseQueryArgs<HouseholdCalendarQueryVariables>, 'query'>) {
+  return Urql.useQuery<HouseholdCalendarQuery, HouseholdCalendarQueryVariables>({ query: HouseholdCalendarDocument, ...options });
 };
 export const MeDocument = gql`
     query Me {

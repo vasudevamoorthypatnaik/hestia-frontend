@@ -1,0 +1,78 @@
+query HouseholdCalendar($period: CalendarPeriodInput!) {
+  householdCalendar(period: $period) {
+    household {
+      id
+      name
+      timezone
+    }
+    period {
+      range
+      start
+      end
+      label
+      timezone
+    }
+    members {
+      id
+      displayName
+      initial
+      colorHex
+      kind
+      role
+      isResponsibleCapable
+      ageLabel
+    }
+    events {
+      id
+      title
+      start
+      end
+      allDay
+      timeLabel
+      dayOfWeek
+      date
+      colorHex
+      location
+      needsDriver
+      isCoverageGap
+      ownerMembers {
+        id
+        displayName
+        initial
+        colorHex
+      }
+      responsibleMember {
+        id
+        displayName
+        initial
+        colorHex
+      }
+    }
+    coverageGaps {
+      eventId
+      label
+      shortLabel
+    }
+    load {
+      total
+      summaryLabel
+      entries {
+        member {
+          id
+          displayName
+          initial
+          colorHex
+        }
+        count
+        percent
+      }
+    }
+    connectedAccounts {
+      id
+      provider
+      label
+      status
+      statusLabel
+    }
+  }
+}

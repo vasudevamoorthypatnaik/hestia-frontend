@@ -1,0 +1,30 @@
+mutation CreateCalendarEvent($input: CreateCalendarEventInput!) {
+  createCalendarEvent(input: $input) {
+    event {
+      id
+      title
+      start
+      end
+      allDay
+      timeLabel
+      dayOfWeek
+      date
+      colorHex
+      location
+      needsDriver
+      isCoverageGap
+      ownerMembers {
+        id
+        displayName
+        initial
+        colorHex
+      }
+      responsibleMember {
+        id
+        displayName
+        initial
+        colorHex
+      }
+    }
+  }
+}
