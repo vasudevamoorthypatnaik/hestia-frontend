@@ -1,0 +1,6 @@
+{
+  "groups": {
+    "auth": { "description": "Authentication flows", "files": ["e2e/web/auth-login.spec.ts"] }
+  },
+  "note": "Local-pointing E2E groups (HES-SETUP). Extend as features land."
+}

@@ -1,6 +1,6 @@
 // WeakRef polyfill must load before React Navigation (which uses WeakRef internally).
 import '@/shared/polyfills/weakref'
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState } from 'react'
 import { Stack } from 'expo-router'
 import { Provider as URQLProvider } from 'urql'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
@@ -32,7 +32,6 @@ void SplashScreen.preventAutoHideAsync()
  */
 export default function RootLayout() {
   const [client, setClient] = useState(getUrqlClient())
-  const [themeReady, setThemeReady] = useState(false)
 
   const [fontsLoaded, fontError] = useFonts({
     Newsreader,
@@ -45,9 +44,10 @@ export default function RootLayout() {
     return onUrqlClientReset(() => setClient(getUrqlClient()))
   }, [])
 
-  const onThemeReady = useCallback(() => setThemeReady(true), [])
-
-  const ready = (fontsLoaded || !!fontError) && themeReady
+  // Gate ONLY on fonts — NOT on theme. ThemeProvider must mount unconditionally; gating the
+  // whole tree (incl. ThemeProvider) on a theme-ready signal it emits would deadlock (the app
+  // would render null forever and the screen stays blank).
+  const ready = fontsLoaded || !!fontError
   useEffect(() => {
     if (ready) void SplashScreen.hideAsync()
   }, [ready])
@@ -59,7 +59,7 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <ThemeProvider onReady={onThemeReady}>
+        <ThemeProvider>
           <LocaleProvider>
             <AlertProvider>
               <URQLProvider value={client}>
