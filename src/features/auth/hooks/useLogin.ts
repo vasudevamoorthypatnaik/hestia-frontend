@@ -72,15 +72,22 @@ export function useLogin(): UseLoginReturn {
         setIsLoading(false)
 
         if (result.error) {
-          // Generic message for ALL credential/auth failures — no enumeration (T2).
-          setGlobalError(GENERIC_AUTH_ERROR)
+          // Distinguish a transport failure (server down, network, CORS) from a credential
+          // rejection. Credential failures stay generic + enumeration-safe (T2); network
+          // failures get a connectivity message rather than a misleading "wrong password".
+          setGlobalError(result.error.networkError ? NETWORK_ERROR : GENERIC_AUTH_ERROR)
           return true
         }
 
         const loginData = result.data?.login
-        if (loginData) {
-          await setTokens(loginData.accessToken, loginData.refreshToken)
+        if (!loginData) {
+          // No error but no payload — a malformed/empty response. Don't navigate to the
+          // authed home with no tokens (would flicker back to login); surface the error.
+          setGlobalError(GENERIC_AUTH_ERROR)
+          return true
         }
+
+        await setTokens(loginData.accessToken, loginData.refreshToken)
         safeReplace(POST_LOGIN_DESTINATION)
         return true
       } catch (error) {

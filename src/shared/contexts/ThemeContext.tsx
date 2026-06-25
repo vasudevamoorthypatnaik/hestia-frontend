@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useRef, type ReactNode } from 'react'
+import { createContext, useContext, useState, useEffect, type ReactNode } from 'react'
 import { useColorScheme as useSystemColorScheme } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { colorScheme as nativeWindColorScheme } from 'nativewind'
@@ -16,39 +16,20 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
 
 const THEME_STORAGE_KEY = '@hestia/theme'
-const THEME_LOAD_TIMEOUT_MS = 300
 
 interface ThemeProviderProps {
   children: ReactNode
-  /** Called once after saved theme loads (or after timeout) — gates splash hide. */
-  onReady?: () => void
 }
 
-export function ThemeProvider({ children, onReady }: ThemeProviderProps) {
+export function ThemeProvider({ children }: ThemeProviderProps) {
   const systemColorScheme = useSystemColorScheme() ?? 'light'
   // Phase 1 design is a warm light palette → default to 'light' (invite defaulted 'dark').
   const [theme, setThemeState] = useState<Theme>('light')
-  const hasCalledOnReady = useRef(false)
-  const onReadyRef = useRef(onReady)
-  useEffect(() => {
-    onReadyRef.current = onReady
-  }, [onReady])
 
+  // Load the saved theme preference on mount. The provider mounts unconditionally (the root
+  // layout gates only on fonts), so there is no splash-coordination callback to fire.
   useEffect(() => {
-    const markReady = () => {
-      if (hasCalledOnReady.current) return
-      hasCalledOnReady.current = true
-      onReadyRef.current?.()
-    }
-    const timeoutId = setTimeout(() => {
-      console.warn(`[ThemeProvider] Theme load timed out after ${THEME_LOAD_TIMEOUT_MS}ms`)
-      markReady()
-    }, THEME_LOAD_TIMEOUT_MS)
-    loadTheme().finally(() => {
-      clearTimeout(timeoutId)
-      markReady()
-    })
-    return () => clearTimeout(timeoutId)
+    void loadTheme()
   }, [])
 
   // Single source of truth for the NativeWind observable + web `dark` class.

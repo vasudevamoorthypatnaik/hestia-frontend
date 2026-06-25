@@ -56,4 +56,29 @@ describe('useLogin', () => {
     expect(mockSetTokens).not.toHaveBeenCalled()
     expect(mockSafeReplace).not.toHaveBeenCalled()
   })
+
+  it('shows a connectivity error (not "wrong password") on a network failure', async () => {
+    mockLoginMutation.mockResolvedValue({ error: { networkError: new Error('Failed to fetch') } })
+    const { result } = renderHook(() => useLogin())
+    act(() => result.current.onChange('email', 'test@hestia.app'))
+    act(() => result.current.onChange('password', 'password123'))
+    await act(async () => {
+      await result.current.onSubmit()
+    })
+    expect(result.current.globalError).toMatch(/connection/i)
+    expect(mockSafeReplace).not.toHaveBeenCalled()
+  })
+
+  it('does not navigate when the response has no error but no login payload', async () => {
+    mockLoginMutation.mockResolvedValue({ data: { login: null } })
+    const { result } = renderHook(() => useLogin())
+    act(() => result.current.onChange('email', 'test@hestia.app'))
+    act(() => result.current.onChange('password', 'password123'))
+    await act(async () => {
+      await result.current.onSubmit()
+    })
+    expect(mockSetTokens).not.toHaveBeenCalled()
+    expect(mockSafeReplace).not.toHaveBeenCalled()
+    expect(result.current.globalError).toBe('Invalid email or password. Please try again.')
+  })
 })
