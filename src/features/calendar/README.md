@@ -23,8 +23,8 @@ the only client-side logic (pure UI state).
 `useHouseholdCalendar(range)` → generated `useHouseholdCalendarQuery` (PAUSED until an auth token
 hydrates — no anonymous request, TAC-6). Period navigation re-queries the backend, which recomputes
 the window in the household timezone. Creating an event → `useCreateCalendarEvent` →
-`createCalendarEvent` mutation; URQL's document cache invalidates the calendar query so the new
-event appears.
+`createCalendarEvent` mutation; on success the modal's `onCreated` callback triggers the screen's
+`refetch()` (network-only) so the new event is guaranteed to appear.
 
 ## Files
 - `api/*.graphql` — query + mutation documents (codegen → `@/__generated__/graphql`).
@@ -44,8 +44,8 @@ Out: smart capture, full Mental Load tab, sync-health screens, event edit/delete
 
 ## Tests
 Jest/RTL: `useMemberFilter`, `useHouseholdCalendar` (pause + nav), `useCreateCalendarEvent`,
-`EventCard`, `CoverageGapBanner`, `LoadBar`, `NewEventForm` (validation + submit). Playwright E2E:
-`e2e/web/calendar.spec.ts` (web week view + mobile-viewport day view).
+`EventCard`, `CoverageGapBanner`, `LoadBar`, `NewEventForm` (validation + submit). Playwright E2E
+(`e2e/web/calendar.spec.ts`, web week view + mobile-viewport day view) is added in the E2E phase.
 
 ## Backend
 `hestia-backend` module `hestia-event` (`com.hestia.event`): `householdCalendar` query +
