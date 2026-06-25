@@ -1,6 +1,10 @@
 {
   "groups": {
-    "auth": { "description": "Authentication flows", "files": ["e2e/web/auth-login.spec.ts"] }
+    "auth": { "description": "Authentication flows", "files": ["e2e/web/auth-login.spec.ts"] },
+    "calendar": {
+      "description": "Household calendar view + new event (HES-CAL)",
+      "files": ["e2e/web/calendar.spec.ts"]
+    }
   },
   "note": "Local-pointing E2E groups (HES-SETUP). Extend as features land."
 }

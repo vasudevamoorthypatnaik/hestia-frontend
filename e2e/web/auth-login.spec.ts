@@ -32,7 +32,8 @@ test.describe('Login (/auth/login)', () => {
     await page.getByLabel('Email').fill(TEST_USER.email)
     await page.getByLabel('Password', { exact: true }).fill(TEST_USER.password)
     await page.getByRole('button', { name: 'Sign in' }).click()
-    await expect(page.getByText('Welcome back.', { exact: true })).toBeVisible({ timeout: 15000 })
+    // The auth-gated landing is now the household calendar (HES-CAL) — Sign out remains reachable.
+    await expect(page.getByText("This week's load")).toBeVisible({ timeout: 15000 })
     await expect(page.getByRole('button', { name: 'Sign out' })).toBeVisible()
   })
 })
