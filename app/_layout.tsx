@@ -1,3 +1,5 @@
+// WeakRef polyfill must load before React Navigation (which uses WeakRef internally).
+import '@/shared/polyfills/weakref'
 import { useEffect, useState, useCallback } from 'react'
 import { Stack } from 'expo-router'
 import { Provider as URQLProvider } from 'urql'
@@ -13,6 +15,9 @@ import HankenGroteskBold from '@expo-google-fonts/hanken-grotesk/700Bold/HankenG
 import { getUrqlClient, onUrqlClientReset } from '@/shared/graphql/client'
 import { ThemeProvider } from '@/shared/contexts/ThemeContext'
 import { AlertProvider } from '@/shared/contexts/AlertContext'
+import { LocaleProvider } from '@/shared/i18n/LocaleContext'
+import { NetworkStatusProvider } from '@/shared/contexts/NetworkStatusContext'
+import { UserProfileProvider } from '@/shared/contexts/UserProfileContext'
 import { initSentry } from '@/shared/config/sentry'
 import '../global.css'
 
@@ -55,12 +60,18 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <ThemeProvider onReady={onThemeReady}>
-          <AlertProvider>
-            <URQLProvider value={client}>
-              <StatusBar style="auto" />
-              <Stack screenOptions={{ headerShown: false }} />
-            </URQLProvider>
-          </AlertProvider>
+          <LocaleProvider>
+            <AlertProvider>
+              <URQLProvider value={client}>
+                <NetworkStatusProvider>
+                  <UserProfileProvider>
+                    <StatusBar style="auto" />
+                    <Stack screenOptions={{ headerShown: false }} />
+                  </UserProfileProvider>
+                </NetworkStatusProvider>
+              </URQLProvider>
+            </AlertProvider>
+          </LocaleProvider>
         </ThemeProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
