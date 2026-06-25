@@ -18,6 +18,8 @@ interface UseHouseholdCalendarResult {
   shiftPeriod: (direction: number) => void
   /** Reset to the current week/today. */
   resetToToday: () => void
+  /** Force a fresh fetch (e.g. after creating an event). */
+  refetch: () => void
   hasToken: boolean
 }
 
@@ -33,10 +35,15 @@ export function useHouseholdCalendar(range: CalendarRange): UseHouseholdCalendar
 
   const [anchor, setAnchor] = useState<string>(() => todayIso())
 
-  const [{ data, fetching, error }] = useHouseholdCalendarQuery({
+  const [{ data, fetching, error }, reexecuteQuery] = useHouseholdCalendarQuery({
     variables: { period: { anchor, range } },
     pause: !hasToken,
   })
+
+  const refetch = useCallback(
+    () => reexecuteQuery({ requestPolicy: 'network-only' }),
+    [reexecuteQuery]
+  )
 
   const shiftPeriod = useCallback(
     (direction: number) => {
@@ -54,6 +61,7 @@ export function useHouseholdCalendar(range: CalendarRange): UseHouseholdCalendar
     anchor,
     shiftPeriod,
     resetToToday,
+    refetch,
     hasToken,
   }
 }

@@ -1,6 +1,5 @@
 import { View, Text, Pressable } from 'react-native'
-import { MemberDot } from '@/features/calendar/components/MemberDot'
-import { MemberRoleLabel } from '@/features/calendar/components/MemberDot'
+import { MemberDot, MemberRoleLabel } from '@/features/calendar/components/MemberDot'
 import type { ConnectedAccountVM, MemberVM } from '@/features/calendar/types'
 import { SyncStatusValues } from '@/features/calendar/types'
 

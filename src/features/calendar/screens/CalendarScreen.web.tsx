@@ -16,7 +16,7 @@ import { NewEventModal } from '@/features/calendar/components/NewEventModal.web'
 /** Web household dashboard — Mon–Sun week grid, member sidebar, coverage gaps, weekly load. */
 export default function CalendarScreenWeb() {
   const router = useRouter()
-  const { calendar, fetching, error, shiftPeriod, anchor } = useHouseholdCalendar(
+  const { calendar, fetching, error, shiftPeriod, anchor, refetch } = useHouseholdCalendar(
     CalendarRangeValues.Week
   )
   const members = calendar?.members ?? []
@@ -90,6 +90,7 @@ export default function CalendarScreenWeb() {
         members={members}
         defaultDate={anchor}
         onClose={() => setShowNew(false)}
+        onCreated={refetch}
       />
     </View>
   )

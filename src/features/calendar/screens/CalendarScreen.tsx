@@ -16,7 +16,7 @@ import { NewEventModal } from '@/features/calendar/components/NewEventModal'
 /** Mobile household view — a single day's agenda with member filters and coverage gaps. */
 export default function CalendarScreen() {
   const router = useRouter()
-  const { calendar, fetching, error, shiftPeriod, anchor } = useHouseholdCalendar(
+  const { calendar, fetching, error, shiftPeriod, anchor, refetch } = useHouseholdCalendar(
     CalendarRangeValues.Day
   )
   const members = calendar?.members ?? []
@@ -97,6 +97,7 @@ export default function CalendarScreen() {
         members={members}
         defaultDate={anchor}
         onClose={() => setShowNew(false)}
+        onCreated={refetch}
       />
     </View>
   )

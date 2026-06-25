@@ -1,4 +1,5 @@
 import { renderHook, act } from '@testing-library/react-native'
+import { useHouseholdCalendar } from './useHouseholdCalendar'
 
 const mockTokenRef: { current: string | null } = { current: 'token-123' }
 const mockUseHouseholdCalendarQuery = jest.fn()
@@ -12,8 +13,6 @@ jest.mock('@/shared/auth/token', () => ({
   getTokenChangeVersion: () => 0,
   getAccessTokenSync: () => mockTokenRef.current,
 }))
-
-import { useHouseholdCalendar } from './useHouseholdCalendar'
 
 describe('useHouseholdCalendar', () => {
   beforeEach(() => {

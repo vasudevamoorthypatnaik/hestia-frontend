@@ -10,16 +10,21 @@ export function NewEventModal({
   members,
   defaultDate,
   onClose,
+  onCreated,
 }: {
   visible: boolean
   members: readonly MemberVM[]
   defaultDate: string
   onClose: () => void
+  onCreated?: () => void
 }) {
   const { create, submitting, error } = useCreateCalendarEvent()
 
   const handleSubmit = async (input: CreateCalendarEventInput) => {
-    if (await create(input)) onClose()
+    if (await create(input)) {
+      onCreated?.()
+      onClose()
+    }
   }
 
   return (

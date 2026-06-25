@@ -1,12 +1,11 @@
 import { renderHook, act } from '@testing-library/react-native'
+import { useCreateCalendarEvent } from './useCreateCalendarEvent'
+import type { CreateCalendarEventInput } from '@/__generated__/graphql'
 
 const mockExecute = jest.fn()
 jest.mock('@/__generated__/graphql', () => ({
   useCreateCalendarEventMutation: () => [{ fetching: false }, mockExecute],
 }))
-
-import { useCreateCalendarEvent } from './useCreateCalendarEvent'
-import type { CreateCalendarEventInput } from '@/__generated__/graphql'
 
 const input: CreateCalendarEventInput = {
   title: 'Dentist',
