@@ -54,13 +54,18 @@ export async function setAccessToken(token: string): Promise<void> {
 }
 
 export async function getAccessToken(): Promise<string | null> {
+  const previous = _cachedAccessToken
+  let token: string | null
   if (isWeb) {
-    const token = localStorage.getItem(ACCESS_TOKEN_KEY)
-    _cachedAccessToken = token
-    return token
+    token = localStorage.getItem(ACCESS_TOKEN_KEY)
+  } else {
+    token = await SecureStore.getItemAsync(ACCESS_TOKEN_KEY)
   }
-  const token = await SecureStore.getItemAsync(ACCESS_TOKEN_KEY)
   _cachedAccessToken = token
+  // Native cold-start: the async read can hydrate the cache from null → a real token. Emit
+  // so token-pub-sub consumers (UserProfileProvider) re-render and un-pause `me`; otherwise
+  // an app restart leaves them stuck at hasToken=false. (PR review HIGH.)
+  if (previous !== token) emitTokenChange()
   return token
 }
 
@@ -85,10 +90,15 @@ export function getAccessTokenSync(): string | null {
   return _cachedAccessToken
 }
 
-/** Persist both tokens together (login). */
+/**
+ * Persist both tokens together (login). Refresh is written FIRST (it does not emit), then the
+ * access token (which emits the token-change event). So the reactive "authenticated" signal
+ * only fires once BOTH tokens are durably stored — if the refresh write throws, the access
+ * token is never written or emitted, avoiding an access-token-without-refresh state. (PR review MED.)
+ */
 export async function setTokens(accessToken: string, refreshToken: string): Promise<void> {
-  await setAccessToken(accessToken)
   await setRefreshToken(refreshToken)
+  await setAccessToken(accessToken)
 }
 
 /** Clear all stored auth tokens (logout) — T5. */

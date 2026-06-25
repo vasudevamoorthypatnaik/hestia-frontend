@@ -1,7 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 
-const API = process.env.E2E_API_URL ?? 'http://localhost:8082/graphql'
+const API = process.env.E2E_API_URL ?? 'http://localhost:8080/graphql'
 const AUTH_DIR = path.resolve(__dirname, '.auth')
 const EMPTY_STATE = { cookies: [], origins: [] }
 

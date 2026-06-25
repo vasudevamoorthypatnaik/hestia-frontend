@@ -72,10 +72,25 @@ export function useLogin(): UseLoginReturn {
         setIsLoading(false)
 
         if (result.error) {
-          // Distinguish a transport failure (server down, network, CORS) from a credential
-          // rejection. Credential failures stay generic + enumeration-safe (T2); network
-          // failures get a connectivity message rather than a misleading "wrong password".
-          setGlobalError(result.error.networkError ? NETWORK_ERROR : GENERIC_AUTH_ERROR)
+          // Transport failure (server down, network, CORS) → connectivity message.
+          if (result.error.networkError) {
+            setGlobalError(NETWORK_ERROR)
+            return true
+          }
+          // Rate-limit lockout is FORBIDDEN with a safe backend userMessage — surface it so the
+          // user isn't told "wrong password" and made to keep retrying during lockout. Credential
+          // failures (UNAUTHORIZED) stay generic + enumeration-safe (T2). (PR review MED.)
+          const rateLimited = result.error.graphQLErrors?.find(
+            (e) => e.extensions?.['classification'] === 'FORBIDDEN'
+          )
+          if (rateLimited) {
+            setGlobalError(
+              (rateLimited.extensions?.['userMessage'] as string | undefined) ??
+                'Too many login attempts. Please try again later.'
+            )
+            return true
+          }
+          setGlobalError(GENERIC_AUTH_ERROR)
           return true
         }
 
