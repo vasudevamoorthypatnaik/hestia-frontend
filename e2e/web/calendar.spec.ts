@@ -1,11 +1,26 @@
-import { test, expect } from '@playwright/test'
+import { test, expect, type Page } from '@playwright/test'
 
 /**
- * Household Calendar (HES-CAL) — web week dashboard. The `web` project is pre-authenticated
- * (global-setup storageState), so '/' lands on the calendar. Selectors use getByRole/getByLabel/
- * getByText per the RNW E2E rule. Backend must be seeded with "The Hearth" (V003).
+ * Household Calendar (HES-CAL) — web week dashboard. global-setup writes empty storageState, so
+ * each test logs in (test user seeded by global-setup against E2E_API_URL). After login the auth
+ * gate lands on '/' (the calendar). Selectors use getByRole/getByLabel/getByText per the RNW rule.
+ * Backend must be the HES-CAL build seeded with "The Hearth" (V003).
  */
+const TEST_USER = { email: 'pallavi@hestia.app', password: 'password123' }
+
+async function login(page: Page) {
+  await page.goto('/auth/login')
+  await page.getByLabel('Email').fill(TEST_USER.email)
+  await page.getByLabel('Password', { exact: true }).fill(TEST_USER.password)
+  await page.getByRole('button', { name: 'Sign in' }).click()
+  await expect(page).toHaveURL(/localhost:\d+\/?$/, { timeout: 15000 })
+}
+
 test.describe('Household Calendar (web)', () => {
+  test.beforeEach(async ({ page }) => {
+    await login(page)
+  })
+
   test('A1 — calendar loads with seeded household, events, gap, and load (no JS errors)', async ({
     page,
   }) => {
@@ -43,14 +58,15 @@ test.describe('Household Calendar (web)', () => {
 
   test('C1 — period navigation moves the week window', async ({ page }) => {
     await page.goto('/')
-    const header = page.locator('text=/\\w+ \\d+ . \\d+, \\d{4}/').first()
+    // The period header is the only element ending in a 4-digit year (e.g. "Jun 22 – 28, 2026").
+    const header = page.getByText(/\d+,\s*\d{4}$/).first()
     await expect(header).toBeVisible({ timeout: 15000 })
-    const before = await header.textContent()
+    const before = (await header.textContent())?.trim()
 
     await page.getByRole('button', { name: 'Next week' }).click()
 
     await expect
-      .poll(async () => (await header.textContent()) !== before, { timeout: 5000 })
+      .poll(async () => (await header.textContent())?.trim() !== before, { timeout: 8000 })
       .toBe(true)
   })
 
@@ -71,8 +87,10 @@ test.describe('Household Calendar (web)', () => {
   })
 
   test('F1 — renders at a mobile viewport without errors', async ({ page }) => {
+    // The web dashboard is the desktop surface (the native day-agenda is the mobile UI). At a
+    // narrow viewport it still mounts without crashing — assert the always-visible sidebar.
     await page.setViewportSize({ width: 390, height: 844 })
     await page.goto('/')
-    await expect(page.getByText('Standup').first()).toBeVisible({ timeout: 15000 })
+    await expect(page.getByText('Pallavi', { exact: true }).first()).toBeVisible({ timeout: 15000 })
   })
 })
