@@ -33,6 +33,10 @@ export function useHouseholdCalendar(range: CalendarRange): UseHouseholdCalendar
   useSyncExternalStore(subscribeToTokenChanges, getTokenChangeVersion, getTokenChangeVersion)
   const hasToken = !!getAccessTokenSync()
 
+  // KNOWN LIMITATION (follow-up): the initial anchor is the DEVICE-local date, while the backend
+  // resolves the window in the household timezone. A user far from the household tz can land on the
+  // wrong day/week only right around midnight. Re-anchoring from the server's returned period is a
+  // tracked follow-up; impact is negligible for the seeded America/Los_Angeles demo.
   const [anchor, setAnchor] = useState<string>(() => todayIso())
 
   const [{ data, fetching, error }, reexecuteQuery] = useHouseholdCalendarQuery({

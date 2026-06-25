@@ -37,7 +37,12 @@ export default function CalendarScreen() {
         </Text>
         <View className="flex-row items-center gap-3">
           <ThemeToggle />
-          <Pressable onPress={handleSignOut} accessibilityRole="button" accessibilityLabel="Sign out">
+          <Pressable
+            onPress={handleSignOut}
+            accessibilityRole="button"
+            accessibilityLabel="Sign out"
+            className="min-h-[44px] justify-center"
+          >
             <Text className="font-sans text-[13px] font-semibold text-ink-muted">Sign out</Text>
           </Pressable>
         </View>

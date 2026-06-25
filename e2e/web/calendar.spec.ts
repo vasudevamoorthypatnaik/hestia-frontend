@@ -4,7 +4,8 @@ import { test, expect, type Page } from '@playwright/test'
  * Household Calendar (HES-CAL) — web week dashboard. global-setup writes empty storageState, so
  * each test logs in (test user seeded by global-setup against E2E_API_URL). After login the auth
  * gate lands on '/' (the calendar). Selectors use getByRole/getByLabel/getByText per the RNW rule.
- * Backend must be the HES-CAL build seeded with "The Hearth" (V003).
+ * Backend must be the HES-CAL build with the demo seed (db/seed/V900 "The Hearth"), i.e. run with
+ * the `local`/`test` Flyway profile. Uses the global-setup test user pallavi@hestia.app.
  */
 const TEST_USER = { email: 'pallavi@hestia.app', password: 'password123' }
 
@@ -84,6 +85,20 @@ test.describe('Household Calendar (web)', () => {
 
     await page.getByRole('button', { name: 'Cancel' }).click()
     await expect(page.getByLabel('Title')).toHaveCount(0)
+  })
+
+  test('D2 — creating an event makes it appear on the calendar', async ({ page }) => {
+    await page.goto('/')
+    await expect(page.getByText('Standup').first()).toBeVisible({ timeout: 15000 })
+
+    const title = `E2E Dentist ${Date.now()}`
+    await page.getByRole('button', { name: 'New event' }).click()
+    await page.getByLabel('Title').fill(title)
+    await page.getByRole('checkbox', { name: 'For (owner): Maya' }).click()
+    await page.getByRole('button', { name: 'Save event' }).click()
+
+    // Modal closes and the calendar refetches → the new event is visible in the current week.
+    await expect(page.getByText(title)).toBeVisible({ timeout: 10000 })
   })
 
   test('F1 — renders at a mobile viewport without errors', async ({ page }) => {

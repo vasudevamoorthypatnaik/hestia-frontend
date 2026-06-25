@@ -47,7 +47,11 @@ export function NewEventForm({
   onCancel: () => void
   onSubmit: (input: CreateCalendarEventInput) => void
 }) {
-  const adults = useMemo(() => members.filter((m) => m.kind === MemberKindValues.Adult), [members])
+  // Only adults the backend marks as capable can be the responsible adult (mirrors server validation).
+  const adults = useMemo(
+    () => members.filter((m) => m.kind === MemberKindValues.Adult && m.isResponsibleCapable),
+    [members]
+  )
   const [title, setTitle] = useState('')
   const [date, setDate] = useState(defaultDate)
   const [startTime, setStartTime] = useState('15:00')

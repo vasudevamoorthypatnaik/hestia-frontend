@@ -20,6 +20,10 @@ export function NewEventModal({
 }) {
   const { create, submitting, error } = useCreateCalendarEvent()
 
+  // Unmount the form while closed so it remounts with fresh state + the current defaultDate on each
+  // open (RN Modal keeps children mounted otherwise → stale draft / stale defaultDate on reopen).
+  if (!visible) return null
+
   const handleSubmit = async (input: CreateCalendarEventInput) => {
     if (await create(input)) {
       onCreated?.()
