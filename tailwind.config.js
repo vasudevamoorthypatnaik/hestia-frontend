@@ -1,99 +1,77 @@
 /** @type {import('tailwindcss').Config} */
+// Phase 1 design tokens (HES-SETUP) — warm "household" palette from designs/phase-1.
+// Semantic names; each color exposes light + dark variants for darkMode:'class'.
 module.exports = {
   content: ['./app/**/*.{js,jsx,ts,tsx}', './src/**/*.{js,jsx,ts,tsx}'],
   darkMode: 'class',
-  // Safelist animation utilities referenced via inline animationName in StyleSheet.create
-  // (Tailwind JIT only emits @keyframes when a class appears in scanned templates)
   safelist: ['animate-float', 'animate-zoom-out'],
   presets: [require('nativewind/preset')],
   theme: {
     extend: {
       colors: {
-        primary: {
-          50: '#f5f3ff',
-          100: '#ede9fe',
-          200: '#ddd6fe',
-          300: '#c4b5fd',
-          400: '#a78bfa',
-          500: '#8b5cf6',
-          600: '#7c3aed',
-          700: '#6d28d9',
-          800: '#5b21b6',
-          900: '#4c1d95',
+        // Brand accent (terracotta)
+        terracotta: {
+          DEFAULT: '#C4603D',
+          dark: '#D08C70',
+          deep: '#A0492C',
         },
-        accent: {
-          50: '#fdf4ff',
-          100: '#fae8ff',
-          400: '#e879f9',
-          500: '#d946ef',
-          600: '#c026d3',
+        // Text / ink
+        ink: {
+          DEFAULT: '#2B2521',
+          dark: '#F4EFE6',
+          muted: '#6B6155',
+          'muted-dark': '#A89A88',
         },
+        // Backgrounds & surfaces
         surface: {
-          light: '#fafbfc',
-          dark: '#0f172a',
+          light: '#E9E2D6',
+          dark: '#1F1B18',
         },
-        nav: {
-          'active-bg': '#f5f3ff',
-          'active-bg-dark': 'rgba(139, 92, 246, 0.15)',
-          'active-text': '#7c3aed',
-          'active-text-dark': '#a78bfa',
-          'inactive-text': '#6b7280',
-          'inactive-text-dark': '#9ca3af',
-          'border': '#e5e7eb',
-          'border-dark': '#374151',
+        cream: {
+          DEFAULT: '#EFE7DA',
+          dark: '#3A332C',
         },
-        sidebar: {
-          'active-bg': '#f5f3ff',
-          'active-bg-dark': 'rgba(139, 92, 246, 0.15)',
-          'active-border': '#8b5cf6',
-          'bg': '#f9fafb',
-          'bg-dark': '#1f2937',
+        field: {
+          DEFAULT: '#F8F4EC',
+          dark: '#2B2521',
+          border: '#E0D5C5',
+          'border-dark': '#4A4238',
         },
+        // Status accents
+        sage: { DEFAULT: '#6E9466', dark: '#8FB587' },
+        gold: { DEFAULT: '#B6843C', dark: '#CDA15E' },
+        danger: { DEFAULT: '#A0492C', bg: '#FBEAE2', border: '#E2A88E' },
       },
       fontFamily: {
-        display: ['DMSerifDisplay', 'Georgia', 'serif'],
-        sans: ['DMSans', 'system-ui', 'sans-serif'],
+        // Newsreader (serif/display) + Hanken Grotesk (sans/body) per Phase 1 design
+        display: ['Newsreader', 'Georgia', 'serif'],
+        sans: ['HankenGrotesk', 'system-ui', 'sans-serif'],
       },
       borderRadius: {
-        'card': '12px',
-        'button': '10px',
-        'input': '10px',
+        card: '18px',
+        button: '12px',
+        input: '12px',
+        pill: '9999px',
       },
       boxShadow: {
-        'card': '0 1px 3px 0 rgba(0, 0, 0, 0.06), 0 1px 2px -1px rgba(0, 0, 0, 0.06)',
-        'card-hover': '0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -2px rgba(0, 0, 0, 0.06)',
-        'elevated': '0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.04)',
+        card: '0 1px 3px 0 rgba(43,37,33,0.08), 0 1px 2px -1px rgba(43,37,33,0.06)',
+        elevated: '0 30px 60px -20px rgba(43,37,33,0.45)',
       },
-      // Web-only animation keyframes (NativeWind ignores these on native)
       keyframes: {
-        'fade-up': {
-          '0%': { opacity: '0', transform: 'translateY(24px)' },
-          '100%': { opacity: '1', transform: 'translateY(0)' },
-        },
         'zoom-out': {
           '0%': { opacity: '0', transform: 'scale(2.0)' },
           '100%': { opacity: '1', transform: 'scale(1)' },
-        },
-        'spring-pop': {
-          '0%': { transform: 'scale(0.8)', opacity: '0' },
-          '70%': { transform: 'scale(1.05)' },
-          '100%': { transform: 'scale(1)', opacity: '1' },
-        },
-        shimmer: {
-          '0%': { transform: 'translateX(-100%)' },
-          '100%': { transform: 'translateX(100%)' },
         },
         float: {
           '0%, 100%': { transform: 'translateY(0)' },
           '50%': { transform: 'translateY(-15px)' },
         },
+        spin: { to: { transform: 'rotate(360deg)' } },
       },
       animation: {
-        'fade-up': 'fade-up 0.5s ease-out forwards',
         'zoom-out': 'zoom-out 2.5s ease-out forwards',
-        'spring-pop': 'spring-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards',
-        shimmer: 'shimmer 3s ease-in-out infinite',
         float: 'float 6s ease-in-out infinite',
+        spin: 'spin 0.7s linear infinite',
       },
     },
   },
