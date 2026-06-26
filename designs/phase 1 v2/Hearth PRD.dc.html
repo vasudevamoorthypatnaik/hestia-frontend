@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  body { margin: 0; background: #FBF7F1; color: #2B2521;
+         font-family: 'Hanken Grotesk', system-ui, sans-serif; }
+  .doc { box-sizing: border-box; max-width: 8.5in; margin: 0 auto;
+         background: inherit;
+         padding: 0 clamp(24px, 5vw, 0.75in) 96px; }
+  .doc-frame { width: 100%; border-collapse: collapse; }
+  .doc-frame td { padding: 0; }
+  .running-hdr, .running-ftr, .hdr-space, .ftr-space { display: none; }
+
+  h1, h2, h3 { text-wrap: balance; }
+  p, li { text-wrap: pretty; }
+
+  @page { size: letter; margin: 0; }
+  @media print {
+    html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    html, body { margin: 0; padding: 0; background: #FBF7F1; }
+    .doc { max-width: none !important; margin: 0 !important;
+           padding: 0 0.7in 0 !important; box-shadow: none !important;
+           border: none !important; }
+    #dc-root, .sc-host { height: auto !important; }
+    .hdr-space, .ftr-space { display: table-cell; height: 0.7in !important; }
+    .running-hdr, .running-ftr { display: flex !important;
+           justify-content: space-between; align-items: baseline;
+           position: fixed !important; left: 0; right: 0;
+           margin: 0 !important; font-size: 10px;
+           letter-spacing: 0.12em; text-transform: uppercase;
+           color: #8A8075; font-family: 'Hanken Grotesk', sans-serif; }
+    .running-hdr { top: 0; padding: 0.32in 0.7in 0 !important; }
+    .running-ftr { bottom: 0; padding: 0 0.7in 0.32in !important; }
+    h1, h2, h3, h4, h5, h6 { break-after: avoid; }
+    figure, pre, blockquote, img, svg, tr, .keep { break-inside: avoid; }
+    p, li { orphans: 3; widows: 3; }
+    .screen-only { display: none !important; }
+    .page-break { break-before: page; }
+  }
+</style>
+</helmet>
+<main class="doc">
+  <table class="doc-frame" role="presentation">
+    <thead><tr><td class="hdr-space"></td></tr></thead>
+    <tbody><tr><td>
+
+      <!-- ============ COVER ============ -->
+      <section class="keep" style="padding:84px 0 64px;border-bottom:1px solid #E6DBCC;margin-bottom:8px;">
+        <div style="display:flex;align-items:center;gap:14px;margin-bottom:auto;">
+          <span style="width:26px;height:26px;border-radius:50%;background:#C4603D;display:inline-flex;align-items:center;justify-content:center;flex:none;">
+            <span style="width:9px;height:9px;background:#FBF7F1;border-radius:2px;transform:rotate(45deg);display:block;"></span>
+          </span>
+          <span style="font-size:12px;font-weight:600;letter-spacing:0.26em;text-transform:uppercase;color:#9A8E7E;">Hearth &nbsp;·&nbsp; Product Requirements</span>
+        </div>
+
+        <h1 style="font-family:'Newsreader',serif;font-weight:500;font-size:clamp(56px,11vw,104px);line-height:0.94;letter-spacing:-0.02em;margin:46px 0 0;color:#2B2521;">
+          Hearth
+        </h1>
+        <p style="font-family:'Newsreader',serif;font-style:italic;font-weight:400;font-size:clamp(21px,2.8vw,29px);line-height:1.32;color:#5C5347;max-width:20ch;margin:20px 0 0;">
+          The household runs on someone&rsquo;s invisible mental load. Hearth carries it.
+        </p>
+
+        <p style="font-size:15.5px;line-height:1.6;color:#6B6155;max-width:54ch;margin:30px 0 0;">
+          A shared coordination app that goes beyond a color-coded calendar &mdash; capturing the chaos of school emails, activity texts, and appointments into one source of truth, then distributing the work fairly.
+        </p>
+
+        <div style="display:flex;flex-wrap:wrap;gap:40px;margin-top:46px;">
+          <div>
+            <div style="font-size:10.5px;font-weight:600;letter-spacing:0.16em;text-transform:uppercase;color:#A89A88;margin-bottom:5px;">Status</div>
+            <div style="font-size:15px;font-weight:600;color:#2B2521;">Draft v0.1</div>
+          </div>
+          <div>
+            <div style="font-size:10.5px;font-weight:600;letter-spacing:0.16em;text-transform:uppercase;color:#A89A88;margin-bottom:5px;">Author</div>
+            <div style="font-size:15px;font-weight:600;color:#2B2521;">Vasu</div>
+          </div>
+          <div>
+            <div style="font-size:10.5px;font-weight:600;letter-spacing:0.16em;text-transform:uppercase;color:#A89A88;margin-bottom:5px;">Date</div>
+            <div style="font-size:15px;font-weight:600;color:#2B2521;">June 21, 2026</div>
+          </div>
+          <div>
+            <div style="font-size:10.5px;font-weight:600;letter-spacing:0.16em;text-transform:uppercase;color:#A89A88;margin-bottom:5px;">Scope</div>
+            <div style="font-size:15px;font-weight:600;color:#2B2521;">v1 framing &amp; requirements</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ THE BET ============ -->
+      <section style="padding-top:40px;">
+        <div style="font-size:11px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:#C4603D;margin-bottom:14px;">The bet</div>
+        <p style="font-family:'Newsreader',serif;font-size:clamp(22px,3vw,30px);line-height:1.42;font-weight:400;color:#2B2521;margin:0 0 18px;max-width:30ch;">
+          The unsolved job isn&rsquo;t <span style="font-style:italic;">displaying</span> a schedule &mdash; it&rsquo;s <span style="color:#C4603D;">reducing the mental load</span> of running a household.
+        </p>
+        <p style="font-size:15.5px;line-height:1.68;color:#4A4238;max-width:62ch;margin:0;">
+          Incumbents &mdash; Cozi, FamilyWall, Skylight, Maple, Google and Apple Calendar &mdash; are sticky but dated. They digitize the calendar; almost none reduce the cognitive labor. This document defines the problems v1 must address, and the requirements to address them. The positioning is an <strong style="color:#2B2521;">ingestion + delegation engine</strong>, not another calendar: AI capture and labor-balancing are the moat, calendar UI is table stakes.
+        </p>
+      </section>
+
+      <!-- ============ PROBLEM ============ -->
+      <section style="padding-top:46px;" class="keep">
+        <h2 style="font-family:'Newsreader',serif;font-weight:500;font-size:32px;line-height:1.1;letter-spacing:-0.01em;color:#2B2521;margin:0 0 16px;display:flex;align-items:baseline;gap:14px;">
+          <span style="font-size:14px;font-weight:600;color:#C4603D;font-family:'Hanken Grotesk',sans-serif;">01</span> The problem
+        </h2>
+        <p style="font-size:15.5px;line-height:1.68;color:#4A4238;max-width:62ch;margin:0;">
+          Running a household generates a constant stream of obligations that arrive unstructured &mdash; emails, flyers, texts, verbal asks &mdash; and must be turned into events, reminders, and tasks, then assigned, remembered, and executed across multiple people, most of whom won&rsquo;t adopt a new app. Today this labor falls disproportionately on one &ldquo;household manager,&rdquo; is invisible, and is poorly supported by existing tools.
+        </p>
+      </section>
+
+      <!-- ============ PERSONAS ============ -->
+      <section style="padding-top:34px;">
+        <div style="font-size:11px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:#9A8E7E;margin-bottom:18px;">Who we&rsquo;re building for</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+
+          <div class="keep" style="border:1px solid #E6DBCC;border-radius:10px;padding:22px 22px 24px;background:#FFFCF7;position:relative;">
+            <div style="position:absolute;top:20px;right:20px;font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#FBF7F1;background:#C4603D;padding:3px 9px;border-radius:20px;">Primary</div>
+            <div style="font-family:'Newsreader',serif;font-size:21px;font-weight:500;color:#2B2521;margin-bottom:6px;">The Household Manager</div>
+            <p style="font-size:13.5px;line-height:1.55;color:#6B6155;margin:0 0 14px;max-width:34ch;">Usually one parent who holds the schedule, deadlines, and logistics in their head.</p>
+            <div style="font-size:10.5px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#A89A88;margin-bottom:4px;">Primary need</div>
+            <div style="font-size:13.5px;line-height:1.5;color:#3A332B;font-weight:500;">Offload mental load; stop being the single point of failure.</div>
+          </div>
+
+          <div class="keep" style="border:1px solid #E6DBCC;border-radius:10px;padding:22px 22px 24px;background:#FFFCF7;position:relative;">
+            <div style="position:absolute;top:20px;right:20px;font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#9A8E7E;border:1px solid #E0D5C5;padding:3px 9px;border-radius:20px;">Secondary</div>
+            <div style="font-family:'Newsreader',serif;font-size:21px;font-weight:500;color:#2B2521;margin-bottom:6px;">The Partner</div>
+            <p style="font-size:13.5px;line-height:1.55;color:#6B6155;margin:0 0 14px;max-width:34ch;">Co-parent who wants to help but lacks visibility &mdash; &ldquo;just tell me what to do.&rdquo;</p>
+            <div style="font-size:10.5px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#A89A88;margin-bottom:4px;">Primary need</div>
+            <div style="font-size:13.5px;line-height:1.5;color:#3A332B;font-weight:500;">Low-friction visibility and clear assignments.</div>
+          </div>
+
+          <div class="keep" style="border:1px solid #E6DBCC;border-radius:10px;padding:22px 22px 24px;background:#FFFCF7;position:relative;">
+            <div style="position:absolute;top:20px;right:20px;font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#9A8E7E;border:1px solid #E0D5C5;padding:3px 9px;border-radius:20px;">Tertiary</div>
+            <div style="font-family:'Newsreader',serif;font-size:21px;font-weight:500;color:#2B2521;margin-bottom:6px;">The Teen</div>
+            <p style="font-size:13.5px;line-height:1.55;color:#6B6155;margin:0 0 14px;max-width:34ch;">Has a phone, won&rsquo;t use a &ldquo;family app.&rdquo;</p>
+            <div style="font-size:10.5px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#A89A88;margin-bottom:4px;">Primary need</div>
+            <div style="font-size:13.5px;line-height:1.5;color:#3A332B;font-weight:500;">Get only what&rsquo;s relevant, where they already are.</div>
+          </div>
+
+          <div class="keep" style="border:1px solid #E6DBCC;border-radius:10px;padding:22px 22px 24px;background:#FFFCF7;position:relative;">
+            <div style="position:absolute;top:20px;right:20px;font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#9A8E7E;border:1px solid #E0D5C5;padding:3px 9px;border-radius:20px;">Subjects</div>
+            <div style="font-family:'Newsreader',serif;font-size:21px;font-weight:500;color:#2B2521;margin-bottom:6px;">Young kids</div>
+            <p style="font-size:13.5px;line-height:1.55;color:#6B6155;margin:0 0 14px;max-width:34ch;">Have schedules, no phones.</p>
+            <div style="font-size:10.5px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#A89A88;margin-bottom:4px;">Modeled as</div>
+            <div style="font-size:13.5px;line-height:1.5;color:#3A332B;font-weight:500;">Schedule subjects, not app users.</div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ============ PAIN TIERS ============ -->
+      <section style="padding-top:52px;" class="page-break">
+        <h2 style="font-family:'Newsreader',serif;font-weight:500;font-size:32px;line-height:1.1;letter-spacing:-0.01em;color:#2B2521;margin:0 0 6px;display:flex;align-items:baseline;gap:14px;">
+          <span style="font-size:14px;font-weight:600;color:#C4603D;font-family:'Hanken Grotesk',sans-serif;">02</span> Pain points, prioritized
+        </h2>
+        <p style="font-size:15px;line-height:1.6;color:#6B6155;margin:0 0 28px;max-width:58ch;">What v1 must address, in priority order. Each pain maps to a v1 requirement.</p>
+
+        <!-- P0 -->
+        <div class="keep" style="margin-bottom:22px;">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+            <span style="font-size:12px;font-weight:700;letter-spacing:0.08em;color:#FBF7F1;background:#C4603D;padding:5px 12px;border-radius:6px;">P0</span>
+            <span style="font-size:13px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:#8A7F70;">Must address in v1</span>
+            <span style="flex:1;height:1px;background:#E6DBCC;"></span>
+          </div>
+          <div style="display:grid;gap:12px;">
+            <div style="display:grid;grid-template-columns:auto 1fr;gap:16px;padding:16px 18px;border-radius:9px;background:#FBEFE8;border:1px solid #EFD8CC;">
+              <span style="font-family:'Newsreader',serif;font-size:18px;color:#C4603D;font-weight:500;">3.1</span>
+              <div>
+                <div style="font-size:15px;font-weight:600;color:#2B2521;margin-bottom:4px;">The &ldquo;second account&rdquo; problem</div>
+                <p style="font-size:13.5px;line-height:1.58;color:#5C5347;margin:0 0 8px;">Families already live in Google/Apple Calendar. A separate app means double-entry or abandonment &mdash; &ldquo;my spouse never opens it&rdquo; is the top churn driver.</p>
+                <div style="font-size:13px;line-height:1.5;color:#A0492C;"><strong style="color:#A0492C;">Requirement &middot;</strong> Bidirectional, real-time sync with Google &amp; Apple from day one. Additive to existing calendars, never a forced migration.</div>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:auto 1fr;gap:16px;padding:16px 18px;border-radius:9px;background:#FBEFE8;border:1px solid #EFD8CC;">
+              <span style="font-family:'Newsreader',serif;font-size:18px;color:#C4603D;font-weight:500;">3.2</span>
+              <div>
+                <div style="font-size:15px;font-weight:600;color:#2B2521;margin-bottom:4px;">Input friction <span style="font-size:11px;font-weight:700;color:#C4603D;letter-spacing:0.04em;">&mdash; THE WEDGE</span></div>
+                <p style="font-size:13.5px;line-height:1.58;color:#5C5347;margin:0 0 8px;">&ldquo;Early dismissal Friday, pizza day Wednesday, form due Monday&rdquo; &rarr; 3 events + 1 task + 1 reminder. That conversion is the actual work, and it&rsquo;s manual in every tool.</p>
+                <div style="font-size:13px;line-height:1.5;color:#A0492C;"><strong style="color:#A0492C;">Requirement &middot;</strong> Forward an email, paste text, or photograph a flyer &rarr; structured, reviewable events/tasks. The single biggest AI-enabled unlock.</div>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:auto 1fr;gap:16px;padding:16px 18px;border-radius:9px;background:#FBEFE8;border:1px solid #EFD8CC;">
+              <span style="font-family:'Newsreader',serif;font-size:18px;color:#C4603D;font-weight:500;">3.3</span>
+              <div>
+                <div style="font-size:15px;font-weight:600;color:#2B2521;margin-bottom:4px;">Invisible &amp; unequal mental load</div>
+                <p style="font-size:13.5px;line-height:1.58;color:#5C5347;margin:0 0 8px;">Apps store events but don&rsquo;t distribute labor. No incumbent answers &ldquo;what&rsquo;s on my plate vs. my partner&rsquo;s, and is it balanced?&rdquo;</p>
+                <div style="font-size:13px;line-height:1.5;color:#A0492C;"><strong style="color:#A0492C;">Requirement &middot;</strong> Every item has an owner and an optional responsible adult; a household view surfaces load distribution.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- P1 -->
+        <div class="keep" style="margin-bottom:22px;">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+            <span style="font-size:12px;font-weight:700;letter-spacing:0.08em;color:#C4603D;background:#FBEFE8;border:1px solid #E8C9B8;padding:5px 12px;border-radius:6px;">P1</span>
+            <span style="font-size:13px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:#8A7F70;">Strongly desired &mdash; acceptable in fast-follow</span>
+            <span style="flex:1;height:1px;background:#E6DBCC;"></span>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div style="padding:15px 17px;border-radius:9px;border:1px solid #E6DBCC;background:#FFFCF7;">
+              <div style="font-size:14.5px;font-weight:600;color:#2B2521;margin-bottom:4px;"><span style="color:#C4603D;font-family:'Newsreader',serif;margin-right:7px;">3.4</span>Dumb notifications</div>
+              <p style="font-size:13px;line-height:1.55;color:#5C5347;margin:0;">Reminders are spam or silence. Need context-aware nudges (&ldquo;you&rsquo;re in a meeting until 6 &mdash; who&rsquo;s getting Maya?&rdquo;) and digest summaries.</p>
+            </div>
+            <div style="padding:15px 17px;border-radius:9px;border:1px solid #E6DBCC;background:#FFFCF7;">
+              <div style="font-size:14.5px;font-weight:600;color:#2B2521;margin-bottom:4px;"><span style="color:#C4603D;font-family:'Newsreader',serif;margin-right:7px;">3.5</span>Irregular recurrence</div>
+              <p style="font-size:13px;line-height:1.55;color:#5C5347;margin:0;">Custody (2-2-3, week-on/off) and shift work can&rsquo;t be expressed by standard RRULE &mdash; exactly where coordination matters most. Need a rotation builder.</p>
+            </div>
+            <div style="padding:15px 17px;border-radius:9px;border:1px solid #E6DBCC;background:#FFFCF7;grid-column:1 / -1;">
+              <div style="font-size:14.5px;font-weight:600;color:#2B2521;margin-bottom:4px;"><span style="color:#C4603D;font-family:'Newsreader',serif;margin-right:7px;">3.6</span>Kid-activity fragmentation</div>
+              <p style="font-size:13px;line-height:1.55;color:#5C5347;margin:0;">Activities live in silos &mdash; TeamSnap, Remind, Brightwheel, classroom apps &mdash; that don&rsquo;t talk to anything. Email-ingestion is the universal bridge (most send emails); direct integrations later.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- P2 -->
+        <div class="keep">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+            <span style="font-size:12px;font-weight:700;letter-spacing:0.08em;color:#9A8E7E;background:transparent;border:1px solid #D8CCB9;padding:5px 12px;border-radius:6px;">P2</span>
+            <span style="font-size:13px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:#8A7F70;">Out of scope for v1 &mdash; on the roadmap</span>
+            <span style="flex:1;height:1px;background:#E6DBCC;"></span>
+          </div>
+          <ul style="margin:0;padding:0;list-style:none;display:grid;gap:8px;">
+            <li style="font-size:13.5px;line-height:1.5;color:#5C5347;padding-left:18px;position:relative;"><span style="position:absolute;left:0;color:#C9BBA8;">&mdash;</span>Meal planning connected to shopping lists and pantry (plan &rarr; ingredients &rarr; list).</li>
+            <li style="font-size:13.5px;line-height:1.5;color:#5C5347;padding-left:18px;position:relative;"><span style="position:absolute;left:0;color:#C9BBA8;">&mdash;</span>Teen-facing lightweight surface (SMS / shared-link / widget rather than full app adoption).</li>
+            <li style="font-size:13.5px;line-height:1.5;color:#5C5347;padding-left:18px;position:relative;"><span style="position:absolute;left:0;color:#C9BBA8;">&mdash;</span>Smart-display / fridge-screen mode.</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- ============ FIELD EVIDENCE ============ -->
+      <section style="padding-top:52px;" class="page-break">
+        <h2 style="font-family:'Newsreader',serif;font-weight:500;font-size:32px;line-height:1.1;letter-spacing:-0.01em;color:#2B2521;margin:0 0 6px;display:flex;align-items:baseline;gap:14px;">
+          <span style="font-size:14px;font-weight:600;color:#C4603D;font-family:'Hanken Grotesk',sans-serif;">03</span> Evidence from the field
+        </h2>
+        <p style="font-size:15px;line-height:1.6;color:#6B6155;margin:0 0 26px;max-width:60ch;">Recurring, documented complaints driving users away from incumbents. These validate the pain points above &mdash; treat them as v1 requirements, not nice-to-haves.</p>
+
+        <div class="keep" style="border-left:3px solid #C4603D;background:#FBEFE8;border-radius:0 10px 10px 0;padding:20px 24px;margin-bottom:18px;">
+          <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#C4603D;margin-bottom:8px;">Loudest signal</div>
+          <div style="font-family:'Newsreader',serif;font-size:19px;font-weight:500;color:#2B2521;margin-bottom:8px;line-height:1.3;">Cozi&rsquo;s paywall backlash</div>
+          <p style="font-size:13.5px;line-height:1.6;color:#5C5347;margin:0 0 10px;">May 2024: Cozi restricted free users to a rolling 30-day window &mdash; impossible to plan summer camp or next season&rsquo;s sports without paying. Trustpilot fell to ~2.1 stars; long-time users described feeling &ldquo;scammed&rdquo; and &ldquo;held hostage,&rdquo; locked out of their own data.</p>
+          <div style="font-size:13px;line-height:1.5;color:#A0492C;"><strong>Implication &middot;</strong> Don&rsquo;t gate core planning behind a hostile paywall. If freemium, gate on capture volume or premium automation &mdash; never on viewing your own family&rsquo;s schedule.</div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+          <div class="keep" style="border:1px solid #E6DBCC;border-radius:9px;padding:16px 18px;background:#FFFCF7;">
+            <div style="font-size:14px;font-weight:600;color:#2B2521;margin-bottom:5px;">One-way sync</div>
+            <p style="font-size:12.5px;line-height:1.5;color:#5C5347;margin:0 0 7px;">Cozi only pushes out to Google; changes never flow back, so edits silently desync.</p>
+            <div style="font-size:12px;color:#8A7F70;"><strong style="color:#6B6155;">&rarr;</strong> Confirms 3.1 &mdash; true bidirectional sync is non-negotiable.</div>
+          </div>
+          <div class="keep" style="border:1px solid #E6DBCC;border-radius:9px;padding:16px 18px;background:#FFFCF7;">
+            <div style="font-size:14px;font-weight:600;color:#2B2521;margin-bottom:5px;">No admin roles</div>
+            <p style="font-size:12.5px;line-height:1.5;color:#5C5347;margin:0 0 7px;">No permission levels or locked events &mdash; one swipe by a kid wipes a month of entries.</p>
+            <div style="font-size:12px;color:#8A7F70;"><strong style="color:#6B6155;">&rarr;</strong> Add roles, protected events, and undo to v1.</div>
+          </div>
+          <div class="keep" style="border:1px solid #E6DBCC;border-radius:9px;padding:16px 18px;background:#FFFCF7;">
+            <div style="font-size:14px;font-weight:600;color:#2B2521;margin-bottom:5px;">Data lock-in</div>
+            <p style="font-size:12.5px;line-height:1.5;color:#5C5347;margin:0 0 7px;">No CSV/ICS export &mdash; families can&rsquo;t take years of history with them.</p>
+            <div style="font-size:12px;color:#8A7F70;"><strong style="color:#6B6155;">&rarr;</strong> Add export &amp; portability; it also lowers adoption anxiety.</div>
+          </div>
+          <div class="keep" style="border:1px solid #E6DBCC;border-radius:9px;padding:16px 18px;background:#FFFCF7;">
+            <div style="font-size:14px;font-weight:600;color:#2B2521;margin-bottom:5px;">Manual entry is hated</div>
+            <p style="font-size:12.5px;line-height:1.5;color:#5C5347;margin:0 0 7px;">Comparison sites headline &ldquo;stop losing 4+ hours to manual entry.&rdquo; The feature pulling switchers is AI photo extraction.</p>
+            <div style="font-size:12px;color:#8A7F70;"><strong style="color:#6B6155;">&rarr;</strong> Validates smart capture (3.2) as the wedge &mdash; the market already rewards it.</div>
+          </div>
+          <div class="keep" style="border:1px solid #E6DBCC;border-radius:9px;padding:16px 18px;background:#FFFCF7;">
+            <div style="font-size:14px;font-weight:600;color:#2B2521;margin-bottom:5px;">Ads &amp; clutter</div>
+            <p style="font-size:12.5px;line-height:1.5;color:#5C5347;margin:0 0 7px;">TimeTree users cite intrusive ads on daily opens plus syncing issues.</p>
+            <div style="font-size:12px;color:#8A7F70;"><strong style="color:#6B6155;">&rarr;</strong> Keep the core clean; don&rsquo;t monetize via ads in the daily loop.</div>
+          </div>
+          <div class="keep" style="border:1px solid #E6DBCC;border-radius:9px;padding:16px 18px;background:#FFFCF7;">
+            <div style="font-size:14px;font-weight:600;color:#2B2521;margin-bottom:5px;">Feature sprawl</div>
+            <p style="font-size:12.5px;line-height:1.5;color:#5C5347;margin:0 0 7px;">FamilyWall is &ldquo;overkill&rdquo;; the least tech-savvy member determines adoption.</p>
+            <div style="font-size:12px;color:#8A7F70;"><strong style="color:#6B6155;">&rarr;</strong> Argues for ruthless onboarding simplicity over feature breadth.</div>
+          </div>
+        </div>
+        <p style="font-size:12px;line-height:1.55;color:#9A8E7E;font-style:italic;margin:16px 0 0;max-width:64ch;">Sourcing note: patterns corroborated across multiple independent review sources and parenting-community grievances; worth validating with first-party user interviews before locking scope.</p>
+      </section>
+
+      <!-- ============ GOALS ============ -->
+      <section style="padding-top:52px;" class="keep page-break">
+        <h2 style="font-family:'Newsreader',serif;font-weight:500;font-size:32px;line-height:1.1;letter-spacing:-0.01em;color:#2B2521;margin:0 0 24px;display:flex;align-items:baseline;gap:14px;">
+          <span style="font-size:14px;font-weight:600;color:#C4603D;font-family:'Hanken Grotesk',sans-serif;">04</span> Goals &amp; non-goals
+        </h2>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:28px;">
+          <div>
+            <div style="font-size:12px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#C4603D;margin-bottom:14px;">Goals</div>
+            <ul style="margin:0;padding:0;list-style:none;display:grid;gap:13px;">
+              <li style="font-size:14px;line-height:1.55;color:#3A332B;padding-left:22px;position:relative;"><span style="position:absolute;left:0;top:1px;color:#C4603D;font-weight:700;">&check;</span>Become the household&rsquo;s single source of truth without anyone abandoning their existing calendar.</li>
+              <li style="font-size:14px;line-height:1.55;color:#3A332B;padding-left:22px;position:relative;"><span style="position:absolute;left:0;top:1px;color:#C4603D;font-weight:700;">&check;</span>Cut time-to-capture an unstructured obligation into a structured, assigned item by ~80% vs. manual entry.</li>
+              <li style="font-size:14px;line-height:1.55;color:#3A332B;padding-left:22px;position:relative;"><span style="position:absolute;left:0;top:1px;color:#C4603D;font-weight:700;">&check;</span>Make the distribution of household labor visible and more equitable.</li>
+            </ul>
+          </div>
+          <div>
+            <div style="font-size:12px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#9A8E7E;margin-bottom:14px;">Non-goals &middot; v1</div>
+            <ul style="margin:0;padding:0;list-style:none;display:grid;gap:13px;">
+              <li style="font-size:14px;line-height:1.55;color:#6B6155;padding-left:22px;position:relative;"><span style="position:absolute;left:0;top:0;color:#C9BBA8;font-weight:700;">&times;</span>Replacing Google/Apple Calendar.</li>
+              <li style="font-size:14px;line-height:1.55;color:#6B6155;padding-left:22px;position:relative;"><span style="position:absolute;left:0;top:0;color:#C9BBA8;font-weight:700;">&times;</span>Being a full project-management or to-do power-tool.</li>
+              <li style="font-size:14px;line-height:1.55;color:#6B6155;padding-left:22px;position:relative;"><span style="position:absolute;left:0;top:0;color:#C9BBA8;font-weight:700;">&times;</span>Forcing every family member onto the app &mdash; partial adoption must still deliver value.</li>
+              <li style="font-size:14px;line-height:1.55;color:#6B6155;padding-left:22px;position:relative;"><span style="position:absolute;left:0;top:0;color:#C9BBA8;font-weight:700;">&times;</span>Social/community features.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ V1 REQUIREMENTS ============ -->
+      <section style="padding-top:52px;">
+        <h2 style="font-family:'Newsreader',serif;font-weight:500;font-size:32px;line-height:1.1;letter-spacing:-0.01em;color:#2B2521;margin:0 0 6px;display:flex;align-items:baseline;gap:14px;">
+          <span style="font-size:14px;font-weight:600;color:#C4603D;font-family:'Hanken Grotesk',sans-serif;">05</span> v1 functional requirements
+        </h2>
+        <p style="font-size:15px;line-height:1.6;color:#6B6155;margin:0 0 26px;max-width:60ch;">The calendar is the foundation everything attaches to &mdash; the bar is &ldquo;as reliable as Google Calendar, plus the household layer incumbents lack.&rdquo;</p>
+
+        <div style="display:grid;gap:11px;">
+          <div class="keep" style="display:grid;grid-template-columns:64px 1fr;gap:18px;align-items:start;padding:17px 20px;border:1px solid #E6DBCC;border-radius:9px;background:#FFFCF7;">
+            <div style="font-family:'Newsreader',serif;font-size:22px;color:#C4603D;font-weight:500;">5.1</div>
+            <div>
+              <div style="font-size:15px;font-weight:600;color:#2B2521;margin-bottom:4px;">Calendar sync &nbsp;<span style="font-size:10px;font-weight:700;color:#C4603D;letter-spacing:0.06em;vertical-align:middle;background:#FBEFE8;padding:2px 7px;border-radius:4px;">P0 FOUNDATION</span></div>
+              <p style="font-size:13.5px;line-height:1.58;color:#5C5347;margin:0;">True two-way sync with Google &amp; Apple/iCloud &mdash; edits reflect within ~5 seconds, never silently dropped or duplicated. CalDAV + ICS subscription for read-only external calendars (school, league). Outlook/365 as a fast-follow. Last-write-wins with a visible change log; a clear sync-health surface with one-tap re-auth.</p>
+            </div>
+          </div>
+          <div class="keep" style="display:grid;grid-template-columns:64px 1fr;gap:18px;align-items:start;padding:17px 20px;border:1px solid #EFD8CC;border-radius:9px;background:#FBEFE8;">
+            <div style="font-family:'Newsreader',serif;font-size:22px;color:#C4603D;font-weight:500;">5.2</div>
+            <div>
+              <div style="font-size:15px;font-weight:600;color:#2B2521;margin-bottom:4px;">Smart capture &nbsp;<span style="font-size:10px;font-weight:700;color:#FBF7F1;letter-spacing:0.06em;vertical-align:middle;background:#C4603D;padding:2px 7px;border-radius:4px;">THE WEDGE</span></div>
+              <p style="font-size:13.5px;line-height:1.58;color:#5C5347;margin:0;">Forward an email, photograph a flyer/permission slip, or paste text/screenshot &rarr; AI extracts candidate events/tasks. Extraction captures title, date/time, location, responsible person, prep tasks, and deadlines, with confidence shown. <strong style="color:#A0492C;">Review-before-commit</strong>: nothing auto-commits silently.</p>
+            </div>
+          </div>
+          <div class="keep" style="display:grid;grid-template-columns:64px 1fr;gap:18px;align-items:start;padding:17px 20px;border:1px solid #E6DBCC;border-radius:9px;background:#FFFCF7;">
+            <div style="font-family:'Newsreader',serif;font-size:22px;color:#C4603D;font-weight:500;">5.3</div>
+            <div>
+              <div style="font-size:15px;font-weight:600;color:#2B2521;margin-bottom:4px;">Household model</div>
+              <p style="font-size:13.5px;line-height:1.58;color:#5C5347;margin:0;">Members (adults, kids, others) with attributes: has-phone, can-be-assigned, schedule-subject-only. Every event/task carries an <em>owner</em> (whom it concerns &mdash; possibly a phone-less child) and a <em>responsible adult</em> (who handles logistics). This split is the hook the mental-load layer reads from.</p>
+            </div>
+          </div>
+          <div class="keep" style="display:grid;grid-template-columns:64px 1fr;gap:18px;align-items:start;padding:17px 20px;border:1px solid #E6DBCC;border-radius:9px;background:#FFFCF7;">
+            <div style="font-family:'Newsreader',serif;font-size:22px;color:#C4603D;font-weight:500;">5.4</div>
+            <div>
+              <div style="font-size:15px;font-weight:600;color:#2B2521;margin-bottom:4px;">Mental-load view</div>
+              <p style="font-size:13.5px;line-height:1.58;color:#5C5347;margin:0;">A dashboard of upcoming items grouped by responsible adult, with a simple balance indicator. Not a guilt machine &mdash; a visibility tool.</p>
+            </div>
+          </div>
+          <div class="keep" style="display:grid;grid-template-columns:64px 1fr;gap:18px;align-items:start;padding:17px 20px;border:1px solid #E6DBCC;border-radius:9px;background:#FFFCF7;">
+            <div style="font-family:'Newsreader',serif;font-size:22px;color:#C4603D;font-weight:500;">5.5</div>
+            <div>
+              <div style="font-size:15px;font-weight:600;color:#2B2521;margin-bottom:4px;">Shared lists</div>
+              <p style="font-size:13.5px;line-height:1.58;color:#5C5347;margin:0;">Basic shared lists (shopping, to-do, packing) with real-time sync &mdash; the foundation for later meal-planning connection.</p>
+            </div>
+          </div>
+          <div class="keep" style="display:grid;grid-template-columns:64px 1fr;gap:18px;align-items:start;padding:17px 20px;border:1px solid #E6DBCC;border-radius:9px;background:#FFFCF7;">
+            <div style="font-family:'Newsreader',serif;font-size:22px;color:#C4603D;font-weight:500;">5.6</div>
+            <div>
+              <div style="font-size:15px;font-weight:600;color:#2B2521;margin-bottom:4px;">Smart notifications</div>
+              <p style="font-size:13.5px;line-height:1.58;color:#5C5347;margin:0;">A daily/&ldquo;tomorrow&rdquo; digest per adult, configurable. Conflict and gap detection &mdash; &ldquo;no one is assigned to pickup Friday.&rdquo; Reminders route to the responsible adult, not spammed to everyone; respect quiet hours.</p>
+            </div>
+          </div>
+          <div class="keep" style="display:grid;grid-template-columns:64px 1fr;gap:18px;align-items:start;padding:17px 20px;border:1px solid #E6DBCC;border-radius:9px;background:#FFFCF7;">
+            <div style="font-family:'Newsreader',serif;font-size:22px;color:#C4603D;font-weight:500;">5.7</div>
+            <div>
+              <div style="font-size:15px;font-weight:600;color:#2B2521;margin-bottom:4px;">Custody / rotation schedules &nbsp;<span style="font-size:10px;font-weight:700;color:#C4603D;letter-spacing:0.06em;vertical-align:middle;background:#FBEFE8;padding:2px 7px;border-radius:4px;">P1</span></div>
+              <p style="font-size:13.5px;line-height:1.58;color:#5C5347;margin:0;">A template-driven builder for common patterns (week-on/week-off, 2-2-3, every-other-weekend) that generates the underlying events automatically. The calendar must <em>store and render</em> generated rotation events in P0 even though the builder lands in P1.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ CALENDAR ACCEPTANCE ============ -->
+      <section style="padding-top:38px;" class="keep">
+        <div style="background:#2B2521;border-radius:12px;padding:30px 32px;color:#F3ECE0;">
+          <div style="font-size:11px;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;color:#E0A487;margin-bottom:6px;">P0 acceptance criteria</div>
+          <div style="font-family:'Newsreader',serif;font-size:21px;font-weight:500;color:#FBF7F1;margin-bottom:20px;">The calendar must clear this bar before anything ships on top of it.</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px 30px;">
+            <div style="display:grid;grid-template-columns:auto 1fr;gap:12px;"><span style="font-family:'Newsreader',serif;color:#E0A487;font-size:15px;">01</span><span style="font-size:13px;line-height:1.5;color:#D8CFC1;">A change in Google or Apple appears in-app within ~5s, and vice versa, with no duplication.</span></div>
+            <div style="display:grid;grid-template-columns:auto 1fr;gap:12px;"><span style="font-family:'Newsreader',serif;color:#E0A487;font-size:15px;">02</span><span style="font-size:13px;line-height:1.5;color:#D8CFC1;">Create a recurring event, edit a single occurrence &mdash; both reflect correctly across synced calendars.</span></div>
+            <div style="display:grid;grid-template-columns:auto 1fr;gap:12px;"><span style="font-family:'Newsreader',serif;color:#E0A487;font-size:15px;">03</span><span style="font-size:13px;line-height:1.5;color:#D8CFC1;">A non-admin cannot delete a protected event; any deletion is recoverable from trash.</span></div>
+            <div style="display:grid;grid-template-columns:auto 1fr;gap:12px;"><span style="font-family:'Newsreader',serif;color:#E0A487;font-size:15px;">04</span><span style="font-size:13px;line-height:1.5;color:#D8CFC1;">Two conflicting responsibilities for the same adult produce a visible warning.</span></div>
+            <div style="display:grid;grid-template-columns:auto 1fr;gap:12px;"><span style="font-family:'Newsreader',serif;color:#E0A487;font-size:15px;">05</span><span style="font-size:13px;line-height:1.5;color:#D8CFC1;">An unassigned pickup/event is surfaced as a coverage gap.</span></div>
+            <div style="display:grid;grid-template-columns:auto 1fr;gap:12px;"><span style="font-family:'Newsreader',serif;color:#E0A487;font-size:15px;">06</span><span style="font-size:13px;line-height:1.5;color:#D8CFC1;">A user can export the full calendar to ICS and re-import without data loss.</span></div>
+            <div style="display:grid;grid-template-columns:auto 1fr;gap:12px;grid-column:1 / -1;"><span style="font-family:'Newsreader',serif;color:#E0A487;font-size:15px;">07</span><span style="font-size:13px;line-height:1.5;color:#D8CFC1;">A connected account that loses authorization shows a clear, actionable sync-error state.</span></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ KEY FLOWS ============ -->
+      <section style="padding-top:52px;" class="page-break">
+        <h2 style="font-family:'Newsreader',serif;font-weight:500;font-size:32px;line-height:1.1;letter-spacing:-0.01em;color:#2B2521;margin:0 0 24px;display:flex;align-items:baseline;gap:14px;">
+          <span style="font-size:14px;font-weight:600;color:#C4603D;font-family:'Hanken Grotesk',sans-serif;">06</span> Key flows
+        </h2>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+          <div class="keep" style="border:1px solid #E6DBCC;border-radius:10px;padding:20px 22px;background:#FFFCF7;">
+            <div style="font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#C4603D;margin-bottom:8px;">Onboarding</div>
+            <p style="font-size:13.5px;line-height:1.6;color:#4A4238;margin:0;">Connect Google/Apple Calendar &rarr; confirm imported members &rarr; set who can be assigned work.</p>
+          </div>
+          <div class="keep" style="border:1px solid #E6DBCC;border-radius:10px;padding:20px 22px;background:#FFFCF7;">
+            <div style="font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#C4603D;margin-bottom:8px;">Capture</div>
+            <p style="font-size:13.5px;line-height:1.6;color:#4A4238;margin:0;">Forward school email &rarr; review 3 extracted items &rarr; confirm &rarr; items land on the right calendars with owners and a prep task.</p>
+          </div>
+          <div class="keep" style="border:1px solid #E6DBCC;border-radius:10px;padding:20px 22px;background:#FFFCF7;">
+            <div style="font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#C4603D;margin-bottom:8px;">Daily loop</div>
+            <p style="font-size:13.5px;line-height:1.6;color:#4A4238;margin:0;">Each adult gets a morning digest of their responsibilities; gaps are flagged for someone to claim.</p>
+          </div>
+          <div class="keep" style="border:1px solid #E6DBCC;border-radius:10px;padding:20px 22px;background:#FFFCF7;">
+            <div style="font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#C4603D;margin-bottom:8px;">Rebalance</div>
+            <p style="font-size:13.5px;line-height:1.6;color:#4A4238;margin:0;">Household manager opens the load view, sees imbalance, reassigns two pickups to partner in two taps.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ METRICS ============ -->
+      <section style="padding-top:52px;" class="keep">
+        <h2 style="font-family:'Newsreader',serif;font-weight:500;font-size:32px;line-height:1.1;letter-spacing:-0.01em;color:#2B2521;margin:0 0 22px;display:flex;align-items:baseline;gap:14px;">
+          <span style="font-size:14px;font-weight:600;color:#C4603D;font-family:'Hanken Grotesk',sans-serif;">07</span> Success metrics
+        </h2>
+        <div style="display:grid;gap:0;border-top:1px solid #E6DBCC;">
+          <div style="display:grid;grid-template-columns:150px 1fr;gap:20px;padding:14px 0;border-bottom:1px solid #E6DBCC;align-items:baseline;">
+            <div style="font-size:13.5px;font-weight:700;color:#C4603D;">Activation</div>
+            <div style="font-size:14px;line-height:1.55;color:#4A4238;">% of new households that connect &ge;1 external calendar and complete one smart-capture in week 1.</div>
+          </div>
+          <div style="display:grid;grid-template-columns:150px 1fr;gap:20px;padding:14px 0;border-bottom:1px solid #E6DBCC;align-items:baseline;">
+            <div style="font-size:13.5px;font-weight:700;color:#C4603D;">Core value</div>
+            <div style="font-size:14px;line-height:1.55;color:#4A4238;">Smart-captures per household per week &mdash; the proxy for offloaded mental load.</div>
+          </div>
+          <div style="display:grid;grid-template-columns:150px 1fr;gap:20px;padding:14px 0;border-bottom:1px solid #E6DBCC;align-items:baseline;">
+            <div style="font-size:13.5px;font-weight:700;color:#C4603D;">Adoption depth</div>
+            <div style="font-size:14px;line-height:1.55;color:#4A4238;">% of households with &ge;2 active adult members &mdash; beats the &ldquo;spouse never opens it&rdquo; failure mode.</div>
+          </div>
+          <div style="display:grid;grid-template-columns:150px 1fr;gap:20px;padding:14px 0;border-bottom:1px solid #E6DBCC;align-items:baseline;">
+            <div style="font-size:13.5px;font-weight:700;color:#C4603D;">Retention</div>
+            <div style="font-size:14px;line-height:1.55;color:#4A4238;">Week-4 and week-12 household retention.</div>
+          </div>
+          <div style="display:grid;grid-template-columns:150px 1fr;gap:20px;padding:14px 0;border-bottom:1px solid #E6DBCC;align-items:baseline;">
+            <div style="font-size:13.5px;font-weight:700;color:#C4603D;">Load equity <span style="font-size:10px;color:#9A8E7E;font-weight:700;letter-spacing:0.05em;">&nbsp;★ NORTH-STAR</span></div>
+            <div style="font-size:14px;line-height:1.55;color:#4A4238;">Reduction in share of items owned by the single busiest adult over time.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ COMPETITIVE ============ -->
+      <section style="padding-top:52px;" class="keep page-break">
+        <h2 style="font-family:'Newsreader',serif;font-weight:500;font-size:32px;line-height:1.1;letter-spacing:-0.01em;color:#2B2521;margin:0 0 8px;display:flex;align-items:baseline;gap:14px;">
+          <span style="font-size:14px;font-weight:600;color:#C4603D;font-family:'Hanken Grotesk',sans-serif;">08</span> Competitive landscape
+        </h2>
+        <p style="font-size:15px;line-height:1.6;color:#6B6155;margin:0 0 24px;max-width:60ch;">Positioning: an <strong style="color:#2B2521;">ingestion + delegation engine</strong>, not another calendar. AI capture and labor-balancing are the moat; calendar UI is table stakes.</p>
+        <table style="width:100%;border-collapse:collapse;font-size:13.5px;">
+          <thead>
+            <tr style="border-bottom:2px solid #2B2521;">
+              <th style="text-align:left;padding:0 14px 10px 0;font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#8A7F70;width:24%;">Product</th>
+              <th style="text-align:left;padding:0 14px 10px;font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#8A7F70;">Strength</th>
+              <th style="text-align:left;padding:0 0 10px 14px;font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#C4603D;">Gap we exploit</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-bottom:1px solid #E6DBCC;">
+              <td style="padding:14px 14px 14px 0;font-weight:600;color:#2B2521;vertical-align:top;">Cozi</td>
+              <td style="padding:14px;color:#5C5347;line-height:1.5;vertical-align:top;">Category default; lists + calendar.</td>
+              <td style="padding:14px 0 14px 14px;color:#3A332B;line-height:1.5;vertical-align:top;">Dated; no AI capture; no load balancing; weak sync.</td>
+            </tr>
+            <tr style="border-bottom:1px solid #E6DBCC;">
+              <td style="padding:14px 14px 14px 0;font-weight:600;color:#2B2521;vertical-align:top;">Google / Apple Calendar</td>
+              <td style="padding:14px;color:#5C5347;line-height:1.5;vertical-align:top;">Already where people live.</td>
+              <td style="padding:14px 0 14px 14px;color:#3A332B;line-height:1.5;vertical-align:top;">No household model, no capture, no task/owner layer.</td>
+            </tr>
+            <tr style="border-bottom:1px solid #E6DBCC;">
+              <td style="padding:14px 14px 14px 0;font-weight:600;color:#2B2521;vertical-align:top;">Skylight</td>
+              <td style="padding:14px;color:#5C5347;line-height:1.5;vertical-align:top;">Hardware display; family-friendly.</td>
+              <td style="padding:14px 0 14px 14px;color:#3A332B;line-height:1.5;vertical-align:top;">Display-first; input still manual; hardware lock-in.</td>
+            </tr>
+            <tr style="border-bottom:1px solid #E6DBCC;">
+              <td style="padding:14px 14px 14px 0;font-weight:600;color:#2B2521;vertical-align:top;">FamilyWall / Maple</td>
+              <td style="padding:14px;color:#5C5347;line-height:1.5;vertical-align:top;">Feature-rich household hubs.</td>
+              <td style="padding:14px 0 14px 14px;color:#3A332B;line-height:1.5;vertical-align:top;">Feature sprawl, manual entry, no mental-load framing.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- ============ RISKS ============ -->
+      <section style="padding-top:52px;" class="keep">
+        <h2 style="font-family:'Newsreader',serif;font-weight:500;font-size:32px;line-height:1.1;letter-spacing:-0.01em;color:#2B2521;margin:0 0 22px;display:flex;align-items:baseline;gap:14px;">
+          <span style="font-size:14px;font-weight:600;color:#C4603D;font-family:'Hanken Grotesk',sans-serif;">09</span> Risks &amp; open questions
+        </h2>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:28px;">
+          <div>
+            <div style="font-size:12px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#C4603D;margin-bottom:14px;">Risks</div>
+            <ul style="margin:0;padding:0;list-style:none;display:grid;gap:14px;">
+              <li style="font-size:13.5px;line-height:1.58;color:#4A4238;"><strong style="color:#2B2521;">Sync reliability is existential.</strong> A calendar app that loses or duplicates events is dead. Needs heavy investment and testing.</li>
+              <li style="font-size:13.5px;line-height:1.58;color:#4A4238;"><strong style="color:#2B2521;">Extraction trust.</strong> Users must trust AI capture without it silently creating wrong events. Review-before-commit is non-negotiable; measure correction rate.</li>
+              <li style="font-size:13.5px;line-height:1.58;color:#4A4238;"><strong style="color:#2B2521;">Privacy.</strong> Household data (kids, custody, locations) is sensitive. Clear data handling and on-device options should be considered.</li>
+            </ul>
+          </div>
+          <div>
+            <div style="font-size:12px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#9A8E7E;margin-bottom:14px;">Open questions</div>
+            <ul style="margin:0;padding:0;list-style:none;display:grid;gap:14px;">
+              <li style="font-size:13.5px;line-height:1.58;color:#5C5347;padding-left:18px;position:relative;"><span style="position:absolute;left:0;color:#C4603D;">?</span>iOS-first or cross-platform at launch? <span style="color:#8A7F70;">(Recommend iOS-first given Apple Calendar &amp; sharing dynamics.)</span></li>
+              <li style="font-size:13.5px;line-height:1.58;color:#5C5347;padding-left:18px;position:relative;"><span style="position:absolute;left:0;color:#C4603D;">?</span>Monetization &mdash; freemium with capture limits, or flat household subscription?</li>
+              <li style="font-size:13.5px;line-height:1.58;color:#5C5347;padding-left:18px;position:relative;"><span style="position:absolute;left:0;color:#C4603D;">?</span>How far to push teen engagement in v1 vs. defer to P2?</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ PHASING ============ -->
+      <section style="padding-top:52px;padding-bottom:20px;" class="keep">
+        <h2 style="font-family:'Newsreader',serif;font-weight:500;font-size:32px;line-height:1.1;letter-spacing:-0.01em;color:#2B2521;margin:0 0 24px;display:flex;align-items:baseline;gap:14px;">
+          <span style="font-size:14px;font-weight:600;color:#C4603D;font-family:'Hanken Grotesk',sans-serif;">10</span> Suggested phasing
+        </h2>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;border-radius:10px;overflow:hidden;border:1px solid #E6DBCC;">
+          <div style="padding:22px 20px;background:#C4603D;color:#FBF7F1;">
+            <div style="font-size:11px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;opacity:0.85;margin-bottom:8px;">Phase 1 &middot; MVP</div>
+            <div style="font-family:'Newsreader',serif;font-size:17px;font-weight:500;margin-bottom:10px;line-height:1.25;">Prove the wedge</div>
+            <p style="font-size:12.5px;line-height:1.55;margin:0;opacity:0.95;">Calendar sync + smart capture (email/photo) + household model + basic shared lists.</p>
+          </div>
+          <div style="padding:22px 20px;background:#FBEFE8;color:#3A332B;border-left:1px solid #EFD8CC;">
+            <div style="font-size:11px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#C4603D;margin-bottom:8px;">Phase 2</div>
+            <div style="font-family:'Newsreader',serif;font-size:17px;font-weight:500;margin-bottom:10px;line-height:1.25;color:#2B2521;">Layer the household intelligence</div>
+            <p style="font-size:12.5px;line-height:1.55;margin:0;color:#5C5347;">Mental-load view + smart notifications + custody scheduler.</p>
+          </div>
+          <div style="padding:22px 20px;background:#FFFCF7;color:#3A332B;border-left:1px solid #EFD8CC;">
+            <div style="font-size:11px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#9A8E7E;margin-bottom:8px;">Phase 3</div>
+            <div style="font-family:'Newsreader',serif;font-size:17px;font-weight:500;margin-bottom:10px;line-height:1.25;color:#2B2521;">Expand the surface</div>
+            <p style="font-size:12.5px;line-height:1.55;margin:0;color:#5C5347;">Meal planning &rarr; list connection, teen surface, activity-app integrations, display mode.</p>
+          </div>
+        </div>
+        <div style="margin-top:40px;padding-top:20px;border-top:1px solid #E6DBCC;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+          <span style="font-size:12px;color:#9A8E7E;letter-spacing:0.04em;">Hearth &mdash; Product Requirements Document &middot; Draft v0.1</span>
+          <span style="font-size:12px;color:#9A8E7E;letter-spacing:0.04em;">Vasu &middot; June 21, 2026</span>
+        </div>
+      </section>
+
+    </td></tr></tbody>
+    <tfoot><tr><td class="ftr-space"></td></tr></tfoot>
+  </table>
+</main>
+</x-dc>
+</body>
+</html>

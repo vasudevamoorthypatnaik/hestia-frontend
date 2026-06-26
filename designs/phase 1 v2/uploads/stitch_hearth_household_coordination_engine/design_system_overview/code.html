@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Hestia | Design System Documentation</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&amp;family=Quicksand:wght@500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-secondary-container": "#496a4d",
+                        "secondary-container": "#c3e9c4",
+                        "secondary": "#456649",
+                        "secondary-fixed": "#c6ecc7",
+                        "on-error": "#ffffff",
+                        "inverse-surface": "#33302e",
+                        "primary-container": "#b95838",
+                        "surface-container": "#f4ece9",
+                        "on-tertiary-fixed-variant": "#484743",
+                        "surface-dim": "#e0d8d5",
+                        "surface-container-high": "#efe7e3",
+                        "error": "#ba1a1a",
+                        "surface": "#fff8f5",
+                        "error-container": "#ffdad6",
+                        "on-surface-variant": "#56423d",
+                        "tertiary-container": "#767470",
+                        "surface-variant": "#e9e1de",
+                        "surface-container-lowest": "#ffffff",
+                        "on-secondary": "#ffffff",
+                        "on-primary": "#ffffff",
+                        "inverse-primary": "#ffb59e",
+                        "surface-container-low": "#faf2ef",
+                        "inverse-on-surface": "#f7efec",
+                        "primary-fixed": "#ffdbd0",
+                        "secondary-fixed-dim": "#abd0ac",
+                        "background": "#fff8f5",
+                        "surface-container-highest": "#e9e1de",
+                        "on-primary-fixed-variant": "#7e2c10",
+                        "outline-variant": "#dcc1b9",
+                        "on-tertiary-fixed": "#1c1c19",
+                        "primary": "#9a4023",
+                        "on-secondary-fixed-variant": "#2d4e33",
+                        "on-error-container": "#93000a",
+                        "on-tertiary-container": "#fffbff",
+                        "on-primary-container": "#fffbff",
+                        "tertiary-fixed": "#e6e2dd",
+                        "on-surface": "#1e1b19",
+                        "surface-tint": "#9d4325",
+                        "outline": "#89726b",
+                        "on-tertiary": "#ffffff",
+                        "on-secondary-fixed": "#01210a",
+                        "on-background": "#1e1b19",
+                        "surface-bright": "#fff8f5",
+                        "on-primary-fixed": "#3a0b00",
+                        "primary-fixed-dim": "#ffb59e",
+                        "tertiary-fixed-dim": "#c9c6c1",
+                        "tertiary": "#5d5c58"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "margin-desktop": "32px",
+                        "unit": "4px",
+                        "margin-mobile": "16px",
+                        "calendar-density-sm": "40px",
+                        "gutter": "16px",
+                        "calendar-density-md": "64px"
+                    },
+                    "fontFamily": {
+                        "label-sm": ["Be Vietnam Pro"],
+                        "calendar-cell": ["Be Vietnam Pro"],
+                        "body-md": ["Be Vietnam Pro"],
+                        "body-lg": ["Be Vietnam Pro"],
+                        "headline-lg": ["Quicksand"],
+                        "headline-md": ["Quicksand"]
+                    },
+                    "fontSize": {
+                        "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.04em", "fontWeight": "600"}],
+                        "calendar-cell": ["14px", {"lineHeight": "18px", "fontWeight": "500"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "headline-md": ["20px", {"lineHeight": "28px", "fontWeight": "600"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            line-height: 1;
+            vertical-align: middle;
+        }
+        .inner-shadow-press {
+            box-shadow: inset 2px 2px 4px rgba(0,0,0,0.05), inset -1px -1px 2px rgba(255,255,255,0.1);
+        }
+        .hearth-glow {
+            background: linear-gradient(90deg, #9a4023 0%, #b95838 30%, #456649 70%, #c3e9c4 100%);
+            filter: blur(8px);
+            opacity: 0.6;
+        }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #dcc1b9; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #89726b; }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body-md selection:bg-primary-fixed selection:text-on-primary-fixed">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 flex justify-between items-center px-margin-desktop py-4 bg-surface dark:bg-surface-dim">
+<div class="flex items-center gap-8">
+<h1 class="font-headline-lg text-headline-lg text-primary dark:text-primary-fixed-dim tracking-tight">Hestia</h1>
+<nav class="hidden md:flex items-center gap-6">
+<a class="text-primary dark:text-primary-fixed font-bold border-b-2 border-primary py-1 transition-colors" href="#">Design Tokens</a>
+<a class="text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-colors px-3 py-1 rounded-lg" href="#">Components</a>
+<a class="text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-colors px-3 py-1 rounded-lg" href="#">Layouts</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative group">
+<input class="bg-surface-container-low dark:bg-surface-container-high border-none rounded-full px-6 py-2 text-body-md focus:ring-2 focus:ring-primary w-64 transition-all group-hover:w-80" placeholder="Search tokens..." type="text"/>
+<span class="material-symbols-outlined absolute right-4 top-2 text-on-surface-variant">search</span>
+</div>
+<button class="material-symbols-outlined text-primary p-2 hover:bg-surface-container-high rounded-full transition-all active:scale-95">settings</button>
+<button class="material-symbols-outlined text-primary p-2 hover:bg-surface-container-high rounded-full transition-all active:scale-95">help</button>
+<div class="w-10 h-10 rounded-full bg-primary-fixed flex items-center justify-center overflow-hidden border-2 border-primary-container">
+<img class="w-full h-full object-cover" data-alt="A warm, professional headshot of a female design systems architect in her late 30s, wearing soft knitwear, smiling gently against a blurred studio background with warm sunlight. Soft humanist lighting, high-quality digital photography, 8k resolution, maintaining a domestic and supportive aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBJ4olZkD5V06TzDpirMDewFhy8MlH2SJUD1ANGdCEU7fmcuo8irNVBNy3QIWf8pF5mtYbDru17fBoF8Bq4oc0dCFP_gPC9Fw1q9_tf0pL1duE3QCsQ0A_7JA8YboYP4xwsTayejJJ3nu18aO9Nu5eVwQ5ScnAopahDNRSzFHotXjICZ76jwsxXHlw9m7Ywn1CTCBEBU1LBoH9Pw4CLYBR02YCFYAiguG-zqq_Sc6LPr_PORLmrv_ibf-ZwHY-5b2q9sxW5hXl16hs"/>
+</div>
+</div>
+</header>
+<!-- SideNavBar -->
+<aside class="fixed left-0 top-0 h-full pt-24 px-4 flex flex-col gap-2 bg-surface-container dark:bg-surface-container-low w-64 border-r border-outline-variant/30 hidden lg:flex">
+<div class="mb-6 px-4">
+<p class="font-headline-md text-headline-md text-primary">Hestia OS</p>
+<p class="text-on-surface-variant text-label-sm">Design System v1.0</p>
+</div>
+<button class="flex items-center gap-3 px-4 py-3 bg-secondary-container dark:bg-on-secondary-container text-on-secondary-container dark:text-secondary-container rounded-xl font-bold active:inner-shadow-press transition-all">
+<span class="material-symbols-outlined">palette</span>
+<span class="text-body-md">Design Tokens</span>
+</button>
+<button class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high dark:hover:bg-surface-container-highest rounded-xl transition-all">
+<span class="material-symbols-outlined">extension</span>
+<span class="text-body-md">Components</span>
+</button>
+<button class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high dark:hover:bg-surface-container-highest rounded-xl transition-all">
+<span class="material-symbols-outlined">grid_view</span>
+<span class="text-body-md">Layouts</span>
+</button>
+<button class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high dark:hover:bg-surface-container-highest rounded-xl transition-all">
+<span class="material-symbols-outlined">auto_awesome</span>
+<span class="text-body-md">Motion</span>
+</button>
+<button class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high dark:hover:bg-surface-container-highest rounded-xl transition-all">
+<span class="material-symbols-outlined">folder_open</span>
+<span class="text-body-md">Assets</span>
+</button>
+<div class="mt-auto mb-8 px-2">
+<button class="w-full bg-primary text-on-primary py-4 rounded-xl font-bold shadow-md hover:brightness-110 active:scale-95 transition-all">
+                New Component
+            </button>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="lg:ml-64 pt-24 pb-20 px-margin-desktop min-h-screen">
+<div class="max-w-6xl mx-auto space-y-20">
+<!-- Hero Section -->
+<section class="relative overflow-hidden rounded-3xl bg-surface-container-low p-12 flex flex-col items-start gap-6 border border-outline-variant/20">
+<div class="absolute top-0 right-0 w-1/2 h-full">
+
+</div>
+<div class="relative z-10 max-w-2xl">
+<span class="inline-block px-3 py-1 bg-primary-fixed text-on-primary-fixed-variant rounded-full font-label-sm text-label-sm mb-4">FOUNDATION</span>
+<h2 class="font-headline-lg text-headline-lg text-on-surface mb-4">Building the Digital Hearth</h2>
+<p class="text-body-lg font-body-lg text-on-surface-variant">Hestia is a humanist-modern design system built for the multi-generational family. It rejects the coldness of corporate productivity in favor of tonal layering, soft tactility, and domestic-inspired warmth.</p>
+</div>
+</section>
+<!-- Color Palette Section -->
+<section class="space-y-8" id="colors">
+<div class="flex items-end justify-between border-b border-outline-variant pb-4">
+<div>
+<h3 class="font-headline-md text-headline-md text-primary">Color Palette</h3>
+<p class="text-body-md text-on-surface-variant">Tonal layering and domestic-inspired hues.</p>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+<!-- Primary Palette: Terracotta -->
+<div class="space-y-4">
+<h4 class="font-body-md font-bold text-on-surface">Primary: Terracotta</h4>
+<div class="flex flex-col gap-2">
+<div class="group relative flex items-center justify-between p-4 bg-primary text-on-primary rounded-xl h-24 shadow-sm hover:scale-[1.02] transition-transform cursor-pointer">
+<div>
+<p class="font-label-sm text-label-sm">Primary (Base)</p>
+<p class="font-bold">#9A4023</p>
+</div>
+<span class="material-symbols-outlined opacity-0 group-hover:opacity-100 transition-opacity">content_copy</span>
+</div>
+<div class="grid grid-cols-2 gap-2">
+<div class="bg-primary-container p-4 rounded-xl text-on-primary-container h-20">
+<p class="text-[10px] font-bold uppercase opacity-80">Container</p>
+<p class="text-sm">#B95838</p>
+</div>
+<div class="bg-primary-fixed p-4 rounded-xl text-on-primary-fixed h-20 border border-primary-container/20">
+<p class="text-[10px] font-bold uppercase opacity-80">Fixed</p>
+<p class="text-sm">#FFDBD0</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Secondary Palette: Earthy Greens -->
+<div class="space-y-4">
+<h4 class="font-body-md font-bold text-on-surface">Secondary: Earthy Greens</h4>
+<div class="flex flex-col gap-2">
+<div class="group relative flex items-center justify-between p-4 bg-secondary text-on-secondary rounded-xl h-24 shadow-sm hover:scale-[1.02] transition-transform cursor-pointer">
+<div>
+<p class="font-label-sm text-label-sm">Secondary (Base)</p>
+<p class="font-bold">#456649</p>
+</div>
+<span class="material-symbols-outlined opacity-0 group-hover:opacity-100 transition-opacity">content_copy</span>
+</div>
+<div class="grid grid-cols-2 gap-2">
+<div class="bg-secondary-container p-4 rounded-xl text-on-secondary-container h-20">
+<p class="text-[10px] font-bold uppercase opacity-80">Container</p>
+<p class="text-sm">#C3E9C4</p>
+</div>
+<div class="bg-secondary-fixed p-4 rounded-xl text-on-secondary-fixed h-20 border border-secondary-container/20">
+<p class="text-[10px] font-bold uppercase opacity-80">Fixed</p>
+<p class="text-sm">#C6ECC7</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Surface / Neutral Palette -->
+<div class="space-y-4">
+<h4 class="font-body-md font-bold text-on-surface">Surface: Soft Creams</h4>
+<div class="flex flex-col gap-2">
+<div class="group relative flex items-center justify-between p-4 bg-surface text-on-surface border border-outline-variant rounded-xl h-24 shadow-sm hover:scale-[1.02] transition-transform cursor-pointer">
+<div>
+<p class="font-label-sm text-label-sm">Surface (Base)</p>
+<p class="font-bold">#FFF8F5</p>
+</div>
+<span class="material-symbols-outlined opacity-0 group-hover:opacity-100 transition-opacity">content_copy</span>
+</div>
+<div class="grid grid-cols-2 gap-2">
+<div class="bg-surface-container-low p-4 rounded-xl text-on-surface-variant h-20">
+<p class="text-[10px] font-bold uppercase opacity-80">Container Low</p>
+<p class="text-sm">#FAF2EF</p>
+</div>
+<div class="bg-surface-container p-4 rounded-xl text-on-surface-variant h-20">
+<p class="text-[10px] font-bold uppercase opacity-80">Container</p>
+<p class="text-sm">#F4ECE9</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Typography Section -->
+<section class="bg-surface-container-low rounded-[32px] p-12 space-y-12" id="typography">
+<div>
+<h3 class="font-headline-md text-headline-md text-primary">Typography</h3>
+<p class="text-body-md text-on-surface-variant">The Quicksand &amp; Be Vietnam Pro duo balances approachability with clarity.</p>
+</div>
+<div class="space-y-10">
+<div class="flex flex-col md:flex-row md:items-baseline gap-4 border-b border-outline-variant pb-6">
+<span class="w-40 text-label-sm font-label-sm text-outline">HEADLINE LG</span>
+<div class="flex-1">
+<p class="font-headline-lg text-headline-lg text-on-surface">The quick brown fox jumps over the lazy dog.</p>
+<p class="text-sm text-on-surface-variant mt-2">Quicksand Bold / 32px / -0.02em tracking</p>
+</div>
+</div>
+<div class="flex flex-col md:flex-row md:items-baseline gap-4 border-b border-outline-variant pb-6">
+<span class="w-40 text-label-sm font-label-sm text-outline">HEADLINE MD</span>
+<div class="flex-1">
+<p class="font-headline-md text-headline-md text-on-surface">The quick brown fox jumps over the lazy dog.</p>
+<p class="text-sm text-on-surface-variant mt-2">Quicksand SemiBold / 20px</p>
+</div>
+</div>
+<div class="flex flex-col md:flex-row md:items-baseline gap-4 border-b border-outline-variant pb-6">
+<span class="w-40 text-label-sm font-label-sm text-outline">BODY LG</span>
+<div class="flex-1">
+<p class="font-body-lg text-body-lg text-on-surface">Experience domestic harmony through thoughtful scheduling and shared labor visualization.</p>
+<p class="text-sm text-on-surface-variant mt-2">Be Vietnam Pro Regular / 18px / 28px Leading</p>
+</div>
+</div>
+<div class="flex flex-col md:flex-row md:items-baseline gap-4 border-b border-outline-variant pb-6">
+<span class="w-40 text-label-sm font-label-sm text-outline">LABEL SM</span>
+<div class="flex-1">
+<p class="font-label-sm text-label-sm text-on-surface uppercase tracking-wider">NEEDS DRIVER • CONFIRMED • URGENT</p>
+<p class="text-sm text-on-surface-variant mt-2">Be Vietnam Pro SemiBold / 12px / 0.04em tracking</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Elevation & Component Preview -->
+<section class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+<!-- Elevation & Roundness -->
+<div class="space-y-8">
+<h3 class="font-headline-md text-headline-md text-primary">Tactility &amp; Form</h3>
+<div class="grid grid-cols-2 gap-6">
+<div class="p-8 bg-surface border border-outline-variant/30 rounded-xl shadow-sm space-y-4">
+<div class="w-12 h-12 bg-primary-fixed rounded-xl border border-primary-container/20"></div>
+<p class="font-body-md font-bold">Standard Roundness</p>
+<p class="text-sm text-on-surface-variant">ROUND_EIGHT (0.75rem / 12px) applied to all core UI cards and containers.</p>
+</div>
+<div class="p-8 bg-surface border border-outline-variant/30 rounded-xl space-y-4 active:inner-shadow-press transition-all cursor-pointer">
+<div class="w-12 h-12 bg-secondary-fixed rounded-full"></div>
+<p class="font-body-md font-bold">Tactile Press</p>
+<p class="text-sm text-on-surface-variant">Interaction state using inner shadows to simulate a physical "pressing" of the UI.</p>
+</div>
+</div>
+<div class="p-8 bg-surface-container-low rounded-[32px] space-y-4">
+<p class="font-bold text-on-surface">Labor Balance visualization</p>
+<div class="relative h-6 w-full rounded-full overflow-hidden">
+<div class="hearth-glow absolute inset-0"></div>
+<div class="absolute inset-0 flex">
+<div class="h-full bg-primary/40 w-[40%]"></div>
+<div class="h-full bg-secondary/40 w-[60%]"></div>
+</div>
+</div>
+<p class="text-sm text-on-surface-variant">The "Hearth Glow" bar represents contribution shares without cold corporate bar charts.</p>
+</div>
+</div>
+<!-- Component Preview Gallery -->
+<div class="space-y-8">
+<h3 class="font-headline-md text-headline-md text-primary">Component Gallery</h3>
+<div class="space-y-6">
+<!-- Event Card Preview -->
+<div class="bg-surface p-5 rounded-xl border-l-4 border-primary shadow-sm hover:shadow-md transition-shadow">
+<div class="flex justify-between items-start mb-2">
+<span class="font-bold text-on-surface">Soccer Practice</span>
+<span class="text-primary font-bold text-sm">4:30 PM</span>
+</div>
+<p class="text-sm text-on-surface-variant mb-4">Central Park Field B • Sarah &amp; Tom</p>
+<div class="flex items-center gap-2">
+<div class="flex items-center gap-1 bg-surface-container-highest px-3 py-1 rounded-full">
+<span class="material-symbols-outlined text-[16px] text-primary">directions_car</span>
+<span class="text-xs font-label-sm">Needs Driver</span>
+</div>
+<button class="ml-auto bg-primary text-on-primary px-4 py-1.5 rounded-full text-xs font-bold hover:brightness-110 active:scale-95 transition-all">
+                                    Claim Task
+                                </button>
+</div>
+</div>
+<!-- Badge Gallery -->
+<div class="flex flex-wrap gap-4 items-center">
+<div class="flex items-center gap-2 bg-on-surface text-surface px-4 py-2 rounded-full">
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">shopping_bag</span>
+<span class="text-sm font-bold">Needs Pickup</span>
+<div class="w-1.5 h-1.5 bg-primary rounded-full animate-pulse"></div>
+</div>
+<div class="flex items-center gap-2 border border-secondary text-secondary px-4 py-2 rounded-full bg-surface">
+<span class="material-symbols-outlined text-[18px]">restaurant</span>
+<span class="text-sm font-bold">Needs Prep</span>
+</div>
+</div>
+<!-- Input Field Preview -->
+<div class="space-y-2">
+<label class="text-label-sm text-on-surface-variant ml-2">EVENT TITLE</label>
+<input class="w-full bg-surface-container-low border-outline-variant border rounded-xl px-4 py-3 focus:ring-primary focus:border-primary transition-all" type="text" value="Family Dinner"/>
+</div>
+</div>
+</div>
+</section>
+</div>
+</main>
+<!-- Footer -->
+<footer class="w-full py-8 px-margin-desktop flex flex-col md:flex-row justify-between items-center gap-4 bg-surface-container-lowest dark:bg-surface-dim border-t border-outline-variant dark:border-outline">
+<div class="flex items-center gap-2">
+<span class="font-headline-md text-headline-md text-primary">Hestia</span>
+<span class="text-on-surface-variant opacity-40">|</span>
+<p class="font-label-sm text-label-sm text-secondary dark:text-secondary-fixed-dim">© 2024 Hestia Design Systems. Built for Multi-generational Harmony.</p>
+</div>
+<div class="flex gap-8">
+<a class="font-label-sm text-label-sm text-on-tertiary-fixed-variant dark:text-tertiary-fixed-dim hover:text-primary dark:hover:text-primary-fixed underline transition-all" href="#">Documentation</a>
+<a class="font-label-sm text-label-sm text-on-tertiary-fixed-variant dark:text-tertiary-fixed-dim hover:text-primary dark:hover:text-primary-fixed underline transition-all" href="#">Changelog</a>
+<a class="font-label-sm text-label-sm text-on-tertiary-fixed-variant dark:text-tertiary-fixed-dim hover:text-primary dark:hover:text-primary-fixed underline transition-all" href="#">Feedback</a>
+</div>
+</footer>
+<script>
+        // Micro-interaction for color cards copy
+        document.querySelectorAll('.cursor-pointer').forEach(card => {
+            card.addEventListener('click', () => {
+                const hex = card.querySelector('.font-bold')?.innerText;
+                if (hex && hex.startsWith('#')) {
+                    navigator.clipboard.writeText(hex);
+                    const toast = document.createElement('div');
+                    toast.className = 'fixed bottom-8 left-1/2 -translate-x-1/2 bg-on-surface text-surface px-6 py-3 rounded-full font-bold shadow-xl z-[100] animate-bounce';
+                    toast.innerText = `Copied ${hex} to clipboard!`;
+                    document.body.appendChild(toast);
+                    setTimeout(() => toast.remove(), 2000);
+                }
+            });
+        });
+    </script>
+</body></html>
