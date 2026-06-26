@@ -45,6 +45,7 @@ jest.mock('expo-image', () => {
 jest.mock('@expo/vector-icons', () => ({
   Ionicons: 'Ionicons',
   MaterialIcons: 'MaterialIcons',
+  FontAwesome: 'FontAwesome',
 }))
 
 // Mock react-native-view-shot
