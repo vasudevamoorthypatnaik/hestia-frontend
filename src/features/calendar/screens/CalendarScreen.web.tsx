@@ -30,7 +30,7 @@ export default function CalendarScreenWeb() {
   }
 
   return (
-    <View className="flex-1 bg-surface-light dark:bg-surface-dark">
+    <View className="flex-1 bg-surface dark:bg-surface-dark">
       {!calendar ? (
         <CenterState fetching={fetching} error={error} />
       ) : (
@@ -42,28 +42,28 @@ export default function CalendarScreenWeb() {
             onToggle={toggle}
           />
           <View className="flex-1">
-            <View className="flex-row items-center justify-between border-b border-field-border px-6 py-4 dark:border-field-border-dark">
+            <View className="flex-row items-center justify-between border-b border-outline-variant px-6 py-4 dark:border-outline-variant-dark">
               <View className="flex-row items-center gap-3.5">
                 <Pressable onPress={() => shiftPeriod(-1)} accessibilityRole="button" accessibilityLabel="Previous week">
-                  <Text className="text-xl text-ink-muted">‹</Text>
+                  <Text className="text-xl text-on-surface-variant dark:text-on-surface-variant-dark">‹</Text>
                 </Pressable>
-                <Text className="font-display text-xl text-ink dark:text-ink-dark">{calendar.period.label}</Text>
+                <Text className="font-head text-xl font-bold text-on-surface dark:text-on-surface-dark">{calendar.period.label}</Text>
                 <Pressable onPress={() => shiftPeriod(1)} accessibilityRole="button" accessibilityLabel="Next week">
-                  <Text className="text-xl text-ink-muted">›</Text>
+                  <Text className="text-xl text-on-surface-variant dark:text-on-surface-variant-dark">›</Text>
                 </Pressable>
               </View>
               <View className="flex-row items-center gap-3">
                 <ThemeToggle />
                 <Pressable onPress={handleSignOut} accessibilityRole="button" accessibilityLabel="Sign out">
-                  <Text className="font-sans text-[13px] font-semibold text-ink-muted">Sign out</Text>
+                  <Text className="font-body text-[13px] font-semibold text-on-surface-variant dark:text-on-surface-variant-dark">Sign out</Text>
                 </Pressable>
                 <Pressable
                   onPress={() => setShowNew(true)}
                   accessibilityRole="button"
                   accessibilityLabel="New event"
-                  className="min-h-[36px] justify-center rounded-button bg-terracotta px-4"
+                  className="min-h-[36px] justify-center rounded-button bg-primary px-4 dark:bg-primary-dark"
                 >
-                  <Text className="font-sans text-[13px] font-bold text-white">+ New event</Text>
+                  <Text className="font-body text-[13px] font-bold text-on-primary dark:text-on-primary-dark">+ New event</Text>
                 </Pressable>
               </View>
             </View>
@@ -78,7 +78,7 @@ export default function CalendarScreenWeb() {
               <WeekGrid events={filterEvents(calendar.events)} periodStart={calendar.period.start} />
             </ScrollView>
 
-            <View className="border-t border-field-border bg-field px-6 py-4 dark:border-field-border-dark dark:bg-field-dark">
+            <View className="border-t border-outline-variant bg-surface-container-low px-6 py-4 dark:border-outline-variant-dark dark:bg-surface-container-low-dark">
               <LoadBar load={calendar.load} />
             </View>
           </View>
@@ -100,11 +100,11 @@ function CenterState({ fetching, error }: { fetching: boolean; error: boolean })
   return (
     <View className="flex-1 items-center justify-center">
       {error ? (
-        <Text className="font-sans text-sm text-danger">Could not load your calendar.</Text>
+        <Text className="font-body text-sm text-error dark:text-error-dark">Could not load your calendar.</Text>
       ) : fetching ? (
-        <ActivityIndicator color="#C4603D" />
+        <ActivityIndicator color="#9a4023" />
       ) : (
-        <Text className="font-sans text-sm text-ink-muted">Loading your household…</Text>
+        <Text className="font-body text-sm text-on-surface-variant dark:text-on-surface-variant-dark">Loading your household…</Text>
       )}
     </View>
   )

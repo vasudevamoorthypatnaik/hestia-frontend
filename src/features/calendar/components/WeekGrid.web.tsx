@@ -29,11 +29,11 @@ export function WeekGrid({
       {columns.map((col) => (
         <View
           key={col.dow}
-          className="flex-1 gap-2 border-l border-field-border px-1 dark:border-field-border-dark"
+          className="flex-1 gap-2 border-l border-outline-variant px-1 dark:border-outline-variant-dark"
         >
           <Text
-            className={`mb-1 text-center font-sans text-[11px] font-bold ${
-              col.isToday ? 'text-terracotta' : 'text-ink-muted dark:text-ink-muted-dark'
+            className={`mb-1 text-center font-body text-[11px] font-bold ${
+              col.isToday ? 'text-primary dark:text-primary-dark' : 'text-on-surface-variant dark:text-on-surface-variant-dark'
             }`}
           >
             {col.label}

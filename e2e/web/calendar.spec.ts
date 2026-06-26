@@ -13,7 +13,7 @@ async function login(page: Page) {
   await page.goto('/auth/login')
   await page.getByLabel('Email').fill(TEST_USER.email)
   await page.getByLabel('Password', { exact: true }).fill(TEST_USER.password)
-  await page.getByRole('button', { name: 'Sign in' }).click()
+  await page.getByRole('button', { name: 'Enter the Hearth' }).click()
   await expect(page).toHaveURL(/localhost:\d+\/?$/, { timeout: 15000 })
 }
 
@@ -41,7 +41,7 @@ test.describe('Household Calendar (web)', () => {
     // A seeded event, the coverage-gap banner, and the load bar (all backend-computed)
     await expect(page.getByText('Standup').first()).toBeVisible()
     await expect(page.getByText(/unassigned/i).first()).toBeVisible()
-    await expect(page.getByText("This week's load")).toBeVisible()
+    await expect(page.getByText('Hearth Glow')).toBeVisible()
 
     expect(errors, `console errors: ${errors.join('\n')}`).toHaveLength(0)
   })

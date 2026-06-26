@@ -93,8 +93,8 @@ export function NewEventForm({
   return (
     <View>
       {errorMessage ? (
-        <View className="mb-4 rounded-xl border border-danger-border bg-danger-bg px-3.5 py-3" accessibilityRole="alert">
-          <Text className="font-sans text-sm font-semibold text-danger">{errorMessage}</Text>
+        <View className="mb-4 rounded-xl border border-error-container bg-error-container px-3.5 py-3 dark:border-error-container-dark dark:bg-error-container-dark" accessibilityRole="alert">
+          <Text className="font-body text-sm font-semibold text-on-error-container dark:text-on-error-container-dark">{errorMessage}</Text>
         </View>
       ) : null}
 
@@ -141,19 +141,19 @@ export function NewEventForm({
           onPress={onCancel}
           accessibilityRole="button"
           accessibilityLabel="Cancel"
-          className="min-h-[44px] justify-center rounded-button bg-cream px-6 dark:bg-cream-dark"
+          className="min-h-[44px] justify-center rounded-button bg-surface-container px-6 dark:bg-surface-container-dark"
         >
-          <Text className="font-sans text-sm font-bold text-ink-muted dark:text-ink-muted-dark">Cancel</Text>
+          <Text className="font-body text-sm font-bold text-on-surface-variant dark:text-on-surface-variant-dark">Cancel</Text>
         </Pressable>
         <Pressable
           onPress={submit}
           disabled={submitting}
           accessibilityRole="button"
           accessibilityLabel="Save event"
-          className="ml-auto min-h-[44px] justify-center rounded-button bg-terracotta px-7"
+          className="ml-auto min-h-[44px] justify-center rounded-button bg-primary px-7 dark:bg-primary-dark"
           style={{ opacity: submitting ? 0.6 : 1 }}
         >
-          <Text className="font-sans text-sm font-bold text-white">{submitting ? 'Saving…' : 'Save event'}</Text>
+          <Text className="font-body text-sm font-bold text-on-primary dark:text-on-primary-dark">{submitting ? 'Saving…' : 'Save event'}</Text>
         </Pressable>
       </View>
     </View>
@@ -170,8 +170,8 @@ function ToggleRow({
   onValueChange: (v: boolean) => void
 }) {
   return (
-    <View className="mb-4 min-h-[44px] flex-row items-center justify-between rounded-input border border-field-border px-4 dark:border-field-border-dark">
-      <Text className="font-sans text-sm font-semibold text-ink dark:text-ink-dark">{label}</Text>
+    <View className="mb-4 min-h-[44px] flex-row items-center justify-between rounded-input border border-outline-variant px-4 dark:border-outline-variant-dark">
+      <Text className="font-body text-sm font-semibold text-on-surface dark:text-on-surface-dark">{label}</Text>
       <Switch value={value} onValueChange={onValueChange} accessibilityLabel={label} />
     </View>
   )
@@ -190,7 +190,7 @@ function ChipGroup({
 }) {
   return (
     <View className="mb-4">
-      <Text className="mb-2 font-sans text-[11px] font-bold uppercase tracking-wide text-ink-muted dark:text-ink-muted-dark">
+      <Text className="mb-2 font-body text-[11px] font-bold uppercase tracking-wide text-on-surface-variant dark:text-on-surface-variant-dark">
         {legend}
       </Text>
       <View className="flex-row flex-wrap gap-2">
@@ -203,17 +203,17 @@ function ChipGroup({
             accessibilityLabel={`${legend}: ${c.label}`}
             className="min-h-[36px] justify-center rounded-pill border px-3.5 py-2"
             style={{
-              backgroundColor: c.selected ? '#C4603D' : 'transparent',
-              borderColor: c.selected ? '#C4603D' : '#E0D5C5',
+              backgroundColor: c.selected ? '#9a4023' : 'transparent',
+              borderColor: c.selected ? '#9a4023' : '#dcc1b9',
             }}
           >
-            <Text className="font-sans text-[13px] font-semibold" style={{ color: c.selected ? '#fff' : '#4A4238' }}>
+            <Text className="font-body text-[13px] font-semibold" style={{ color: c.selected ? '#fff' : '#56423d' }}>
               {c.label}
             </Text>
           </Pressable>
         ))}
       </View>
-      {error ? <Text className="mt-1 font-sans text-xs text-danger">{error}</Text> : null}
+      {error ? <Text className="mt-1 font-body text-xs text-error dark:text-error-dark">{error}</Text> : null}
     </View>
   )
 }

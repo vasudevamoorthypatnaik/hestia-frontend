@@ -8,10 +8,16 @@ import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { StatusBar } from 'expo-status-bar'
 import { useFonts } from 'expo-font'
 import * as SplashScreen from 'expo-splash-screen'
+// Warm Hearth fonts (HES-REDESIGN): Quicksand (headlines) + Be Vietnam Pro (body).
+import Quicksand from '@expo-google-fonts/quicksand/600SemiBold/Quicksand_600SemiBold.ttf'
+import QuicksandBold from '@expo-google-fonts/quicksand/700Bold/Quicksand_700Bold.ttf'
+import BeVietnamPro from '@expo-google-fonts/be-vietnam-pro/400Regular/BeVietnamPro_400Regular.ttf'
+import BeVietnamProMedium from '@expo-google-fonts/be-vietnam-pro/500Medium/BeVietnamPro_500Medium.ttf'
+import BeVietnamProSemiBold from '@expo-google-fonts/be-vietnam-pro/600SemiBold/BeVietnamPro_600SemiBold.ttf'
+import BeVietnamProBold from '@expo-google-fonts/be-vietnam-pro/700Bold/BeVietnamPro_700Bold.ttf'
+// Legacy fonts kept loaded as fallback during the brand migration.
 import Newsreader from '@expo-google-fonts/newsreader/500Medium/Newsreader_500Medium.ttf'
-import NewsreaderSemiBold from '@expo-google-fonts/newsreader/600SemiBold/Newsreader_600SemiBold.ttf'
 import HankenGrotesk from '@expo-google-fonts/hanken-grotesk/500Medium/HankenGrotesk_500Medium.ttf'
-import HankenGroteskBold from '@expo-google-fonts/hanken-grotesk/700Bold/HankenGrotesk_700Bold.ttf'
 import { getUrqlClient, onUrqlClientReset } from '@/shared/graphql/client'
 import { ThemeProvider } from '@/shared/contexts/ThemeContext'
 import { AlertProvider } from '@/shared/contexts/AlertContext'
@@ -26,18 +32,26 @@ initSentry()
 void SplashScreen.preventAutoHideAsync()
 
 /**
- * Root layout (HES-SETUP). Provider tree + Phase 1 fonts (Newsreader/Hanken Grotesk, native via
- * expo-font; web also via +html Google Fonts). URQL client swaps on reset (post-logout cache
- * clear). GestureHandlerRootView is required for the Reanimated AlertModal.
+ * Root layout. Provider tree + Warm Hearth fonts (Quicksand/Be Vietnam Pro, native via
+ * expo-font; web also via +html Google Fonts; legacy Newsreader/Hanken kept as fallback). URQL
+ * client swaps on reset (post-logout cache clear). GestureHandlerRootView is required for the
+ * Reanimated AlertModal. Splash gates on FONTS ONLY (never theme) — see note below.
  */
 export default function RootLayout() {
   const [client, setClient] = useState(getUrqlClient())
 
   const [fontsLoaded, fontError] = useFonts({
+    // Family-name keys MUST match tailwind.config fontFamily values (head: 'Quicksand',
+    // body: 'Be Vietnam Pro') so NativeWind resolves them on native.
+    Quicksand,
+    'Quicksand-Bold': QuicksandBold,
+    'Be Vietnam Pro': BeVietnamPro,
+    'Be Vietnam Pro-Medium': BeVietnamProMedium,
+    'Be Vietnam Pro-SemiBold': BeVietnamProSemiBold,
+    'Be Vietnam Pro-Bold': BeVietnamProBold,
+    // Legacy fallback
     Newsreader,
-    'Newsreader-SemiBold': NewsreaderSemiBold,
     HankenGrotesk,
-    'HankenGrotesk-Bold': HankenGroteskBold,
   })
 
   useEffect(() => {

@@ -18,7 +18,7 @@ export function MemberRoleLabel({ member }: { member: MemberVM }) {
   const text = member.role === MemberRoleValues.Admin ? 'admin' : member.ageLabel ?? null
   if (!text) return null
   return (
-    <Text className="ml-auto font-sans text-[11px] text-ink-muted dark:text-ink-muted-dark">
+    <Text className="ml-auto font-body text-[11px] text-on-surface-variant dark:text-on-surface-variant-dark">
       {text}
     </Text>
   )

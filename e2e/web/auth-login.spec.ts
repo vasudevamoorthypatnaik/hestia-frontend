@@ -1,39 +1,46 @@
 import { test, expect } from '@playwright/test'
 
 // Login is the unauthenticated entry. We enter at '/', which the auth gate redirects to
-// /auth/login (no token). Selectors use getByLabel/getByRole per the RNW E2E rule (T9).
+// /auth/login (no token). Selectors use getByLabel/getByRole per the RNW E2E rule (T2).
 const TEST_USER = { email: 'pallavi@hestia.app', password: 'password123' }
 
 test.describe('Login (/auth/login)', () => {
-  test('redirects unauthenticated root to the sign-in screen (U1/T10)', async ({ page }) => {
+  test('redirects unauthenticated root to the sign-in screen (U1/U3)', async ({ page }) => {
     await page.goto('/')
     await expect(page).toHaveURL(/\/auth\/login/)
-    await expect(page.getByText('Welcome back to your household.')).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Sign in' })).toBeVisible()
+    // Warm Hearth hero tagline + welcome copy + renamed CTA (string-rename contract).
+    await expect(page.getByText("Keep the hearth glowing, even when you're apart.")).toBeVisible()
+    await expect(page.getByText('Welcome Home')).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Enter the Hearth' })).toBeVisible()
   })
 
-  test('shows generic error on invalid credentials (T2/T8)', async ({ page }) => {
+  test('shows generic error on invalid credentials (T2/U7)', async ({ page }) => {
     await page.goto('/auth/login')
     await page.getByLabel('Email').fill('nobody@hestia.app')
     await page.getByLabel('Password', { exact: true }).fill('wrongpassword')
-    await page.getByRole('button', { name: 'Sign in' }).click()
+    await page.getByRole('button', { name: 'Enter the Hearth' }).click()
     await expect(page.getByText('Invalid email or password. Please try again.')).toBeVisible()
   })
 
-  test('Google/Apple are present but inert (U7/T14)', async ({ page }) => {
+  test('Google/Apple are present but inert (T7)', async ({ page }) => {
     await page.goto('/auth/login')
     await expect(page.getByText('Google', { exact: true })).toBeVisible()
     await expect(page.getByText('Apple', { exact: true })).toBeVisible()
     await expect(page.getByText('soon').first()).toBeVisible()
   })
 
-  test('successful login lands on the household home (U2/U6)', async ({ page }) => {
+  test('password show/hide toggle is present (U5)', async ({ page }) => {
+    await page.goto('/auth/login')
+    await expect(page.getByRole('button', { name: 'Show password' })).toBeVisible()
+  })
+
+  test('successful login lands on the household home (U6/U7)', async ({ page }) => {
     await page.goto('/auth/login')
     await page.getByLabel('Email').fill(TEST_USER.email)
     await page.getByLabel('Password', { exact: true }).fill(TEST_USER.password)
-    await page.getByRole('button', { name: 'Sign in' }).click()
-    // The auth-gated landing is now the household calendar (HES-CAL) — Sign out remains reachable.
-    await expect(page.getByText("This week's load")).toBeVisible({ timeout: 15000 })
+    await page.getByRole('button', { name: 'Enter the Hearth' }).click()
+    // The auth-gated landing is the household calendar — the Hearth Glow footer + Sign out appear.
+    await expect(page.getByText('Hearth Glow')).toBeVisible({ timeout: 15000 })
     await expect(page.getByRole('button', { name: 'Sign out' })).toBeVisible()
   })
 })

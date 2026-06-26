@@ -1,14 +1,15 @@
 import { View, Text } from 'react-native'
+import { MaterialIcons } from '@expo/vector-icons'
 
-/** Mobile bottom tab bar. Only Calendar is wired this slice; Capture/Load are inert (UAC-9). */
+/** Mobile bottom tab bar (Warm Hearth). Only Calendar is wired this slice; Capture/Load are inert. */
 export function CalendarBottomNav() {
-  const items: { icon: string; label: string; active: boolean }[] = [
-    { icon: '▦', label: 'Calendar', active: true },
-    { icon: '✉', label: 'Capture', active: false },
-    { icon: '⚖', label: 'Load', active: false },
+  const items: { icon: keyof typeof MaterialIcons.glyphMap; label: string; active: boolean }[] = [
+    { icon: 'calendar-month', label: 'Calendar', active: true },
+    { icon: 'mail-outline', label: 'Capture', active: false },
+    { icon: 'balance', label: 'Load', active: false },
   ]
   return (
-    <View className="flex-row items-center justify-around border-t border-field-border bg-field py-2.5 dark:border-field-border-dark dark:bg-field-dark">
+    <View className="flex-row items-center justify-around border-t border-outline-variant bg-surface-container-lowest py-2.5 dark:border-outline-variant-dark dark:bg-surface-container-low-dark">
       {items.map((it) => (
         <View
           key={it.label}
@@ -16,12 +17,12 @@ export function CalendarBottomNav() {
           accessibilityState={it.active ? { selected: true } : undefined}
           className="items-center gap-0.5"
         >
-          <Text style={{ fontSize: 18 }} className={it.active ? 'text-terracotta' : 'text-ink-muted'}>
-            {it.icon}
-          </Text>
+          <MaterialIcons name={it.icon} size={20} color={it.active ? '#9a4023' : '#89726b'} />
           <Text
-            className={`font-sans text-[11px] ${
-              it.active ? 'font-bold text-terracotta' : 'font-semibold text-ink-muted'
+            className={`font-body text-[11px] ${
+              it.active
+                ? 'font-bold text-primary dark:text-primary-dark'
+                : 'font-semibold text-on-surface-variant dark:text-on-surface-variant-dark'
             }`}
           >
             {it.label}
