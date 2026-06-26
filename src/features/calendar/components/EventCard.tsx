@@ -1,7 +1,12 @@
 import { View, Text } from 'react-native'
 import type { CalendarEventVM } from '@/features/calendar/types'
 
-/** A single event tile. Color comes from the backend (`colorHex`); coverage gaps render dashed. */
+// Warm Hearth gap accents (terracotta family) for unassigned/coverage-gap events.
+const GAP_BORDER = '#e2a88e'
+const GAP_PRIMARY = '#9a4023'
+const GAP_MUTED = '#d08c70'
+
+/** A single event tile (Warm Hearth). Color comes from the backend (`colorHex`); coverage gaps render dashed. */
 export function EventCard({
   event,
   showResponsible = true,
@@ -22,27 +27,24 @@ export function EventCard({
       className="rounded-md px-2.5 py-2"
       style={
         gap
-          ? { borderWidth: 1.5, borderStyle: 'dashed', borderColor: '#E2A88E', backgroundColor: 'transparent' }
+          ? { borderWidth: 1.5, borderStyle: 'dashed', borderColor: GAP_BORDER, backgroundColor: 'transparent' }
           : { borderLeftWidth: 3, borderLeftColor: event.colorHex, backgroundColor: `${event.colorHex}1A` }
       }
     >
-      <Text
-        className="font-sans text-[10px] font-bold"
-        style={{ color: gap ? '#C4603D' : event.colorHex }}
-      >
+      <Text className="font-body text-[10px] font-bold" style={{ color: gap ? GAP_PRIMARY : event.colorHex }}>
         {event.needsDriver ? `${event.timeLabel} 🚗` : event.timeLabel}
         {gap ? ' ⚠' : ''}
       </Text>
       <Text
-        className="font-sans text-xs font-semibold text-ink dark:text-ink-dark"
-        style={gap ? { color: '#C4603D' } : undefined}
+        className="font-body text-xs font-semibold text-on-surface dark:text-on-surface-dark"
+        style={gap ? { color: GAP_PRIMARY } : undefined}
       >
         {event.title}
       </Text>
       {showResponsible && (
         <Text
-          className="mt-0.5 font-sans text-[10px] text-ink-muted dark:text-ink-muted-dark"
-          style={gap ? { color: '#D08C70', fontWeight: '600' } : undefined}
+          className="mt-0.5 font-body text-[10px] text-on-surface-variant dark:text-on-surface-variant-dark"
+          style={gap ? { color: GAP_MUTED, fontWeight: '600' } : undefined}
         >
           {gap ? 'Unassigned' : event.responsibleMember?.displayName ?? owners}
         </Text>

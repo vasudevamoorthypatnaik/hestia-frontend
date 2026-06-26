@@ -38,11 +38,11 @@ export function NewEventModal({
       style={StyleSheet.absoluteFill}
       className="z-50 items-center justify-center bg-black/40 p-4"
     >
-      <View className="max-h-[90%] w-[600px] max-w-full overflow-hidden rounded-card bg-field dark:bg-field-dark">
-        <View className="flex-row items-center justify-between border-b border-field-border px-7 py-5 dark:border-field-border-dark">
-          <Text className="font-display text-2xl text-ink dark:text-ink-dark">New event</Text>
+      <View className="max-h-[90%] w-[600px] max-w-full overflow-hidden rounded-card bg-surface-container-low dark:bg-surface-container-low-dark">
+        <View className="flex-row items-center justify-between border-b border-outline-variant px-7 py-5 dark:border-outline-variant-dark">
+          <Text className="font-head text-2xl font-bold text-on-surface dark:text-on-surface-dark">New event</Text>
           <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Close">
-            <Text className="text-xl text-ink-muted">×</Text>
+            <Text className="text-xl text-on-surface-variant dark:text-on-surface-variant-dark">×</Text>
           </Pressable>
         </View>
         <ScrollView className="px-7 py-6">

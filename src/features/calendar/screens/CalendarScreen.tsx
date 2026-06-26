@@ -30,9 +30,9 @@ export default function CalendarScreen() {
   }
 
   return (
-    <View className="flex-1 bg-surface-light dark:bg-surface-dark">
+    <View className="flex-1 bg-surface dark:bg-surface-dark">
       <View className="flex-row items-center justify-between px-5 pb-2 pt-4">
-        <Text className="font-display text-2xl text-ink dark:text-ink-dark">
+        <Text className="font-head text-2xl font-bold text-on-surface dark:text-on-surface-dark">
           {calendar?.period.label ?? 'Calendar'}
         </Text>
         <View className="flex-row items-center gap-3">
@@ -43,25 +43,25 @@ export default function CalendarScreen() {
             accessibilityLabel="Sign out"
             className="min-h-[44px] justify-center"
           >
-            <Text className="font-sans text-[13px] font-semibold text-ink-muted">Sign out</Text>
+            <Text className="font-body text-[13px] font-semibold text-on-surface-variant dark:text-on-surface-variant-dark">Sign out</Text>
           </Pressable>
         </View>
       </View>
 
       <View className="flex-row items-center gap-2 px-5 pb-2">
         <Pressable onPress={() => shiftPeriod(-1)} accessibilityRole="button" accessibilityLabel="Previous day">
-          <Text className="text-lg text-ink-muted">‹</Text>
+          <Text className="text-lg text-on-surface-variant dark:text-on-surface-variant-dark">‹</Text>
         </Pressable>
         <Pressable onPress={() => shiftPeriod(1)} accessibilityRole="button" accessibilityLabel="Next day">
-          <Text className="text-lg text-ink-muted">›</Text>
+          <Text className="text-lg text-on-surface-variant dark:text-on-surface-variant-dark">›</Text>
         </Pressable>
         <Pressable
           onPress={() => setShowNew(true)}
           accessibilityRole="button"
           accessibilityLabel="New event"
-          className="ml-auto h-9 w-9 items-center justify-center rounded-pill bg-terracotta"
+          className="ml-auto h-9 w-9 items-center justify-center rounded-pill bg-primary dark:bg-primary-dark"
         >
-          <Text className="text-lg font-bold text-white">+</Text>
+          <Text className="text-lg font-bold text-on-primary dark:text-on-primary-dark">+</Text>
         </Pressable>
       </View>
 
@@ -71,15 +71,15 @@ export default function CalendarScreen() {
         </View>
       )}
 
-      <ScrollView className="flex-1 rounded-t-3xl border-t border-field-border bg-white px-4 pt-4 dark:border-field-border-dark dark:bg-cream-dark">
+      <ScrollView className="flex-1 rounded-t-3xl border-t border-outline-variant bg-surface-container-lowest px-4 pt-4 dark:border-outline-variant-dark dark:bg-surface-container-low-dark">
         {!calendar ? (
           <View className="items-center justify-center py-16">
             {error ? (
-              <Text className="font-sans text-sm text-danger">Could not load your calendar.</Text>
+              <Text className="font-body text-sm text-error dark:text-error-dark">Could not load your calendar.</Text>
             ) : fetching ? (
-              <ActivityIndicator color="#C4603D" />
+              <ActivityIndicator color="#9a4023" />
             ) : (
-              <Text className="font-sans text-sm text-ink-muted">Loading…</Text>
+              <Text className="font-body text-sm text-on-surface-variant dark:text-on-surface-variant-dark">Loading…</Text>
             )}
           </View>
         ) : (

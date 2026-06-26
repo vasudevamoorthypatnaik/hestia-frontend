@@ -7,6 +7,7 @@ import {
   type TextInput as RNTextInput,
 } from 'react-native'
 import { useRouter, type Href } from 'expo-router'
+import { MaterialIcons } from '@expo/vector-icons'
 import { FormField } from '@/shared/components/FormField'
 import type { LoginFormValues, LoginFormErrors } from '../types'
 
@@ -20,9 +21,9 @@ interface EmailLoginFormProps {
 }
 
 /**
- * Email + password login form (HES-SETUP). Phase 1 styling. Generic error banner (T2/T8),
- * disabled+spinner Sign-in during submit (T11), Forgot? link. accessibilityLabel on inputs
- * maps to aria-label for Playwright getByLabel (T9/U4).
+ * Email + password login form (HES-REDESIGN, Warm Hearth). Leading mail/lock icons, password
+ * show/hide toggle, "Enter the Hearth" CTA. Generic error banner (enumeration-safe, rendered as
+ * plain text). accessibilityLabel/testIDs preserved for Playwright getByLabel/testID (T2, U5).
  */
 export function EmailLoginForm({
   values,
@@ -39,16 +40,19 @@ export function EmailLoginForm({
     <View>
       {globalError ? (
         <View
-          className="mb-4 rounded-xl border border-danger-border bg-danger-bg px-3.5 py-3"
+          className="mb-4 rounded-xl border border-error-container bg-error-container px-3.5 py-3 dark:border-error-container-dark dark:bg-error-container-dark"
           accessibilityRole="alert"
         >
-          <Text className="text-sm font-semibold font-sans text-danger">{globalError}</Text>
+          <Text className="text-sm font-semibold font-body text-on-error-container dark:text-on-error-container-dark">
+            {globalError}
+          </Text>
         </View>
       ) : null}
 
       <FormField
         label="Email"
         required
+        leadingIcon={<MaterialIcons name="mail-outline" size={20} color="#89726b" />}
         value={values.email}
         onChangeText={(text) => onChange('email', text)}
         error={formErrors.email}
@@ -67,6 +71,9 @@ export function EmailLoginForm({
         ref={passwordRef}
         label="Password"
         required
+        leadingIcon={<MaterialIcons name="lock-outline" size={20} color="#89726b" />}
+        secureToggle
+        secureToggleTestID="login-password-toggle"
         value={values.password}
         onChangeText={(text) => onChange('password', text)}
         error={formErrors.password}
@@ -88,7 +95,7 @@ export function EmailLoginForm({
           testID="forgot-password-link"
           className="min-h-[44px] justify-center"
         >
-          <Text className="text-sm font-semibold font-sans text-terracotta">Forgot?</Text>
+          <Text className="text-sm font-semibold font-body text-primary dark:text-primary-dark">Forgot?</Text>
         </Pressable>
       </View>
 
@@ -96,17 +103,18 @@ export function EmailLoginForm({
         onPress={onSubmit}
         disabled={isLoading}
         accessibilityRole="button"
-        accessibilityLabel="Sign in"
+        accessibilityLabel="Enter the Hearth"
         accessibilityState={{ disabled: isLoading, busy: isLoading }}
         testID="login-submit"
-        className={`min-h-[50px] flex-row items-center justify-center gap-2 rounded-button bg-terracotta px-4 py-3.5 ${
+        className={`min-h-[52px] flex-row items-center justify-center gap-2 rounded-xl bg-primary px-4 py-4 shadow-glow dark:bg-primary-dark ${
           isLoading ? 'opacity-75' : ''
         }`}
       >
         {isLoading ? <ActivityIndicator size="small" color="#FFFFFF" /> : null}
-        <Text className="text-base font-bold font-sans text-white">
-          {isLoading ? 'Signing in…' : 'Sign in'}
+        <Text className="text-base font-bold font-body text-on-primary dark:text-on-primary-dark">
+          {isLoading ? 'Signing in…' : 'Enter the Hearth'}
         </Text>
+        {!isLoading ? <MaterialIcons name="arrow-forward" size={18} color="#ffffff" /> : null}
       </Pressable>
     </View>
   )

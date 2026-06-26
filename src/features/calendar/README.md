@@ -51,3 +51,19 @@ Jest/RTL: `useMemberFilter`, `useHouseholdCalendar` (pause + nav), `useCreateCal
 `hestia-backend` module `hestia-event` (`com.hestia.event`): `householdCalendar` query +
 `createCalendarEvent` mutation, Flyway `V002` (schema) + `V003` (idempotent seed). Events seeded as
 (day-of-week, minute-of-day) and projected onto the requested week so the demo always looks current.
+
+## HES-REDESIGN — Warm Hearth reskin (frontend-only)
+Pure visual reskin to the Warm Hearth design system — **no backend / GraphQL / codegen change**
+(every element already had its data). What changed:
+- **Tokens + fonts:** all calendar components migrated to the Warm Hearth Material token set
+  (primary / surface-container-* / on-surface / outline / secondary / error) with `dark:` variants;
+  Quicksand headlines + Be Vietnam Pro body. Member event colors still come from backend `colorHex`.
+- **`LoadBar` → "Hearth Glow":** header renamed to **"Hearth Glow"** (visible-string change — E2E
+  updated); shows a per-member soft warm bar + a Balanced/Lopsided pill (Balanced when no adult
+  >60%). Guards: returns null on empty entries OR `total === 0` (no divide-by-zero); single-member
+  100% renders cleanly. Covered by `LoadBar.test.tsx`.
+- **Icons:** sidebar nav + bottom nav use `@expo/vector-icons` MaterialIcons (calendar/mail/balance)
+  instead of unicode glyphs.
+- **NewEventModal (web + native):** reskinned tokens ONLY — overlay structure / pointer-events /
+  `if (!visible) return null` pattern preserved (web-modal click-interception gotcha, FM8).
+- Coverage-gap banner "Assign"/"Claim" stays inert (deferred — needs a new mutation).

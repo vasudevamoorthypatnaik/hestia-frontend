@@ -25,7 +25,7 @@ export function MemberFilterChips({
             className="min-h-[36px] flex-row items-center gap-1.5 rounded-pill border px-2.5 py-1.5"
             style={{
               backgroundColor: on ? m.colorHex : 'transparent',
-              borderColor: on ? m.colorHex : '#E0D5C5',
+              borderColor: on ? m.colorHex : '#dcc1b9',
             }}
           >
             <View
@@ -35,8 +35,8 @@ export function MemberFilterChips({
               <Text className="text-[10px] font-bold text-white">{m.initial}</Text>
             </View>
             <Text
-              className="font-sans text-xs font-semibold"
-              style={{ color: on ? '#ffffff' : '#6B6155' }}
+              className="font-body text-xs font-semibold"
+              style={{ color: on ? '#ffffff' : '#56423d' }}
             >
               {m.displayName}
             </Text>

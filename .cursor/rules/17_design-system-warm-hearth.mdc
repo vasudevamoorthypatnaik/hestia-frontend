@@ -1,0 +1,55 @@
+---
+description: Warm Hearth design system — color tokens, fonts, dark mode, and web-CSS rules
+alwaysApply: true
+---
+
+# Warm Hearth Design System (HES-REDESIGN)
+
+**Role Perspective:** Senior Staff Engineer / Design Systems
+
+The Hestia UI uses the **Warm Hearth** design system (humanist-modern, Terracotta / Sage / Cream).
+Source of truth: `tailwind.config.js`. Mockups: `designs/phase 1 v2/`.
+
+## Color tokens (NativeWind / Tailwind)
+- Canonical **Material-style semantic tokens**, each with a light value AND a `-dark` counterpart:
+  `primary`, `primary-container`, `on-primary`, `secondary`, `secondary-container`,
+  `on-secondary[-container]`, `surface`, `surface-container-{lowest,low,DEFAULT,high,highest}`,
+  `on-surface`, `on-surface-variant`, `outline`, `outline-variant`, `inverse-surface`,
+  `inverse-on-surface`, `error`, `error-container`, `on-error[-container]`.
+- Usage: `bg-primary dark:bg-primary-dark`, `text-on-surface dark:text-on-surface-dark`, etc.
+  (explicit `dark:` variant classes — NOT CSS `var()`, which is unreliable on native).
+- **Legacy aliases** (`terracotta`, `ink`, `surface.light`, `cream`, `field`, `sage`, `gold`,
+  `danger` incl. sub-keys `danger.bg/border`, `field.border[-dark]`, `ink.muted[-dark]`) are kept
+  remapped to Warm Hearth values for backward compatibility. Prefer canonical tokens in new code.
+- Per-person/member event colors come from the backend (`colorHex`) — render inline, never tokenize.
+
+## Fonts
+- **Quicksand** = headlines (`font-head`); **Be Vietnam Pro** = body (`font-body`). Legacy
+  `font-display`/`font-sans` are remapped to these.
+- Loaded TWO ways (both required): native via `useFonts` in `app/_layout.tsx` (deep per-weight TTF
+  imports from `@expo-google-fonts/*`), AND web via the Google Fonts `<link>` in `app/+html.tsx`.
+  `useFonts` alone does NOT deliver web @font-face — always update `+html.tsx` too.
+- The root splash gate keys on **fonts only** (never theme) — gating on theme deadlocks the tree.
+
+## Dark mode
+- `darkMode: 'class'`; `ThemeProvider` sets `document.documentElement.classList` (web) +
+  `nativeWindColorScheme.set()` (native). Light-first; every restyled surface needs `dark:` variants.
+- Primary CTAs keep a **terracotta fill** in dark mode (brand consistency), not a Material inversion.
+
+## Web CSS rebuild (KNOWN GOTCHA)
+The compiled web CSS can lag newly-added `dark:` classes → partial restyle on toggle. When adding
+new utility classes: clear `node_modules/.cache/nativewind/*`, restart Metro `--clear`, rebuild the
+web CSS, and **grep the compiled `global.css.web.css` for representative new `dark:` classes** to
+confirm they compiled. Verify BOTH themes by actually toggling, not just initial load.
+
+## Icons
+Use `@expo/vector-icons` (MaterialIcons) for crisp cross-platform icons (mail, lock, visibility,
+calendar-month, balance, arrow-forward). Mock it in `jest.setup.js`
+(`jest.mock('@expo/vector-icons', () => ({ Ionicons: 'Ionicons', MaterialIcons: 'MaterialIcons' }))`).
+
+## Assets
+Photographic assets (e.g. `assets/images/login-hero.jpg`) ship world-readable on the public web
+build — **strip EXIF/metadata before commit** (re-encode or `exiftool -all=`). Declare new image
+extensions in `src/types/assets.d.ts` and import via `import X from '....jpg'` (no `require()` —
+ESLint `no-var-requires`). Use `expo-image` (not RN `Image`) for web compatibility, with a solid
+brand-color fallback behind any photo so a missing asset never breaks the screen.

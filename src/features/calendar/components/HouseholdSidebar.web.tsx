@@ -1,9 +1,14 @@
 import { View, Text, Pressable } from 'react-native'
+import { MaterialIcons } from '@expo/vector-icons'
+import { HestiaMark } from '@/shared/components/HestiaMark'
 import { MemberDot, MemberRoleLabel } from '@/features/calendar/components/MemberDot'
 import type { ConnectedAccountVM, MemberVM } from '@/features/calendar/types'
 import { SyncStatusValues } from '@/features/calendar/types'
 
-/** Web dashboard left rail: brand, nav, member filter rows, connected accounts. */
+const SYNC_OK = '#456649'
+const SYNC_OFF = '#9a4023'
+
+/** Web dashboard left rail (Warm Hearth): brand, nav, member filter rows, connected accounts. */
 export function HouseholdSidebar({
   members,
   accounts,
@@ -16,19 +21,17 @@ export function HouseholdSidebar({
   onToggle: (memberId: string) => void
 }) {
   return (
-    <View className="w-60 border-r border-field-border bg-field px-4 py-6 dark:border-field-border-dark dark:bg-field-dark">
+    <View className="w-60 border-r border-outline-variant bg-surface-container-low px-4 py-6 dark:border-outline-variant-dark dark:bg-surface-container-low-dark">
       <View className="mb-6 flex-row items-center gap-2.5">
-        <View className="h-7 w-7 items-center justify-center rounded-pill bg-terracotta">
-          <View className="h-2.5 w-2.5 rotate-45 rounded-[2px] bg-field dark:bg-field-dark" />
-        </View>
-        <Text className="font-display text-xl text-ink dark:text-ink-dark">Hestia</Text>
+        <HestiaMark size={28} />
+        <Text className="font-head text-xl font-bold text-on-surface dark:text-on-surface-dark">Hestia</Text>
       </View>
 
-      <NavRow icon="▦" label="Calendar" active />
-      <NavRow icon="✉" label="Capture" />
-      <NavRow icon="⚖" label="Mental load" />
+      <NavRow icon="calendar-month" label="Calendar" active />
+      <NavRow icon="mail-outline" label="Capture" />
+      <NavRow icon="balance" label="Mental load" />
 
-      <Text className="mb-3 mt-6 font-sans text-[10px] font-bold uppercase tracking-wider text-ink-muted dark:text-ink-muted-dark">
+      <Text className="mb-3 mt-6 font-body text-[10px] font-bold uppercase tracking-wider text-on-surface-variant dark:text-on-surface-variant-dark">
         Household · tap to filter
       </Text>
       {members.map((m) => {
@@ -43,8 +46,8 @@ export function HouseholdSidebar({
             className="min-h-[36px] flex-row items-center gap-2.5 py-1.5"
             style={{ opacity: on ? 1 : 0.4 }}
           >
-            <MemberDot colorHex={on ? m.colorHex : '#A89A88'} />
-            <Text className="font-sans text-[13px] font-medium text-ink dark:text-ink-dark">
+            <MemberDot colorHex={on ? m.colorHex : '#89726b'} />
+            <Text className="font-body text-[13px] font-medium text-on-surface dark:text-on-surface-dark">
               {m.displayName}
             </Text>
             <MemberRoleLabel member={m} />
@@ -52,19 +55,19 @@ export function HouseholdSidebar({
         )
       })}
 
-      <Text className="mb-3 mt-6 font-sans text-[10px] font-bold uppercase tracking-wider text-ink-muted dark:text-ink-muted-dark">
+      <Text className="mb-3 mt-6 font-body text-[10px] font-bold uppercase tracking-wider text-on-surface-variant dark:text-on-surface-variant-dark">
         Connected
       </Text>
       {accounts.map((a) => (
         <View key={a.id} className="flex-row items-center gap-2 py-1">
           <View
             className="h-2 w-2 rounded-pill"
-            style={{ backgroundColor: a.status === SyncStatusValues.Synced ? '#6E9466' : '#C4603D' }}
+            style={{ backgroundColor: a.status === SyncStatusValues.Synced ? SYNC_OK : SYNC_OFF }}
           />
-          <Text className="font-sans text-xs text-ink-muted dark:text-ink-muted-dark">{a.label}</Text>
+          <Text className="font-body text-xs text-on-surface-variant dark:text-on-surface-variant-dark">{a.label}</Text>
           <Text
-            className="ml-auto font-sans text-[11px] font-semibold"
-            style={{ color: a.status === SyncStatusValues.Synced ? '#6E9466' : '#C4603D' }}
+            className="ml-auto font-body text-[11px] font-semibold"
+            style={{ color: a.status === SyncStatusValues.Synced ? SYNC_OK : SYNC_OFF }}
           >
             {a.statusLabel}
           </Text>
@@ -74,21 +77,31 @@ export function HouseholdSidebar({
   )
 }
 
-function NavRow({ icon, label, active = false }: { icon: string; label: string; active?: boolean }) {
+function NavRow({
+  icon,
+  label,
+  active = false,
+}: {
+  icon: keyof typeof MaterialIcons.glyphMap
+  label: string
+  active?: boolean
+}) {
   return (
     <View
       accessibilityRole={active ? 'tab' : 'none'}
       accessibilityState={active ? { selected: true } : undefined}
       className={`min-h-[40px] flex-row items-center gap-3 rounded-xl px-3 py-2.5 ${
-        active ? 'border border-field-border bg-cream dark:border-field-border-dark dark:bg-cream-dark' : ''
+        active
+          ? 'border border-outline-variant bg-surface-container-lowest dark:border-outline-variant-dark dark:bg-surface-container-dark'
+          : ''
       }`}
     >
-      <Text style={{ fontSize: 16 }} className={active ? 'text-ink dark:text-ink-dark' : 'text-ink-muted'}>
-        {icon}
-      </Text>
+      <MaterialIcons name={icon} size={18} color={active ? '#9a4023' : '#89726b'} />
       <Text
-        className={`font-sans text-sm ${
-          active ? 'font-semibold text-ink dark:text-ink-dark' : 'font-medium text-ink-muted'
+        className={`font-body text-sm ${
+          active
+            ? 'font-semibold text-on-surface dark:text-on-surface-dark'
+            : 'font-medium text-on-surface-variant dark:text-on-surface-variant-dark'
         }`}
       >
         {label}

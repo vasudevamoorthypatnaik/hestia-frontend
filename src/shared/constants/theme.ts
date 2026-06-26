@@ -1,7 +1,7 @@
-// Shared theme constants (HES-SETUP). Phase 1 brand values for non-NativeWind contexts.
+// Shared theme constants. Warm Hearth brand values for non-NativeWind contexts (HES-REDESIGN).
 export const BRAND = {
-  terracotta: '#C4603D',
-  ink: '#2B2521',
-  surfaceLight: '#E9E2D6',
-  surfaceDark: '#1F1B18',
+  terracotta: '#9a4023',
+  ink: '#1e1b19',
+  surfaceLight: '#fff8f5',
+  surfaceDark: '#1a1714',
 } as const

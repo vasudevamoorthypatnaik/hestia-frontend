@@ -33,12 +33,12 @@ export function NewEventModal({
 
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
-      <View className="flex-1 bg-surface-light dark:bg-surface-dark">
-        <View className="flex-row items-center justify-between border-b border-field-border px-5 py-4 dark:border-field-border-dark">
+      <View className="flex-1 bg-surface dark:bg-surface-dark">
+        <View className="flex-row items-center justify-between border-b border-outline-variant px-5 py-4 dark:border-outline-variant-dark">
           <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Cancel">
-            <Text className="font-sans text-sm font-semibold text-ink-muted">Cancel</Text>
+            <Text className="font-body text-sm font-semibold text-on-surface-variant dark:text-on-surface-variant-dark">Cancel</Text>
           </Pressable>
-          <Text className="font-sans text-base font-bold text-ink dark:text-ink-dark">New event</Text>
+          <Text className="font-head text-base font-bold text-on-surface dark:text-on-surface-dark">New event</Text>
           <View className="w-12" />
         </View>
         <ScrollView className="flex-1 px-5 py-5">

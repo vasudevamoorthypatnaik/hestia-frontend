@@ -49,3 +49,21 @@ auth gate + home at `app/(tabs)/_layout.tsx` + `app/(tabs)/index.tsx`.
 - hestia-backend auth (login/register/refresh + users table) — path A.
 - Login Playwright E2E against local (EX-36) once a seeded test user exists.
 - Native font bundling (Newsreader/Hanken `.ttf`); AlertModal (Reanimated) if modal alerts needed.
+
+## HES-REDESIGN — Warm Hearth reskin
+- **Fonts:** Quicksand (headlines, `font-head`) + Be Vietnam Pro (body, `font-body`); legacy
+  `font-display`/`font-sans` remapped to them. Web fonts via `app/+html.tsx` Google Fonts link;
+  native via `useFonts` (splash still gates on fonts only).
+- **Login:** split-panel — web/desktop hero (photo `assets/images/login-hero.jpg` + terracotta
+  gradient overlay + Hestia mark + tagline + 2 feature bullets) left, form right; mobile centered
+  card. `EmailLoginForm` adds leading mail/lock icons (`@expo/vector-icons` MaterialIcons) + a
+  password show/hide toggle (`testID="login-password-toggle"`).
+- **CTA rename (string-rename contract):** the primary CTA visible text + accessibilityLabel are
+  now **"Enter the Hearth"** (was "Sign in"); `testID="login-submit"` preserved. E2E specs
+  (`auth-login.spec.ts`, `calendar.spec.ts` login helper) updated in lockstep.
+- **Register / Forgot:** reskinned navigable placeholders (web Register = gradient hero split-panel).
+  Functional registration/reset remain out of scope (A5) — these screens render NO credential
+  inputs and NO submit (zero attack surface, asserted in `RegisterScreen.test.tsx`).
+- **Dark mode:** light-first + coherent dark variant; primary CTA keeps a terracotta fill in dark.
+- **Tests:** `FormField.test.tsx` (icon + show/hide), `LoginScreen.test.tsx` (hero + CTA + inert
+  social), `RegisterScreen.test.tsx` (no credential surface).
