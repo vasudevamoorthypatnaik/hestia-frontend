@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en" style="width: 1280px; height: 1042px; overflow: hidden; position: relative;"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Hestia | Family Management</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&amp;family=Be+Vietnam+Pro:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "tertiary": "#5d5c58",
+                    "surface-container-lowest": "#ffffff",
+                    "primary-fixed": "#ffdbd0",
+                    "primary-container": "#b95838",
+                    "on-error-container": "#93000a",
+                    "surface-bright": "#fff8f5",
+                    "error-container": "#ffdad6",
+                    "primary": "#9a4023",
+                    "outline": "#89726b",
+                    "on-tertiary-fixed": "#1c1c19",
+                    "on-tertiary": "#ffffff",
+                    "tertiary-fixed": "#e6e2dd",
+                    "on-error": "#ffffff",
+                    "secondary": "#456649",
+                    "on-primary": "#ffffff",
+                    "surface": "#fff8f5",
+                    "primary-fixed-dim": "#ffb59e",
+                    "on-secondary-container": "#496a4d",
+                    "error": "#ba1a1a",
+                    "surface-container-highest": "#e9e1de",
+                    "inverse-on-surface": "#f7efec",
+                    "tertiary-fixed-dim": "#c9c6c1",
+                    "surface-variant": "#e9e1de",
+                    "on-primary-container": "#fffbff",
+                    "outline-variant": "#dcc1b9",
+                    "on-tertiary-container": "#fffbff",
+                    "surface-container": "#f4ece9",
+                    "on-secondary-fixed-variant": "#2d4e33",
+                    "on-surface": "#1e1b19",
+                    "surface-tint": "#9d4325",
+                    "on-primary-fixed-variant": "#7e2c10",
+                    "inverse-primary": "#ffb59e",
+                    "tertiary-container": "#767470",
+                    "on-tertiary-fixed-variant": "#484743",
+                    "secondary-container": "#c3e9c4",
+                    "on-primary-fixed": "#3a0b00",
+                    "surface-container-low": "#faf2ef",
+                    "on-secondary": "#ffffff",
+                    "surface-container-high": "#efe7e3",
+                    "on-secondary-fixed": "#01210a",
+                    "inverse-surface": "#33302e",
+                    "surface-dim": "#e0d8d5",
+                    "secondary-fixed-dim": "#abd0ac",
+                    "on-background": "#1e1b19",
+                    "background": "#fff8f5",
+                    "secondary-fixed": "#c6ecc7",
+                    "on-surface-variant": "#56423d"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "unit": "4px",
+                    "margin-desktop": "32px",
+                    "calendar-density-sm": "40px",
+                    "calendar-density-md": "64px",
+                    "gutter": "16px",
+                    "margin-mobile": "16px"
+            },
+            "fontFamily": {
+                    "body-md": ["Be Vietnam Pro"],
+                    "label-sm": ["Be Vietnam Pro"],
+                    "headline-lg": ["Quicksand"],
+                    "calendar-cell": ["Be Vietnam Pro"],
+                    "headline-md": ["Quicksand"],
+                    "headline-lg-mobile": ["Quicksand"],
+                    "body-lg": ["Be Vietnam Pro"]
+            },
+            "fontSize": {
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.04em", "fontWeight": "600"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "calendar-cell": ["14px", {"lineHeight": "18px", "fontWeight": "500"}],
+                    "headline-md": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "headline-lg-mobile": ["26px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .hearth-glow {
+            background: linear-gradient(90deg, #9a4023 0%, #ffb59e 45%, #abd0ac 55%, #456649 100%);
+            filter: blur(8px);
+            opacity: 0.8;
+        }
+        .neomorphic-press:active {
+            box-shadow: inset 2px 2px 5px rgba(0,0,0,0.1), inset -2px -2px 5px rgba(255,255,255,0.7);
+        }
+        .calendar-card-shadow {
+            box-shadow: 0 4px 12px rgba(51, 48, 46, 0.05);
+        }
+        .animate-pulse-slow {
+            animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body-md min-h-screen flex">
+<!-- SideNavBar (The Anchor) -->
+<aside class="h-screen sticky left-0 top-0 w-64 bg-surface-container-low dark:bg-surface-container-lowest flex flex-col h-full p-unit">
+<div class="px-gutter py-8 flex flex-col gap-2">
+<h1 class="font-headline-md text-headline-md text-primary">Hestia</h1>
+<p class="text-on-surface-variant font-label-sm uppercase tracking-widest">Family Management</p>
+</div>
+<nav class="flex-1 px-4 space-y-2 mt-4">
+<!-- Active Tab: Hearth (Dashboard) -->
+<a class="flex items-center gap-4 px-4 py-3 rounded-lg text-primary font-bold border-r-4 border-primary bg-primary-fixed/20 transition-all Active: translate-x-1 duration-200" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="font-body-md text-body-md">Hearth</span>
+</a>
+<a class="flex items-center gap-4 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-all" href="#">
+<span class="material-symbols-outlined">calendar_today</span>
+<span class="font-body-md text-body-md">Calendar</span>
+</a>
+<a class="flex items-center gap-4 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-all" href="#">
+<span class="material-symbols-outlined">assignment</span>
+<span class="font-body-md text-body-md">Tasks</span>
+</a>
+<a class="flex items-center gap-4 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-all" href="#">
+<span class="material-symbols-outlined">group</span>
+<span class="font-body-md text-body-md">Household</span>
+</a>
+<a class="flex items-center gap-4 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-all" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-body-md text-body-md">Settings</span>
+</a><a class="flex items-center gap-4 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-all" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-body-md text-body-md">Settings</span>
+</a></nav>
+<div class="px-4 py-6 border-t border-outline-variant/30">
+<button class="w-full py-4 bg-primary text-on-primary rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg hover:brightness-110 active:scale-95 transition-all">
+<span class="material-symbols-outlined">add</span>
+                Add Event
+            </button>
+</div>
+<div class="px-4 pb-8 space-y-2">
+<a class="flex items-center gap-4 px-4 py-2 text-on-surface-variant hover:bg-surface-container-high transition-all rounded-lg" href="#">
+<span class="material-symbols-outlined">help</span>
+<span class="font-body-md text-body-md">Support</span>
+</a>
+<a class="flex items-center gap-4 px-4 py-2 text-on-surface-variant hover:bg-surface-container-high transition-all rounded-lg" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="font-body-md text-body-md">Account</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="flex-1 overflow-y-auto relative">
+<!-- TopAppBar Placeholder Contextual -->
+<header class="w-full top-0 sticky z-10 bg-surface/80 backdrop-blur-md flex justify-between items-center px-margin-desktop py-6">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-full overflow-hidden bg-surface-container-high">
+<img class="w-full h-full object-cover" data-alt="A warm and inviting portrait of a woman in her late 30s with a kind smile, styled with soft natural lighting in a cozy home environment. The aesthetic is humanist and modern, matching the Hestia brand colors with hints of terracotta and sage green in the background decor." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA_ng6IK32lfBp7WU14HcFSpLN7YCM2gOHTuaJRs8WCGHkTEv6BN1tFZlIejWYRPV41ypoN0vzjXuvUyYK9fyavlpwrj_n7Ky9H-yM9ow9MFVxkhne0exe3F8QQFCgiSa3PDo2Epn32_K6U84ynpuEh5co7POjg55tbYDKpcLKGOFaObhs7go9NuUnd3dz5WfWX0smTgvcafFU0e9o1EReg1732U0KR65CjGzu2QRjPcuEBseBHiA0_ijOK-fEwbFyqHqcNb68sHnw"/>
+</div>
+<div>
+<h2 class="font-headline-md text-headline-md text-on-surface">Hi Sarah! ✨</h2>
+<p class="text-on-surface-variant font-body-md">Your home is thriving today.</p>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-3 rounded-full hover:bg-surface-container-high text-on-surface-variant transition-colors active:scale-95">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="p-3 rounded-full hover:bg-surface-container-high text-on-surface-variant transition-colors active:scale-95">
+<span class="material-symbols-outlined">settings</span>
+</button>
+</div>
+</header>
+<div class="px-margin-desktop pb-margin-desktop flex flex-col gap-8">
+<!-- Shared Load Section (Hearth Glow Visualization) -->
+<!-- Grid Layout for Dashboard Items -->
+<section class="bg-surface-container-low rounded-2xl p-6 border border-outline-variant/30">
+<div class="flex justify-between items-end mb-4">
+<div>
+<h3 class="font-headline-md text-headline-md text-on-surface">Hearth Glow</h3>
+<p class="text-on-surface-variant font-body-md">Current labor balance</p>
+</div>
+<div class="text-right">
+<span class="font-label-sm uppercase tracking-wider text-primary">Thriving</span>
+</div>
+</div>
+<div class="relative h-8 w-full bg-surface-container-high rounded-full overflow-hidden flex">
+<!-- Sarah's Share (Terracotta) -->
+<div class="h-full bg-primary flex items-center px-4 transition-all duration-1000" style="width: 55%">
+<span class="text-on-primary font-label-sm">Sarah 55%</span>
+</div>
+<!-- Mark's Share (Earthy Green) -->
+<div class="h-full bg-secondary flex items-center justify-end px-4 transition-all duration-1000" style="width: 45%">
+<span class="text-on-secondary font-label-sm">Mark 45%</span>
+</div>
+<!-- Center Glow Divider -->
+<div class="absolute top-0 bottom-0 left-[55%] w-1 hearth-glow -translate-x-1/2 z-10"></div>
+</div>
+<div class="mt-4 flex gap-8">
+<div class="flex items-center gap-2">
+<div class="w-3 h-3 rounded-full bg-primary"></div>
+<span class="text-on-surface-variant font-label-sm">Mental Load</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="w-3 h-3 rounded-full bg-secondary"></div>
+<span class="text-on-surface-variant font-label-sm">Physical Tasks</span>
+</div>
+</div>
+</section><div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+<!-- Left: Coverage Gaps -->
+<div class="lg:col-span-1 flex flex-col gap-4">
+<h3 class="font-headline-md text-headline-md text-on-surface px-2">Coverage Gaps</h3>
+<div class="flex flex-col gap-4">
+<!-- Gap Card 1 -->
+<div class="p-6 rounded-2xl bg-error-container/20 border border-error/10 flex flex-col gap-4 animate-pulse-slow">
+<div class="flex justify-between items-start">
+<div class="flex gap-3">
+<div class="w-10 h-10 rounded-full bg-on-error-container text-white flex items-center justify-center">
+<span class="material-symbols-outlined">directions_run</span>
+</div>
+<div>
+<h4 class="font-bold text-on-surface">Soccer Pickup</h4>
+<p class="text-on-surface-variant font-label-sm">Tomorrow • 3:30 PM</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-error" data-weight="fill">priority_high</span>
+</div>
+<button class="w-full py-3 bg-white text-primary border border-primary/20 rounded-xl font-bold neomorphic-press hover:bg-primary/5 transition-all">
+                                Claim
+                            </button>
+</div>
+<!-- Gap Card 2 -->
+<div class="p-6 rounded-2xl bg-surface-container-high border border-outline-variant/30 flex flex-col gap-4">
+<div class="flex justify-between items-start">
+<div class="flex gap-3">
+<div class="w-10 h-10 rounded-full bg-tertiary-container text-white flex items-center justify-center">
+<span class="material-symbols-outlined">shopping_basket</span>
+</div>
+<div>
+<h4 class="font-bold text-on-surface">Groceries</h4>
+<p class="text-on-surface-variant font-label-sm">Friday • Any time</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline">circle</span>
+</div>
+<button class="w-full py-3 bg-white text-primary border border-primary/20 rounded-xl font-bold neomorphic-press hover:bg-primary/5 transition-all">
+                                Claim
+                            </button>
+</div>
+</div>
+</div>
+<!-- Right/Central: Tomorrow's Digest -->
+<div class="lg:col-span-2 flex flex-col gap-4">
+<div class="flex justify-between items-center px-2">
+<h3 class="font-headline-md text-headline-md text-on-surface">Tomorrow's Digest</h3>
+<button class="text-primary font-bold text-label-sm uppercase tracking-wider flex items-center gap-1">
+                            Full Calendar <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</button>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<!-- Confirmed Event Card -->
+<div class="p-6 rounded-2xl bg-surface border-l-4 border-secondary calendar-card-shadow flex flex-col gap-3">
+<div class="flex justify-between">
+<span class="font-label-sm text-secondary bg-secondary-container px-3 py-1 rounded-full uppercase">Confirmed</span>
+<span class="text-on-surface-variant font-label-sm">8:00 AM</span>
+</div>
+<h4 class="font-headline-md text-headline-md text-on-surface">School Drop-off</h4>
+<div class="flex items-center gap-2 text-on-surface-variant font-label-sm">
+<span class="material-symbols-outlined text-sm">location_on</span>
+                                Lincoln Elementary
+                            </div>
+<div class="flex -space-x-2 mt-2">
+<div class="w-8 h-8 rounded-full border-2 border-surface overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="Portrait of a young boy with a backpack, styled with warm afternoon sun, high-end family photography, matching the humanist modern aesthetic of Hestia." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBM70ranzBHT_wEt3nyxJFCNEHymCWzoRzUZa449fWWv7xtO_9Z92pQx5WuO162NIPaI0fKBvZWZIr4Dowl8f0yYYSgGKcoZhUVIZiE2EoPcW6j4cQsYNoNOv7nxYBdTsCL9HYDiGOzMI9zFO3KDLo1Oa5uSO2MEdbGyLO234H_fTQ98CbFLoVtm2aOKKoGu5biceAyYrCPcGETGIxLVVL9VdDIbbFoiEbx4sC9sKFh-tKwXdxKYgHFsYz1Tz80O9206FljNBc1kPc"/>
+</div>
+<div class="w-8 h-8 rounded-full border-2 border-surface bg-secondary text-white flex items-center justify-center text-[10px] font-bold">
+                                    M
+                                </div>
+</div>
+</div>
+<!-- Draft Event Card -->
+<div class="p-6 rounded-2xl bg-surface/50 border-2 border-dashed border-outline-variant calendar-card-shadow flex flex-col gap-3">
+<div class="flex justify-between">
+<span class="font-label-sm text-on-surface-variant/70 italic">Draft</span>
+<span class="text-on-surface-variant font-label-sm">6:30 PM</span>
+</div>
+<h4 class="font-headline-md text-headline-md text-on-surface italic">Family Dinner?</h4>
+<p class="text-on-surface-variant font-body-md">Wait for confirmation from Mark</p>
+<button class="mt-auto py-2 px-4 bg-primary/10 text-primary font-bold rounded-lg text-label-sm hover:bg-primary/20 transition-all">
+                                Confirm?
+                            </button>
+</div>
+<!-- Mental Load Indicator Card -->
+<div class="p-6 rounded-2xl bg-surface border-l-4 border-primary calendar-card-shadow flex flex-col gap-3">
+<div class="flex justify-between">
+<span class="font-label-sm text-primary bg-primary-fixed px-3 py-1 rounded-full uppercase">Prep Needed</span>
+<span class="text-on-surface-variant font-label-sm">12:00 PM</span>
+</div>
+<h4 class="font-headline-md text-headline-md text-on-surface">Lunch Packing</h4>
+<div class="flex items-center gap-2">
+<div class="bg-inverse-surface text-surface px-2 py-1 rounded flex items-center gap-1">
+<span class="material-symbols-outlined text-sm text-[#ffb59e]">skillet</span>
+<span class="font-label-sm">Needs Prep</span>
+</div>
+</div>
+</div>
+<!-- Normal Event -->
+<div class="p-6 rounded-2xl bg-surface border-l-4 border-tertiary calendar-card-shadow flex flex-col gap-3">
+<div class="flex justify-between">
+<span class="font-label-sm text-tertiary bg-tertiary-fixed px-3 py-1 rounded-full uppercase">Routine</span>
+<span class="text-on-surface-variant font-label-sm">10:00 PM</span>
+</div>
+<h4 class="font-headline-md text-headline-md text-on-surface">Evening Wind-down</h4>
+<div class="flex items-center gap-2 text-on-surface-variant font-label-sm">
+<span class="material-symbols-outlined text-sm">home_mini</span>
+                                Living Room
+                            </div>
+</div>
+</div>
+</div>
+</div>
+<!-- Brand Image Footer -->
+<section class="mt-8 rounded-3xl overflow-hidden relative h-64 flex items-center justify-center">
+<div class="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent z-10"></div>
+<img class="absolute inset-0 w-full h-full object-cover" data-alt="A serene, wide-angle interior photograph of a modern, warm living room bathed in golden hour sunlight. The space is tidy yet lived-in, featuring a central fireplace with a soft glow, organic textures like wool and wood, and a palette of warm creams, terracotta, and soft greens. The atmosphere is peaceful, domestic, and supportive." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA0YT3fMmQpkjD5dQJo-MN6hUQlYZW4uSTpwcKf5PC0H37u086ByuNdxnuCzFzFFS8jbSMoM0hdOW-X5P-ddnojv3tqGNeyGqpv_pF_Bmcp6ltsFIjSNJMmq7lQP5HKcgoIcOgvBVhjWAUzFatB0b1zbkYg641mNjoHLfGnIw47Kux-jv19SaT9B2whnoEslUbIRm_n0OB76Mm0QuzyJ40Ld-yTkuSx7sYdctdNYK5PeBcMMWyzEC25WzvDha_scFTFtZwiGsJ4ups"/>
+<div class="relative z-20 text-center text-white px-8">
+<h2 class="font-headline-lg text-headline-lg mb-2">Your home is at peace</h2>
+<p class="font-body-lg text-body-lg opacity-90 max-w-lg mx-auto">Everything is accounted for. Enjoy the evening with the people who matter most.</p>
+</div>
+</section>
+</div>
+</main>
+<!-- Floating Action Button (Contextual for Dashboard) -->
+<button class="fixed bottom-8 right-8 w-16 h-16 bg-primary text-on-primary rounded-full shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-30 group">
+<span class="material-symbols-outlined text-3xl group-hover:rotate-90 transition-transform duration-300">add</span>
+</button>
+<script>
+        // Micro-interactions for buttons
+        document.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('click', () => {
+                btn.style.transform = 'scale(0.95)';
+                setTimeout(() => {
+                    btn.style.transform = '';
+                }, 100);
+            });
+        });
+
+        // Hover effects for calendar cards
+        document.querySelectorAll('.calendar-card-shadow').forEach(card => {
+            card.addEventListener('mouseenter', () => {
+                card.style.transform = 'translateY(-4px)';
+                card.style.transition = 'transform 0.3s ease';
+            });
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = 'translateY(0px)';
+            });
+        });
+    </script>
+</body></html>

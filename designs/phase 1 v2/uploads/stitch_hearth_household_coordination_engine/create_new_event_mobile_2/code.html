@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Hestia - Create New Event</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300..700&amp;family=Be+Vietnam+Pro:ital,wght@0,100..900;1,100..900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary-container": "#b95838",
+                        "tertiary-fixed": "#e6e2dd",
+                        "surface-container-highest": "#e9e1de",
+                        "inverse-primary": "#ffb59e",
+                        "error-container": "#ffdad6",
+                        "secondary": "#456649",
+                        "surface-dim": "#e0d8d5",
+                        "on-primary-container": "#fffbff",
+                        "background": "#fff8f5",
+                        "surface-bright": "#fff8f5",
+                        "surface": "#fff8f5",
+                        "on-tertiary": "#ffffff",
+                        "on-background": "#1e1b19",
+                        "secondary-fixed": "#c6ecc7",
+                        "surface-container-low": "#faf2ef",
+                        "outline-variant": "#dcc1b9",
+                        "inverse-surface": "#33302e",
+                        "surface-tint": "#9d4325",
+                        "primary-fixed": "#ffdbd0",
+                        "surface-container": "#f4ece9",
+                        "on-error": "#ffffff",
+                        "inverse-on-surface": "#f7efec",
+                        "on-surface": "#1e1b19",
+                        "primary": "#9a4023",
+                        "surface-container-lowest": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "surface-variant": "#e9e1de",
+                        "surface-container-high": "#efe7e3",
+                        "tertiary-container": "#767470",
+                        "tertiary": "#5d5c58",
+                        "tertiary-fixed-dim": "#c9c6c1",
+                        "on-secondary": "#ffffff",
+                        "on-secondary-container": "#496a4d",
+                        "secondary-container": "#c3e9c4",
+                        "primary-fixed-dim": "#ffb59e",
+                        "outline": "#89726b",
+                        "on-surface-variant": "#56423d",
+                        "on-tertiary-fixed": "#1c1c19",
+                        "on-primary-fixed-variant": "#7e2c10",
+                        "on-primary": "#ffffff",
+                        "on-primary-fixed": "#3a0b00",
+                        "error": "#ba1a1a",
+                        "on-tertiary-container": "#fffbff",
+                        "on-secondary-fixed-variant": "#2d4e33",
+                        "on-secondary-fixed": "#01210a",
+                        "on-tertiary-fixed-variant": "#484743",
+                        "secondary-fixed-dim": "#abd0ac"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "calendar-density-md": "64px",
+                        "gutter": "16px",
+                        "margin-mobile": "16px",
+                        "unit": "4px",
+                        "margin-desktop": "32px",
+                        "calendar-density-sm": "40px"
+                    },
+                    "fontFamily": {
+                        "headline-lg-mobile": ["Quicksand"],
+                        "headline-lg": ["Quicksand"],
+                        "calendar-cell": ["Be Vietnam Pro"],
+                        "body-lg": ["Be Vietnam Pro"],
+                        "label-sm": ["Be Vietnam Pro"],
+                        "headline-md": ["Quicksand"],
+                        "body-md": ["Be Vietnam Pro"]
+                    },
+                    "fontSize": {
+                        "headline-lg-mobile": ["26px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "calendar-cell": ["14px", {"lineHeight": "18px", "fontWeight": "500"}],
+                        "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                        "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.04em", "fontWeight": "600"}],
+                        "headline-md": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .inner-shadow {
+            box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06);
+        }
+        .hearth-glow {
+            background: radial-gradient(circle at top right, rgba(185, 88, 56, 0.08) 0%, transparent 70%);
+        }
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #9a4023 !important;
+            box-shadow: 0 0 0 1px #9a4023;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface font-body-md antialiased min-h-screen pb-24 hearth-glow">
+<!-- Top App Bar -->
+<header class="fixed top-0 w-full z-50 bg-surface dark:bg-surface-dim flex justify-between items-center px-margin-mobile h-16">
+<div class="flex items-center gap-3">
+<button class="active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-primary" data-icon="close">close</span>
+</button>
+<h1 class="font-headline-md text-headline-md-mobile text-primary">New Event</h1>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="sync">sync</span>
+</div>
+</header>
+<main class="pt-20 px-margin-mobile max-w-md mx-auto">
+<form class="space-y-6">
+<!-- Title Input -->
+<div class="space-y-2">
+<label class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Event Title</label>
+<input class="w-full bg-surface-container-low border-outline-variant rounded-xl p-4 font-body-md text-on-surface placeholder:text-outline focus:ring-0 transition-all" placeholder="e.g., Soccer Practice" type="text"/>
+</div>
+<!-- Date & Time Grid -->
+<div class="grid grid-cols-2 gap-4">
+<div class="space-y-2">
+<label class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Date</label>
+<div class="relative">
+<input class="w-full bg-surface-container-low border-outline-variant rounded-xl p-4 font-body-md text-on-surface focus:ring-0" type="date"/>
+</div>
+</div>
+<div class="space-y-2">
+<label class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Time</label>
+<input class="w-full bg-surface-container-low border-outline-variant rounded-xl p-4 font-body-md text-on-surface focus:ring-0" type="time"/>
+</div>
+</div>
+<!-- Member Assignment -->
+<div class="space-y-3">
+<label class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Assigned Members</label>
+<div class="flex flex-wrap gap-3">
+<!-- Member 1 -->
+<button class="flex flex-col items-center gap-2 group" type="button">
+<div class="relative w-14 h-14 rounded-full border-2 border-primary p-0.5 transition-transform group-active:scale-95">
+<img class="w-full h-full rounded-full object-cover" data-alt="A soft-focus portrait of a young boy with a cheerful expression, lit by warm afternoon sunlight, captured in a modern humanist photographic style with a clean background. The aesthetic is domestic and gentle, using soft cream and terracotta tones." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDTB36ipS17TNrXhiHb2CPFM_ZTidhn75WB6R2zTgo5-SL_-K4nQV0oAoW75yb134FQgV0Y7RvLR0ew0L1CnglVF46VrnPdKll1_57DHeSgLZ1cKVrtjl4iqwR0sKr83b0WnkBxW4RfV7au4T2xU_zXCpiopbTI7NmgdH-Yv1BcVrHc-GkvkWNie4HfDTH2QarMQVy_U-UCSKNPaJr_gW9Hrv6vR7QthB8F9LYLdFF2_SV4JomGcUm1B_F83Pzif9ht9za7e017o2U"/>
+<div class="absolute -bottom-1 -right-1 bg-primary text-white rounded-full w-5 h-5 flex items-center justify-center border-2 border-surface">
+<span class="material-symbols-outlined text-[12px]" data-icon="check" style="font-variation-settings: 'FILL' 1;">check</span>
+</div>
+</div>
+<span class="font-label-sm text-label-sm text-primary">Leo</span>
+</button>
+<!-- Member 2 -->
+<button class="flex flex-col items-center gap-2 group opacity-50 grayscale hover:opacity-100 hover:grayscale-0 transition-all" type="button">
+<div class="relative w-14 h-14 rounded-full border-2 border-transparent p-0.5 transition-transform group-active:scale-95">
+<img class="w-full h-full rounded-full object-cover" data-alt="A warm, professional portrait of a teenage girl with long hair, smiling warmly. The lighting is soft and natural, emphasizing a domestic hearth-like feeling. The color palette is composed of organic sages and deep creams, fitting a modern family app's aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDtRA3-wZvmfItlVwjvv8qto2HQxoRbPhIrme0Gs5W_w0tch0WWOaHluIpyWeEvPSxCSeWpUY0zoxpMbLwh0cxL-FhnVdDMZYRJaRsnotKEInNwDjDna572TJoOlocBBPUpTUFJSpLz4EYWuBxxtu4HM8t7jfdt4H1gcFABKPDwi9DpB0MzoWmsZMVvZoaEgvsbo64460HJTBaDwxHYz4EvOoTk8MNiNxKB7HgZH5G4HuIGcYUnz8CJi9TRSiM6DGLNS6CFEmxMaZA"/>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Maya</span>
+</button>
+<!-- Member 3 -->
+<button class="flex flex-col items-center gap-2 group opacity-50 grayscale hover:opacity-100 hover:grayscale-0 transition-all" type="button">
+<div class="relative w-14 h-14 rounded-full border-2 border-transparent p-0.5 transition-transform group-active:scale-95">
+<img class="w-full h-full rounded-full object-cover" data-alt="A friendly, close-up portrait of a Golden Retriever dog looking directly at the camera, set against a soft-focus garden background. The image is bright and airy, following a minimalist and humanist design philosophy with warm, welcoming lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCqi21rggHtNzGt7Zc2zQVXoejEPV_KCwZKThe2M_uoSFZSY7EBZWdFZLxPdLR_6JqqbGJ2wmNsdY8Wvp7Bch3ua6NAKPB9F6A_A6q1_ZkkrbdJBnq20pxZvYDpEKwqWE-p0DTh9Xi45zVxfBNKXI0K6fqbwsC3MPFAAA-so2vz9USOzr_evYVoldh3tf4GGkyHPjrRGik8YWKWME2yFwYI6hcqGCBEqf5jkmheD1zmBhHnq2pNGr-q-7_xGPXcYXue10dneIi0ZAE"/>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Buddy</span>
+</button>
+<!-- Add More -->
+<button class="flex flex-col items-center gap-2 group" type="button">
+<div class="w-14 h-14 rounded-full border-2 border-dashed border-outline flex items-center justify-center text-outline group-hover:border-primary group-hover:text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="add">add</span>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Add</span>
+</button>
+</div>
+</div>
+<!-- Responsible Adult -->
+<div class="space-y-2">
+<label class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Responsible Adult</label>
+<div class="relative">
+<select class="w-full appearance-none bg-surface-container-low border-outline-variant rounded-xl p-4 font-body-md text-on-surface focus:ring-0">
+<option>Mom (Sarah)</option>
+<option>Dad (Mark)</option>
+<option>Grandpa Joe</option>
+<option>Unassigned</option>
+</select>
+<div class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="keyboard_arrow_down">keyboard_arrow_down</span>
+</div>
+</div>
+</div>
+<!-- Toggles (Mental Load Indicators) -->
+<div class="bg-surface-container rounded-2xl p-4 space-y-4">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-secondary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-secondary" data-icon="directions_car">directions_car</span>
+</div>
+<div>
+<p class="font-body-md text-on-surface font-semibold">Needs Driver</p>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Coordinate pickup/drop-off</p>
+</div>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only peer" type="checkbox"/>
+<div class="w-11 h-6 bg-outline-variant peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+</label>
+</div>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-primary-fixed flex items-center justify-center">
+<span class="material-symbols-outlined text-primary" data-icon="restaurant">restaurant</span>
+</div>
+<div>
+<p class="font-body-md text-on-surface font-semibold">Needs Prep</p>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Meal or gear prep required</p>
+</div>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-11 h-6 bg-outline-variant peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+</label>
+</div>
+</div>
+<!-- Notes -->
+<div class="space-y-2">
+<label class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Notes (Optional)</label>
+<textarea class="w-full bg-surface-container-low border-outline-variant rounded-xl p-4 font-body-md text-on-surface placeholder:text-outline focus:ring-0 transition-all resize-none" placeholder="Add details, locations, or reminders..." rows="3"></textarea>
+</div>
+</form>
+</main>
+<!-- Bottom Action Area -->
+<div class="fixed bottom-0 left-0 w-full p-margin-mobile bg-surface-container-lowest/80 backdrop-blur-md border-t border-surface-container">
+<button class="w-full bg-primary-container text-on-primary-container font-headline-md text-headline-md py-4 rounded-full flex items-center justify-center gap-2 active:scale-[0.98] transition-all shadow-lg">
+<span class="material-symbols-outlined" data-icon="add_circle">add_circle</span>
+            Add to Calendar
+        </button>
+</div>
+<script>
+        // Simple toggle interactions for visual feedback
+        document.querySelectorAll('input[type="checkbox"]').forEach(toggle => {
+            toggle.addEventListener('change', function() {
+                const parent = this.closest('.flex.items-center.justify-between');
+                if (this.checked) {
+                    parent.classList.add('scale-[1.02]');
+                } else {
+                    parent.classList.remove('scale-[1.02]');
+                }
+            });
+        });
+
+        // Dynamic member selection
+        document.querySelectorAll('.MemberAssignment button').forEach(btn => {
+            btn.addEventListener('click', function() {
+                // Logic to toggle 'selected' state visually
+            });
+        });
+    </script>
+</body></html>

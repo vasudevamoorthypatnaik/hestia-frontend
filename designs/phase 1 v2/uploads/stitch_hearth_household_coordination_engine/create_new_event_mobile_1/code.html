@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<title>Create New Event - Hearth</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&amp;family=Be+Vietnam+Pro:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-container": "#f4ece9",
+                    "inverse-on-surface": "#f7efec",
+                    "tertiary-container": "#767470",
+                    "surface-container-lowest": "#ffffff",
+                    "on-background": "#1e1b19",
+                    "on-primary-fixed-variant": "#7e2c10",
+                    "tertiary-fixed": "#e6e2dd",
+                    "outline-variant": "#dcc1b9",
+                    "background": "#fff8f5",
+                    "on-secondary": "#ffffff",
+                    "inverse-surface": "#33302e",
+                    "primary-container": "#b95838",
+                    "on-tertiary-fixed": "#1c1c19",
+                    "surface-tint": "#9d4325",
+                    "surface": "#fff8f5",
+                    "secondary-fixed-dim": "#abd0ac",
+                    "secondary": "#456649",
+                    "surface-dim": "#e0d8d5",
+                    "error": "#ba1a1a",
+                    "on-surface": "#1e1b19",
+                    "surface-bright": "#fff8f5",
+                    "outline": "#89726b",
+                    "surface-container-low": "#faf2ef",
+                    "surface-container-high": "#efe7e3",
+                    "on-secondary-fixed": "#01210a",
+                    "surface-variant": "#e9e1de",
+                    "tertiary": "#5d5c58",
+                    "on-tertiary-container": "#fffbff",
+                    "on-tertiary": "#ffffff",
+                    "on-error": "#ffffff",
+                    "on-tertiary-fixed-variant": "#484743",
+                    "on-surface-variant": "#56423d",
+                    "on-secondary-fixed-variant": "#2d4e33",
+                    "on-error-container": "#93000a",
+                    "error-container": "#ffdad6",
+                    "primary-fixed": "#ffdbd0",
+                    "inverse-primary": "#ffb59e",
+                    "surface-container-highest": "#e9e1de",
+                    "on-primary-fixed": "#3a0b00",
+                    "primary": "#9a4023",
+                    "on-secondary-container": "#496a4d",
+                    "on-primary": "#ffffff",
+                    "secondary-fixed": "#c6ecc7",
+                    "tertiary-fixed-dim": "#c9c6c1",
+                    "secondary-container": "#c3e9c4",
+                    "on-primary-container": "#fffbff",
+                    "primary-fixed-dim": "#ffb59e"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "margin-mobile": "16px",
+                    "calendar-density-md": "64px",
+                    "gutter": "16px",
+                    "unit": "4px",
+                    "margin-desktop": "32px",
+                    "calendar-density-sm": "40px"
+            },
+            "fontFamily": {
+                    "label-sm": ["Be Vietnam Pro"],
+                    "headline-md": ["Quicksand"],
+                    "headline-lg": ["Quicksand"],
+                    "headline-lg-mobile": ["Quicksand"],
+                    "body-lg": ["Be Vietnam Pro"],
+                    "calendar-cell": ["Be Vietnam Pro"],
+                    "body-md": ["Be Vietnam Pro"]
+            },
+            "fontSize": {
+                    "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.04em", "fontWeight": "600"}],
+                    "headline-md": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-lg-mobile": ["26px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "calendar-cell": ["14px", {"lineHeight": "18px", "fontWeight": "500"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .filled-icon {
+            font-variation-settings: 'FILL' 1;
+        }
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #9a4023 !important; /* Primary Terracotta */
+            box-shadow: 0 0 0 2px rgba(154, 64, 35, 0.1);
+        }
+        .toggle-checkbox:checked + .toggle-label {
+            background-color: #9a4023;
+        }
+        .toggle-checkbox:checked + .toggle-label .toggle-dot {
+            transform: translateX(100%);
+        }
+        /* Custom height for mobile dialog aesthetic */
+        .dialog-container {
+            height: calc(100vh - 20px);
+            margin-top: 20px;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface font-body-md overflow-hidden">
+<!-- Top App Bar (As per JSON Anchor) -->
+<header class="bg-surface dark:bg-surface docked full-width top-0 flex justify-between items-center px-margin-mobile w-full py-4 z-50">
+<div class="flex items-center gap-2">
+<button class="p-2 hover:bg-surface-container-low transition-colors rounded-full active:scale-95 duration-100 ease-in-out">
+<span class="material-symbols-outlined text-primary">close</span>
+</button>
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile text-primary">Add Event</h1>
+</div>
+<div class="w-10 h-10 rounded-full overflow-hidden border-2 border-primary-fixed">
+<img class="w-full h-full object-cover" data-alt="A warm, professional headshot of a smiling woman in her late 30s, Sarah, with a soft daylight glow. The background is a cozy, modern domestic kitchen in warm cream and terracotta tones, matching a humanist-modern digital hearth aesthetic. High quality, soft focus background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCXQWUhkMfmqCuqYdJ9moK55B05A7BXBC8NtQd6v_leoQSnn8g1L5Kolp6pkjHKkkFqsS0kgF4cZuxz1bMgW9f7d0Cb3RzLNyv0nf8dvE9z0bt_MLgiMY6jA1NneHkUF7b6Hfmn033OP1qJ7aEsQxa_kXscKw8serxPRVFBT3aquTWCKpu6XTJfsxDVTM5T2d2UmLwiQgSkh6NARJx0tjOHFnEMhmmDoShPWYAZ2HqsePWxuSDhbCsVbZWq62HZqi9auc0_Cs_UMfU"/>
+</div>
+</header>
+<!-- Main Canvas / Dialog Content -->
+<main class="h-[calc(100vh-80px)] overflow-y-auto px-margin-mobile pb-24">
+<div class="max-w-md mx-auto space-y-6 pt-4">
+<!-- Title Input Section -->
+<section class="space-y-2">
+<label class="font-headline-md text-headline-md text-primary px-1">What's happening?</label>
+<div class="relative">
+<input class="w-full bg-surface-container-low border-b-2 border-outline-variant py-4 px-4 font-headline-md text-headline-md placeholder:text-on-surface-variant/40 rounded-t-xl transition-all" placeholder="Soccer Practice" type="text"/>
+<div class="absolute right-4 top-1/2 -translate-y-1/2">
+<span class="material-symbols-outlined text-on-surface-variant/50">edit</span>
+</div>
+</div>
+</section>
+<!-- Date & Time Row -->
+<section class="grid grid-cols-2 gap-4">
+<div class="space-y-1">
+<label class="font-label-sm text-label-sm text-on-surface-variant px-1 uppercase tracking-wider">Date</label>
+<div class="bg-surface-container-high p-3 rounded-xl flex items-center gap-3">
+<span class="material-symbols-outlined text-primary">calendar_today</span>
+<input class="bg-transparent border-none p-0 text-body-md font-medium focus:ring-0 w-full" type="date" value="2023-10-27"/>
+</div>
+</div>
+<div class="space-y-1">
+<label class="font-label-sm text-label-sm text-on-surface-variant px-1 uppercase tracking-wider">Time</label>
+<div class="bg-surface-container-high p-3 rounded-xl flex items-center gap-3">
+<span class="material-symbols-outlined text-primary">schedule</span>
+<input class="bg-transparent border-none p-0 text-body-md font-medium focus:ring-0 w-full" type="time" value="16:30"/>
+</div>
+</div>
+</section>
+<!-- Location Field -->
+<section class="space-y-1">
+<label class="font-label-sm text-label-sm text-on-surface-variant px-1 uppercase tracking-wider">Location</label>
+<div class="bg-surface-container-high p-3 rounded-xl flex items-center gap-3">
+<span class="material-symbols-outlined text-primary">location_on</span>
+<input class="bg-transparent border-none p-0 text-body-md font-medium focus:ring-0 w-full placeholder:text-on-surface-variant/60" placeholder="Maple Leaf Field" type="text"/>
+</div>
+</section>
+<!-- Responsible Adult Selector -->
+<section class="space-y-3">
+<label class="font-label-sm text-label-sm text-on-surface-variant px-1 uppercase tracking-wider">Point Person</label>
+<div class="flex gap-3 overflow-x-auto pb-2 no-scrollbar">
+<!-- Sarah -->
+<label class="relative flex-shrink-0 cursor-pointer group">
+<input checked="" class="peer hidden" name="adult" type="radio" value="sarah"/>
+<div class="flex items-center gap-3 px-4 py-2 rounded-full border-2 border-outline-variant peer-checked:border-primary peer-checked:bg-primary-fixed transition-all">
+<div class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A small circular avatar of Sarah, a woman with warm features and a friendly expression, soft lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBetsfdJZ9Dysf6RWPgPmYjQwsO95vQgtAgB1JzHib1WRIPLymQDAl1NZtyea20_3DBnuYN3zUHrCQ4VQdeQ4Ev3ByR7nl9Sat_0EZB-f4GKKO6xpJjbeavO7_rVAqMjbjEaeqvJ6NylGw16g6IQlYF1UicVvUlwC_q4bAHzO9ay2Pw6B9wGHEeqVZdWeaNhRGpcvMyl2ReAW0E3a6I9iw0Xc6XUCXied0-fB5FZyzuFelWDulqCaJqsFBnAUgIFXQOmG0uGAip5BY"/>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface">Sarah</span>
+</div>
+</label>
+<!-- Mark -->
+<label class="relative flex-shrink-0 cursor-pointer group">
+<input class="peer hidden" name="adult" type="radio" value="mark"/>
+<div class="flex items-center gap-3 px-4 py-2 rounded-full border-2 border-outline-variant peer-checked:border-primary peer-checked:bg-primary-fixed transition-all">
+<div class="w-8 h-8 rounded-full bg-secondary/10 flex items-center justify-center overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A small circular avatar of Mark, a man in his late 30s with short hair and a warm smile, soft lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC5jdGDs5doACgRRke2izVmYQrxdceQxO7-6OSpoC2LMnhXsOf3CsRfbkKjbHtcVMINIPodUD6UADNO2k5YXq12O1rnihokljrMqHcGa0MzEOIpBY5JJ64BuFZd8-x8W3bOQTT_riwEYJs3AfepEutuP7i9iAMK_0bLj1LExO4BnUY9XMuHrlmwG8QJNe_eaLmSIxL57PF9MErPxdjsZLhjmH2a5VhZN6LOuvlw5ezxDiSkOzZ-rc7EDQtpaimyqYi8jk8c9imrXd0"/>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface">Mark</span>
+</div>
+</label>
+<!-- Unassigned -->
+<label class="relative flex-shrink-0 cursor-pointer group">
+<input class="peer hidden" name="adult" type="radio" value="unassigned"/>
+<div class="flex items-center gap-3 px-4 py-2 rounded-full border-2 border-dashed border-outline-variant peer-checked:border-primary peer-checked:bg-primary-fixed transition-all">
+<div class="w-8 h-8 rounded-full border border-dashed border-outline flex items-center justify-center">
+<span class="material-symbols-outlined text-outline text-xs">person_add</span>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface">Later</span>
+</div>
+</label>
+</div>
+</section>
+<!-- Toggles for Mental Load -->
+<section class="space-y-4">
+<label class="font-label-sm text-label-sm text-on-surface-variant px-1 uppercase tracking-wider">Mental Load Indicators</label>
+<!-- Needs Prep Toggle -->
+<div class="flex items-center justify-between p-4 bg-surface-container-low rounded-2xl border border-outline-variant/30">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-secondary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-on-secondary-container">inventory_2</span>
+</div>
+<div>
+<p class="font-headline-md text-headline-md text-on-surface leading-none">Needs Prep</p>
+<p class="text-xs text-on-surface-variant mt-1">Pack bags, buy gear, etc.</p>
+</div>
+</div>
+<div class="relative inline-block w-12 h-6 transition duration-200 ease-in-out rounded-full cursor-pointer">
+<input class="sr-only toggle-checkbox" id="toggle-prep" type="checkbox"/>
+<label class="toggle-label block w-full h-full bg-outline-variant rounded-full transition-colors" for="toggle-prep">
+<span class="toggle-dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform"></span>
+</label>
+</div>
+</div>
+<!-- Needs Driver Toggle -->
+<div class="flex items-center justify-between p-4 bg-surface-container-low rounded-2xl border border-outline-variant/30">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-primary-fixed flex items-center justify-center">
+<span class="material-symbols-outlined text-primary">directions_car</span>
+</div>
+<div>
+<p class="font-headline-md text-headline-md text-on-surface leading-none">Needs Driver</p>
+<p class="text-xs text-on-surface-variant mt-1">Coordination required</p>
+</div>
+</div>
+<div class="relative inline-block w-12 h-6 transition duration-200 ease-in-out rounded-full cursor-pointer">
+<input checked="" class="sr-only toggle-checkbox" id="toggle-driver" type="checkbox"/>
+<label class="toggle-label block w-full h-full bg-outline-variant rounded-full transition-colors" for="toggle-driver">
+<span class="toggle-dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform"></span>
+</label>
+</div>
+</div>
+</section>
+<!-- Calendar Selection -->
+<section class="space-y-1">
+<label class="font-label-sm text-label-sm text-on-surface-variant px-1 uppercase tracking-wider">Sync To</label>
+<div class="bg-surface-container-high p-1 rounded-2xl flex">
+<button class="flex-1 py-2 px-3 rounded-xl bg-surface text-primary font-label-sm text-label-sm shadow-sm transition-all">
+                        Hestia Core
+                    </button>
+<button class="flex-1 py-2 px-3 rounded-xl text-on-surface-variant font-label-sm text-label-sm hover:bg-surface-container-highest transition-all">
+                        Google Family
+                    </button>
+</div>
+</section>
+</div>
+</main>
+<!-- Bottom Actions Area (Modified for Dialog Footer) -->
+<footer class="fixed bottom-0 left-0 w-full bg-surface-container-highest p-4 pb-safe z-50 flex gap-4 items-center border-t border-outline-variant/20">
+<button class="flex-1 py-4 px-6 rounded-2xl font-headline-md text-headline-md text-on-surface-variant hover:bg-surface-container transition-all active:scale-95">
+            Cancel
+        </button>
+<button class="flex-[2] py-4 px-6 rounded-2xl bg-primary text-on-primary font-headline-md text-headline-md shadow-lg shadow-primary/20 hover:bg-primary-container transition-all active:scale-95 flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-xl">check_circle</span>
+            Create Event
+        </button>
+</footer>
+<!-- Bottom Nav Bar (Suppressed for focused task, as per instructions) -->
+<!-- But keeping structure here in case of needed pivot: BottomNavBar hidden on focused journey -->
+<script>
+        // Micro-interaction for primary button
+        const createBtn = document.querySelector('button.bg-primary');
+        createBtn.addEventListener('click', () => {
+            createBtn.innerHTML = '<span class="material-symbols-outlined animate-spin">refresh</span> Creating...';
+            setTimeout(() => {
+                createBtn.innerHTML = '<span class="material-symbols-outlined">done_all</span> Done!';
+                createBtn.classList.replace('bg-primary', 'bg-secondary');
+            }, 1000);
+        });
+
+        // Toggle state styling
+        const checkboxes = document.querySelectorAll('.toggle-checkbox');
+        checkboxes.forEach(cb => {
+            cb.addEventListener('change', (e) => {
+                const parent = e.target.closest('div.bg-surface-container-low');
+                if(e.target.checked) {
+                    parent.classList.add('border-primary/40');
+                    parent.classList.replace('bg-surface-container-low', 'bg-primary-fixed/20');
+                } else {
+                    parent.classList.remove('border-primary/40');
+                    parent.classList.replace('bg-primary-fixed/20', 'bg-surface-container-low');
+                }
+            });
+        });
+    </script>
+</body></html>
