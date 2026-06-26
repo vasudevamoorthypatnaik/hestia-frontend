@@ -15,9 +15,6 @@ import BeVietnamPro from '@expo-google-fonts/be-vietnam-pro/400Regular/BeVietnam
 import BeVietnamProMedium from '@expo-google-fonts/be-vietnam-pro/500Medium/BeVietnamPro_500Medium.ttf'
 import BeVietnamProSemiBold from '@expo-google-fonts/be-vietnam-pro/600SemiBold/BeVietnamPro_600SemiBold.ttf'
 import BeVietnamProBold from '@expo-google-fonts/be-vietnam-pro/700Bold/BeVietnamPro_700Bold.ttf'
-// Legacy fonts kept loaded as fallback during the brand migration.
-import Newsreader from '@expo-google-fonts/newsreader/500Medium/Newsreader_500Medium.ttf'
-import HankenGrotesk from '@expo-google-fonts/hanken-grotesk/500Medium/HankenGrotesk_500Medium.ttf'
 import { getUrqlClient, onUrqlClientReset } from '@/shared/graphql/client'
 import { ThemeProvider } from '@/shared/contexts/ThemeContext'
 import { AlertProvider } from '@/shared/contexts/AlertContext'
@@ -33,9 +30,9 @@ void SplashScreen.preventAutoHideAsync()
 
 /**
  * Root layout. Provider tree + Warm Hearth fonts (Quicksand/Be Vietnam Pro, native via
- * expo-font; web also via +html Google Fonts; legacy Newsreader/Hanken kept as fallback). URQL
- * client swaps on reset (post-logout cache clear). GestureHandlerRootView is required for the
- * Reanimated AlertModal. Splash gates on FONTS ONLY (never theme) — see note below.
+ * expo-font; web also via +html Google Fonts). URQL client swaps on reset (post-logout cache
+ * clear). GestureHandlerRootView is required for the Reanimated AlertModal. Splash gates on
+ * FONTS ONLY (never theme) — see note below.
  */
 export default function RootLayout() {
   const [client, setClient] = useState(getUrqlClient())
@@ -49,9 +46,6 @@ export default function RootLayout() {
     'Be Vietnam Pro-Medium': BeVietnamProMedium,
     'Be Vietnam Pro-SemiBold': BeVietnamProSemiBold,
     'Be Vietnam Pro-Bold': BeVietnamProBold,
-    // Legacy fallback
-    Newsreader,
-    HankenGrotesk,
   })
 
   useEffect(() => {

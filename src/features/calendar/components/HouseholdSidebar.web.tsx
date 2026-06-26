@@ -1,5 +1,6 @@
 import { View, Text, Pressable } from 'react-native'
 import { MaterialIcons } from '@expo/vector-icons'
+import { HestiaMark } from '@/shared/components/HestiaMark'
 import { MemberDot, MemberRoleLabel } from '@/features/calendar/components/MemberDot'
 import type { ConnectedAccountVM, MemberVM } from '@/features/calendar/types'
 import { SyncStatusValues } from '@/features/calendar/types'
@@ -22,9 +23,7 @@ export function HouseholdSidebar({
   return (
     <View className="w-60 border-r border-outline-variant bg-surface-container-low px-4 py-6 dark:border-outline-variant-dark dark:bg-surface-container-low-dark">
       <View className="mb-6 flex-row items-center gap-2.5">
-        <View className="h-7 w-7 items-center justify-center rounded-pill bg-primary dark:bg-primary-dark">
-          <View className="h-2.5 w-2.5 rotate-45 rounded-[2px] bg-surface-container-low dark:bg-surface-container-low-dark" />
-        </View>
+        <HestiaMark size={28} />
         <Text className="font-head text-xl font-bold text-on-surface dark:text-on-surface-dark">Hestia</Text>
       </View>
 

@@ -5,6 +5,7 @@ import { MaterialIcons } from '@expo/vector-icons'
 import { useLogin } from '../hooks/useLogin'
 import { EmailLoginForm } from '../components/EmailLoginForm'
 import { ThemeToggle } from '@/shared/components/ThemeToggle'
+import { HestiaMark } from '@/shared/components/HestiaMark'
 // Hero photo (web split-panel). Bundled asset; the terracotta gradient/fill shows through if the
 // image is absent so login never breaks (T9).
 import HERO from '../../../../assets/images/login-hero.jpg'
@@ -35,21 +36,6 @@ function SocialButton({ label, dark }: { label: string; dark?: boolean }) {
   )
 }
 
-/** Hestia diamond mark. */
-function HestiaMark({ size = 32, onPrimary = false }: { size?: number; onPrimary?: boolean }) {
-  return (
-    <View
-      className={`items-center justify-center rounded-pill ${onPrimary ? 'bg-white/20' : 'bg-primary dark:bg-primary-dark'}`}
-      style={{ width: size, height: size }}
-    >
-      <View
-        className={onPrimary ? 'rotate-45 rounded-[3px] bg-white' : 'rotate-45 rounded-[2px] bg-surface dark:bg-surface-dark'}
-        style={{ width: size * 0.4, height: size * 0.4 }}
-      />
-    </View>
-  )
-}
-
 /**
  * Login screen (HES-REDESIGN) — Warm Hearth split-panel. Web/desktop: hero photo + terracotta
  * gradient + brand copy (left), form (right). Mobile: centered card with mark + form. Inert
@@ -69,10 +55,13 @@ export function LoginScreen() {
           style={{ position: 'absolute', width: '100%', height: '100%' }}
           contentFit="cover"
         />
+        {/* Platform-specific: bg-gradient-* is a web-only NativeWind utility (no-op on native).
+            The hero panel is web/desktop-only (hidden md:flex) and the parent bg-primary fill
+            guarantees text contrast if the gradient/photo don't render. */}
         <View className="absolute inset-0 bg-gradient-to-b from-terracotta-deep/40 to-terracotta-deep/90" />
         <View className="relative flex-1 justify-between p-12">
           <View className="flex-row items-center gap-3">
-            <HestiaMark size={36} onPrimary />
+            <HestiaMark size={36} variant="onPrimary" />
             <Text className="font-head text-2xl font-bold text-white">Hestia</Text>
           </View>
           <View>

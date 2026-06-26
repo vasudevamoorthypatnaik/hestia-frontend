@@ -1,15 +1,7 @@
 import { View, Text, Pressable, ScrollView } from 'react-native'
 import { useRouter, type Href } from 'expo-router'
 import { ThemeToggle } from '@/shared/components/ThemeToggle'
-
-/** Hestia diamond mark (on a primary/gradient surface). */
-function HestiaMark() {
-  return (
-    <View className="h-9 w-9 items-center justify-center rounded-pill bg-white/20">
-      <View className="h-3.5 w-3.5 rotate-45 rounded-[3px] bg-white" />
-    </View>
-  )
-}
+import { HestiaMark } from '@/shared/components/HestiaMark'
 
 /**
  * Register screen (HES-REDESIGN) — Warm Hearth split-panel SHELL. Web/desktop shows the gradient
@@ -21,10 +13,11 @@ export function RegisterScreen() {
   const router = useRouter()
   return (
     <View className="flex-1 bg-surface dark:bg-surface-dark md:flex-row">
-      {/* Gradient hero — desktop/web only */}
+      {/* Gradient hero — desktop/web only. bg-gradient-* is a web-only NativeWind utility; the
+          bg-primary base fill is the cross-platform fallback (this panel is hidden md:flex anyway). */}
       <View className="hidden bg-primary p-12 dark:bg-primary-dark md:flex md:flex-1 md:justify-between bg-gradient-to-br from-primary to-terracotta-deep">
         <View className="flex-row items-center gap-3">
-          <HestiaMark />
+          <HestiaMark variant="onPrimary" size={36} />
           <Text className="font-head text-2xl font-bold text-white">Hestia</Text>
         </View>
         <View>
