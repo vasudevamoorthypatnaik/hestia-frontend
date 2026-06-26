@@ -1,6 +1,11 @@
 import { forwardRef, useState, type ReactNode } from 'react'
 import { View, Text, Pressable, TextInput as RNTextInput, type TextInputProps } from 'react-native'
+import { useColorScheme } from 'nativewind'
 import { MaterialIcons } from '@expo/vector-icons'
+
+// Outline tone per theme — keeps placeholder + secure-toggle icon legible in dark mode.
+const OUTLINE_LIGHT = '#89726b'
+const OUTLINE_DARK = '#a08d86'
 
 interface FormFieldProps extends TextInputProps {
   label: string
@@ -25,6 +30,8 @@ export const FormField = forwardRef<RNTextInput, FormFieldProps>(function FormFi
   ref
 ) {
   const [visible, setVisible] = useState(false)
+  const { colorScheme } = useColorScheme()
+  const outlineColor = colorScheme === 'dark' ? OUTLINE_DARK : OUTLINE_LIGHT
   // When secureToggle is on, the toggle owns the secure state; otherwise honor the caller's prop.
   const effectiveSecure = secureToggle ? !visible : inputProps.secureTextEntry
 
@@ -51,7 +58,7 @@ export const FormField = forwardRef<RNTextInput, FormFieldProps>(function FormFi
               ? 'border-error dark:border-error-dark'
               : 'border-outline-variant dark:border-outline-variant-dark'
           }`}
-          placeholderTextColor="#89726b"
+          placeholderTextColor={outlineColor}
           accessibilityLabel={label}
           accessibilityHint={hint}
           {...inputProps}
@@ -70,7 +77,7 @@ export const FormField = forwardRef<RNTextInput, FormFieldProps>(function FormFi
             <MaterialIcons
               name={visible ? 'visibility-off' : 'visibility'}
               size={20}
-              color="#89726b"
+              color={outlineColor}
             />
           </Pressable>
         ) : null}
