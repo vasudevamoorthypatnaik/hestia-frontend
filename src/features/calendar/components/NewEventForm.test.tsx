@@ -47,4 +47,37 @@ describe('NewEventForm', () => {
       })
     )
   })
+
+  it('renders a Location input (AC2)', () => {
+    setup()
+    expect(screen.getByLabelText('Location')).toBeTruthy()
+  })
+
+  it('threads the entered location through to onSubmit (AC2)', () => {
+    const { onSubmit } = setup()
+    fireEvent.changeText(screen.getByLabelText('Title'), 'Dentist — Maya')
+    fireEvent.press(screen.getByLabelText('For (owner): Maya'))
+    fireEvent.changeText(screen.getByLabelText('Location'), '123 Main St Clinic')
+    fireEvent.press(screen.getByLabelText('Save event'))
+    expect(onSubmit).toHaveBeenCalledWith(
+      expect.objectContaining({ location: '123 Main St Clinic' })
+    )
+  })
+
+  it('sends location: null when the Location field is left blank (AC2)', () => {
+    const { onSubmit } = setup()
+    fireEvent.changeText(screen.getByLabelText('Title'), 'Dentist — Maya')
+    fireEvent.press(screen.getByLabelText('For (owner): Maya'))
+    fireEvent.press(screen.getByLabelText('Save event'))
+    expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ location: null }))
+  })
+
+  it('trims a whitespace-only location down to null (AC2)', () => {
+    const { onSubmit } = setup()
+    fireEvent.changeText(screen.getByLabelText('Title'), 'Dentist — Maya')
+    fireEvent.press(screen.getByLabelText('For (owner): Maya'))
+    fireEvent.changeText(screen.getByLabelText('Location'), '   ')
+    fireEvent.press(screen.getByLabelText('Save event'))
+    expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ location: null }))
+  })
 })

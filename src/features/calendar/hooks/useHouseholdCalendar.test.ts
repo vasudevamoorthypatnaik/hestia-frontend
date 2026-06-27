@@ -1,5 +1,6 @@
 import { renderHook, act } from '@testing-library/react-native'
 import { useHouseholdCalendar } from './useHouseholdCalendar'
+import { addMonthsIso } from '@/features/calendar/types'
 
 const mockTokenRef: { current: string | null } = { current: 'token-123' }
 const mockUseHouseholdCalendarQuery = jest.fn()
@@ -45,5 +46,25 @@ describe('useHouseholdCalendar', () => {
     act(() => result.current.shiftPeriod(1))
     const after = mockUseHouseholdCalendarQuery.mock.calls.at(-1)![0].variables.period.anchor
     expect(after).not.toEqual(first)
+  })
+
+  it('passes range MONTH through to the query (AC10)', () => {
+    mockTokenRef.current = 'token-123'
+    renderHook(() => useHouseholdCalendar('MONTH'))
+    const opts = mockUseHouseholdCalendarQuery.mock.calls.at(-1)![0]
+    expect(opts.pause).toBe(false)
+    expect(opts.variables.period.range).toBe('MONTH')
+    expect(opts.variables.period.anchor).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+  })
+
+  it('shifts the anchor by exactly one month when range is MONTH', () => {
+    mockTokenRef.current = 'token-123'
+    const { result } = renderHook(() => useHouseholdCalendar('MONTH'))
+    const first = mockUseHouseholdCalendarQuery.mock.calls.at(-1)![0].variables.period.anchor
+
+    act(() => result.current.shiftPeriod(1))
+    const after = mockUseHouseholdCalendarQuery.mock.calls.at(-1)![0].variables.period.anchor
+    // A month shift, not a day/week shift — the new anchor equals the month-add of the old anchor.
+    expect(after).toBe(addMonthsIso(first, 1))
   })
 })
