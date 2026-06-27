@@ -25,6 +25,7 @@ export type ConnectedAccountVM = CalendarVM['connectedAccounts'][number]
 export const CalendarRangeValues = {
   Day: 'DAY' as CalendarRange,
   Week: 'WEEK' as CalendarRange,
+  Month: 'MONTH' as CalendarRange,
 } as const
 
 export const MemberKindValues = {
@@ -65,4 +66,28 @@ export function addDaysIso(iso: string, days: number): string {
   const date = new Date(y, m - 1, d)
   date.setDate(date.getDate() + days)
   return toIsoDate(date)
+}
+
+/**
+ * Add (or subtract) whole months to an ISO yyyy-MM-dd (for MONTH period navigation). The day is
+ * clamped to the target month's length (e.g. Jan 31 +1mo -> Feb 28) so the result is always a real
+ * date. Only the month matters to the backend (it resolves the window from the 1st), but clamping
+ * keeps this a correct general helper.
+ */
+export function addMonthsIso(iso: string, months: number): string {
+  const parts = iso.split('-')
+  const y = parseInt(parts[0] ?? '1970', 10)
+  const m = parseInt(parts[1] ?? '1', 10)
+  const d = parseInt(parts[2] ?? '1', 10)
+  const base = new Date(y, m - 1 + months, 1)
+  const lastDay = new Date(base.getFullYear(), base.getMonth() + 1, 0).getDate()
+  return toIsoDate(new Date(base.getFullYear(), base.getMonth(), Math.min(d, lastDay)))
+}
+
+/** First day (yyyy-MM-01) of the month containing the given ISO yyyy-MM-dd. */
+export function startOfMonthIso(iso: string): string {
+  const parts = iso.split('-')
+  const y = parseInt(parts[0] ?? '1970', 10)
+  const m = parseInt(parts[1] ?? '1', 10)
+  return toIsoDate(new Date(y, m - 1, 1))
 }

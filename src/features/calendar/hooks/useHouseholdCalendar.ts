@@ -6,7 +6,7 @@ import {
   getTokenChangeVersion,
   getAccessTokenSync,
 } from '@/shared/auth/token'
-import { addDaysIso, todayIso, type CalendarVM } from '@/features/calendar/types'
+import { addDaysIso, addMonthsIso, todayIso, type CalendarVM } from '@/features/calendar/types'
 
 interface UseHouseholdCalendarResult {
   calendar: CalendarVM | null
@@ -14,7 +14,7 @@ interface UseHouseholdCalendarResult {
   error: boolean
   /** ISO yyyy-MM-dd anchor of the shown period. */
   anchor: string
-  /** Move the window: +1/-1 (week when range=WEEK, day when range=DAY). */
+  /** Move the window: +1/-1 (month when range=MONTH, week when range=WEEK, day when range=DAY). */
   shiftPeriod: (direction: number) => void
   /** Reset to the current week/today. */
   resetToToday: () => void
@@ -51,7 +51,10 @@ export function useHouseholdCalendar(range: CalendarRange): UseHouseholdCalendar
 
   const shiftPeriod = useCallback(
     (direction: number) => {
-      setAnchor((prev) => addDaysIso(prev, range === 'WEEK' ? direction * 7 : direction))
+      setAnchor((prev) => {
+        if (range === 'MONTH') return addMonthsIso(prev, direction)
+        return addDaysIso(prev, range === 'WEEK' ? direction * 7 : direction)
+      })
     },
     [range]
   )

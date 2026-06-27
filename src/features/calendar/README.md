@@ -5,10 +5,15 @@ creation. Proves the PRD "household layer" wedge (owner vs responsible adult, co
 weekly load) without rebuilding a full calendar engine.
 
 ## Surfaces
-- **Web** (`CalendarScreen.web.tsx`): Mon–Sun week dashboard — member/connected-accounts sidebar,
-  7-column week grid, coverage-gap banner, "This week's load" balance bar, `+ New event` modal.
+- **Web** (`CalendarScreen.web.tsx`): **month grid** dashboard — member/connected-accounts sidebar,
+  Mon–Sun month grid (`MonthGrid.web.tsx`, `range: MONTH`), coverage-gap banner, "Hearth Glow"
+  balance bar, `+ New event` modal. A friendly empty state appears when the month has no events.
 - **Mobile** (`CalendarScreen.tsx`): single-day agenda — member filter chips, coverage-gap banner,
-  timeline, bottom nav (Calendar active; Capture/Load inert), `+` opens the create form.
+  timeline, bottom nav (Calendar active; Capture/Load inert), `+` opens the create form. The same
+  empty-state affordance shows when a day has nothing scheduled.
+
+> **Layout-density divergence (allowed):** web uses a month grid, mobile keeps the day agenda. Data,
+> create flow, validation, and empty-state affordance are identical across platforms (`10_cross-platform-patterns §2.2`).
 
 Metro resolves the platform variant from the shared route `app/(tabs)/index.tsx` (the calendar is
 the auth-gated landing).
@@ -29,11 +34,14 @@ the window in the household timezone. Creating an event → `useCreateCalendarEv
 ## Files
 - `api/*.graphql` — query + mutation documents (codegen → `@/__generated__/graphql`).
 - `types.ts` — view-model aliases from generated types + runtime enum value objects
-  (`CalendarRangeValues`, `MemberKindValues`, `MemberRoleValues`, `SyncStatusValues`) + ISO date helpers.
-- `hooks/` — `useHouseholdCalendar` (query + period state), `useMemberFilter` (show/hide), `useCreateCalendarEvent`.
-- `components/` — `EventCard`, `WeekGrid.web`, `DayAgenda`, `MemberFilterChips`, `MemberDot`,
-  `CoverageGapBanner`, `LoadBar`, `HouseholdSidebar.web`, `CalendarBottomNav`, `NewEventForm`,
-  `NewEventModal[.web]`.
+  (`CalendarRangeValues` incl. `Month`, `MemberKindValues`, `MemberRoleValues`, `SyncStatusValues`) +
+  ISO date helpers (`todayIso`, `addDaysIso`, `addMonthsIso`, `startOfMonthIso`).
+- `hooks/` — `useHouseholdCalendar` (query + period state; `shiftPeriod` moves ±1 month/week/day by
+  range), `useMemberFilter` (show/hide), `useCreateCalendarEvent`.
+- `components/` — `EventCard`, `MonthGrid.web` (month grid keyed by `events[].date`), `DayAgenda`,
+  `EmptyCalendarState` (shared "add your first event" affordance), `MemberFilterChips`, `MemberDot`,
+  `CoverageGapBanner`, `LoadBar`, `HouseholdSidebar.web`, `CalendarBottomNav`, `NewEventForm`
+  (incl. optional **Location** field), `NewEventModal[.web]`.
 - `screens/` — `CalendarScreen.web.tsx`, `CalendarScreen.tsx`.
 
 ## Scope (this slice)
@@ -67,3 +75,21 @@ Pure visual reskin to the Warm Hearth design system — **no backend / GraphQL /
 - **NewEventModal (web + native):** reskinned tokens ONLY — overlay structure / pointer-events /
   `if (!visible) return null` pattern preserved (web-modal click-interception gotcha, FM8).
 - Coverage-gap banner "Assign"/"Claim" stays inert (deferred — needs a new mutation).
+
+## calender-view-shwoing-data — month grid, empty state, location
+The calendar was already wired end-to-end to the real backend (`useHouseholdCalendar` →
+`HouseholdCalendar` query → persisted rows) and the create round-trip already persisted + refetched.
+This slice adds:
+- **Month grid (web):** new `MonthGrid.web.tsx` renders Mon–Sun weeks spanning the backend MONTH
+  window (`period.start` = 1st, `period.end` = last day), with leading/trailing out-of-month days, a
+  today highlight, and each event placed on its concrete cell by `events[].date`. The web screen now
+  requests `range: MONTH` and the nav arrows move ±1 month. **The MONTH window/label is computed in
+  the backend** (`CalendarRange.MONTH`); the client only renders + tracks the anchor month.
+- **Empty state:** new shared `EmptyCalendarState.tsx` ("Nothing scheduled yet" + an "Add your first
+  event" button) opens the same New-event flow. Wired into the web month (no events that month) and
+  the mobile day agenda (no events that day), so both platforms share the affordance (AC6/AC11).
+- **Location field:** `NewEventForm` gains an optional Location input, threaded through to the
+  `createCalendarEvent` mutation's `location` (previously hardcoded `null`). The backend already
+  accepted/persisted/returned `location`.
+- `WeekGrid.web.tsx` was removed — the web surface now uses the month grid (no week/month toggle in
+  scope), so the week strip was orphaned dead code.

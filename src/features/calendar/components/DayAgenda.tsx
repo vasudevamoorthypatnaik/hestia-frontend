@@ -1,17 +1,18 @@
 import { View, Text } from 'react-native'
 import { EventCard } from '@/features/calendar/components/EventCard'
+import { EmptyCalendarState } from '@/features/calendar/components/EmptyCalendarState'
 import type { CalendarEventVM } from '@/features/calendar/types'
 
 /** Mobile day agenda — a simple ordered timeline of the day's events. */
-export function DayAgenda({ events }: { events: readonly CalendarEventVM[] }) {
+export function DayAgenda({
+  events,
+  onAddEvent,
+}: {
+  events: readonly CalendarEventVM[]
+  onAddEvent: () => void
+}) {
   if (events.length === 0) {
-    return (
-      <View className="items-center justify-center py-12">
-        <Text className="font-body text-sm text-on-surface-variant dark:text-on-surface-variant-dark">
-          Nothing scheduled.
-        </Text>
-      </View>
-    )
+    return <EmptyCalendarState onAddEvent={onAddEvent} />
   }
 
   return (

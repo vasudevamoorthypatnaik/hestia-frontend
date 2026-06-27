@@ -89,7 +89,7 @@ export default function CalendarScreen() {
                 <CoverageGapBanner gaps={calendar.coverageGaps} actionLabel="Claim" />
               </View>
             )}
-            <DayAgenda events={filterEvents(calendar.events)} />
+            <DayAgenda events={filterEvents(calendar.events)} onAddEvent={() => setShowNew(true)} />
             <View className="h-6" />
           </>
         )}

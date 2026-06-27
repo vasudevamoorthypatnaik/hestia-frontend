@@ -8,16 +8,17 @@ import { CalendarRangeValues } from '@/features/calendar/types'
 import { useHouseholdCalendar } from '@/features/calendar/hooks/useHouseholdCalendar'
 import { useMemberFilter } from '@/features/calendar/hooks/useMemberFilter'
 import { HouseholdSidebar } from '@/features/calendar/components/HouseholdSidebar.web'
-import { WeekGrid } from '@/features/calendar/components/WeekGrid.web'
+import { MonthGrid } from '@/features/calendar/components/MonthGrid.web'
 import { CoverageGapBanner } from '@/features/calendar/components/CoverageGapBanner'
 import { LoadBar } from '@/features/calendar/components/LoadBar'
+import { EmptyCalendarState } from '@/features/calendar/components/EmptyCalendarState'
 import { NewEventModal } from '@/features/calendar/components/NewEventModal.web'
 
-/** Web household dashboard — Mon–Sun week grid, member sidebar, coverage gaps, weekly load. */
+/** Web household dashboard — month grid, member sidebar, coverage gaps, weekly load. */
 export default function CalendarScreenWeb() {
   const router = useRouter()
   const { calendar, fetching, error, shiftPeriod, anchor, refetch } = useHouseholdCalendar(
-    CalendarRangeValues.Week
+    CalendarRangeValues.Month
   )
   const members = calendar?.members ?? []
   const { isVisible, toggle, filterEvents } = useMemberFilter(members)
@@ -44,11 +45,11 @@ export default function CalendarScreenWeb() {
           <View className="flex-1">
             <View className="flex-row items-center justify-between border-b border-outline-variant px-6 py-4 dark:border-outline-variant-dark">
               <View className="flex-row items-center gap-3.5">
-                <Pressable onPress={() => shiftPeriod(-1)} accessibilityRole="button" accessibilityLabel="Previous week">
+                <Pressable onPress={() => shiftPeriod(-1)} accessibilityRole="button" accessibilityLabel="Previous month">
                   <Text className="text-xl text-on-surface-variant dark:text-on-surface-variant-dark">‹</Text>
                 </Pressable>
                 <Text className="font-head text-xl font-bold text-on-surface dark:text-on-surface-dark">{calendar.period.label}</Text>
-                <Pressable onPress={() => shiftPeriod(1)} accessibilityRole="button" accessibilityLabel="Next week">
+                <Pressable onPress={() => shiftPeriod(1)} accessibilityRole="button" accessibilityLabel="Next month">
                   <Text className="text-xl text-on-surface-variant dark:text-on-surface-variant-dark">›</Text>
                 </Pressable>
               </View>
@@ -75,7 +76,15 @@ export default function CalendarScreenWeb() {
             )}
 
             <ScrollView className="flex-1">
-              <WeekGrid events={filterEvents(calendar.events)} periodStart={calendar.period.start} />
+              {calendar.events.length === 0 ? (
+                <EmptyCalendarState onAddEvent={() => setShowNew(true)} />
+              ) : (
+                <MonthGrid
+                  events={filterEvents(calendar.events)}
+                  periodStart={calendar.period.start}
+                  periodEnd={calendar.period.end}
+                />
+              )}
             </ScrollView>
 
             <View className="border-t border-outline-variant bg-surface-container-low px-6 py-4 dark:border-outline-variant-dark dark:bg-surface-container-low-dark">
