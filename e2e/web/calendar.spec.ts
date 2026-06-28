@@ -378,6 +378,49 @@ test.describe('Household Calendar (web)', () => {
     await expect(page.getByText('Standup').first()).toBeVisible()
     expect(errors, `console errors after toggle: ${errors.join('\n')}`).toHaveLength(0)
   })
+
+  test('L17 [UC-006] filter-all empty state — unchecking ALL members shows EmptyCalendarState; re-checking one restores the grid', async ({
+    page,
+  }) => {
+    await page.goto('/')
+    // A seeded event proves the grid is populated before filtering.
+    await expect(page.getByText('Piano — Maya').first()).toBeVisible({ timeout: 15000 })
+
+    // Uncheck every member chip → the VISIBLE set is empty → EmptyCalendarState. This is the f_es5e6f
+    // fix: the gate is `visibleEvents.length === 0` (post-filter), not raw `calendar.events.length`,
+    // so an all-members-filtered view shows the friendly empty state, not a blank grid.
+    for (const name of ['Pallavi filter', 'Vasu filter', 'Maya filter', 'Theo filter']) {
+      await page.getByRole('checkbox', { name }).click()
+    }
+    await page.waitForTimeout(1000) // let the filter re-render settle (deliberate wait)
+
+    await expect(page.getByText('Nothing scheduled yet')).toBeVisible({ timeout: 8000 })
+    await expect(page.getByRole('button', { name: 'Add your first event' })).toBeVisible()
+    // The grid is gone — the previously-visible seed event is no longer rendered.
+    await expect(page.getByText('Piano — Maya')).toHaveCount(0)
+
+    // Re-check one member → the grid returns and the empty state disappears (reversible, no data lost).
+    await page.getByRole('checkbox', { name: 'Maya filter' }).click()
+    await expect(page.getByText('Nothing scheduled yet')).toHaveCount(0)
+    await expect(page.getByText('Piano — Maya').first()).toBeVisible({ timeout: 8000 })
+  })
+
+  test("L18 [UC-008] MONTH range-aware load label — LoadBar subtitle reads \"this month's labor balance\"", async ({
+    page,
+  }) => {
+    await page.goto('/')
+    // The default web view is the MONTH grid → the Hearth Glow load subtitle must be scoped to the
+    // month (the f_ld3c4d fix), never "this week's" on a month-aggregated window.
+    await expect(page.getByText('Hearth Glow')).toBeVisible({ timeout: 15000 })
+    await expect(page.getByText("this month's labor balance")).toBeVisible()
+    await expect(page.getByText("this week's labor balance")).toHaveCount(0)
+
+    // The subtitle scope is range-driven, not filter-driven: toggling one member filter (range
+    // unchanged) keeps the month-scoped label.
+    await page.getByRole('checkbox', { name: 'Maya filter' }).click()
+    await page.waitForTimeout(1000) // deliberate wait for the filter re-render
+    await expect(page.getByText("this month's labor balance")).toBeVisible()
+  })
 })
 
 test.describe('Household Calendar — auth gate & cross-session (web)', () => {
