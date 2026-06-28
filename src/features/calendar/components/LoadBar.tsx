@@ -1,13 +1,22 @@
 import { View, Text } from 'react-native'
+import type { CalendarRange } from '@/__generated__/graphql'
 import type { CalendarLoadVM } from '@/features/calendar/types'
 
+/** Possessive window-scope label matching the range the backend aggregated the load over. */
+function scopeLabel(range: CalendarRange | undefined): string {
+  if (range === 'MONTH') return "this month's"
+  if (range === 'DAY') return "today's"
+  return "this week's" // WEEK (and default)
+}
+
 /**
- * "Hearth Glow" — the backend-computed weekly labor balance (U6). Renders a soft warm bar with
- * one segment per responsible adult (authentic member colors, width = share), plus a balance
- * pill and optional nudge. Returns null when there's no responsible-event load to show
- * (empty entries or total=0) so the marker/segment math never divides by zero.
+ * "Hearth Glow" — the backend-computed labor balance over the visible window (U6). Renders a soft
+ * warm bar with one segment per responsible adult (authentic member colors, width = share), plus a
+ * balance pill and optional nudge. The subtitle scope follows the active `range` (month/week/day) so
+ * it never mislabels the web month-grid load as "this week". Returns null when there's no
+ * responsible-event load to show (empty entries or total=0) so the segment math never divides by zero.
  */
-export function LoadBar({ load }: { load: CalendarLoadVM }) {
+export function LoadBar({ load, range }: { load: CalendarLoadVM; range?: CalendarRange }) {
   if (load.entries.length === 0 || load.total === 0) return null
   // "Balanced" when no single adult carries >60% of the responsible-event load.
   const maxShare = Math.max(...load.entries.map((e) => e.percent))
@@ -21,7 +30,7 @@ export function LoadBar({ load }: { load: CalendarLoadVM }) {
             Hearth Glow
           </Text>
           <Text className="font-body text-[11.5px] text-on-surface-variant dark:text-on-surface-variant-dark">
-            this week&apos;s labor balance
+            {scopeLabel(range)} labor balance
           </Text>
         </View>
         <Text

@@ -93,3 +93,12 @@ This slice adds:
   accepted/persisted/returned `location`.
 - `WeekGrid.web.tsx` was removed — the web surface now uses the month grid (no week/month toggle in
   scope), so the week strip was orphaned dead code.
+
+### PR-review follow-ups (range-aware "Hearth Glow" + filter-aware empty state)
+- **`LoadBar` scope label:** the subtitle no longer hardcodes "this week's labor balance". It takes an
+  optional `range` prop and reads `"this month's"` / `"today's"` / `"this week's"` to match the window
+  the backend aggregated the load over (`CalendarScreen.web` passes `calendar.period.range`). This
+  pairs with the backend nudge fix (`summaryLabel` is now range-scoped). Presentation-only.
+- **Empty state honors the member filter:** the web screen now gates the empty state on
+  `filterEvents(calendar.events).length === 0` (computed once as `visibleEvents`), so unchecking every
+  member shows `EmptyCalendarState` instead of a blank grid.

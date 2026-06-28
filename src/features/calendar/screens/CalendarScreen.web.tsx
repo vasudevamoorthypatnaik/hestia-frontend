@@ -22,6 +22,9 @@ export default function CalendarScreenWeb() {
   )
   const members = calendar?.members ?? []
   const { isVisible, toggle, filterEvents } = useMemberFilter(members)
+  // Gate the empty state on the FILTERED events (not the raw set) so unchecking every member shows
+  // the friendly empty state instead of a blank grid. Computed once and reused by the grid.
+  const visibleEvents = calendar ? filterEvents(calendar.events) : []
   const [showNew, setShowNew] = useState(false)
 
   const handleSignOut = async () => {
@@ -76,11 +79,11 @@ export default function CalendarScreenWeb() {
             )}
 
             <ScrollView className="flex-1">
-              {calendar.events.length === 0 ? (
+              {visibleEvents.length === 0 ? (
                 <EmptyCalendarState onAddEvent={() => setShowNew(true)} />
               ) : (
                 <MonthGrid
-                  events={filterEvents(calendar.events)}
+                  events={visibleEvents}
                   periodStart={calendar.period.start}
                   periodEnd={calendar.period.end}
                 />
@@ -88,7 +91,7 @@ export default function CalendarScreenWeb() {
             </ScrollView>
 
             <View className="border-t border-outline-variant bg-surface-container-low px-6 py-4 dark:border-outline-variant-dark dark:bg-surface-container-low-dark">
-              <LoadBar load={calendar.load} />
+              <LoadBar load={calendar.load} range={calendar.period.range} />
             </View>
           </View>
         </View>
