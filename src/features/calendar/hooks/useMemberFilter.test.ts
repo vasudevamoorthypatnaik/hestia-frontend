@@ -31,4 +31,17 @@ describe('useMemberFilter', () => {
     const shared = [event('e1', ['a', 'b'])]
     expect(result.current.filterEvents(shared)).toHaveLength(1)
   })
+
+  it('returns no events when every member is hidden (drives the empty-state gate)', () => {
+    // The web screen gates EmptyCalendarState on filterEvents(...).length === 0, so unchecking every
+    // member must yield an empty list (PR-review f_es5e6f: blank grid → friendly empty state).
+    const members = [member('a'), member('b')]
+    const { result } = renderHook(() => useMemberFilter(members))
+    const events = [event('e1', ['a']), event('e2', ['b'])]
+
+    act(() => result.current.toggle('a'))
+    act(() => result.current.toggle('b'))
+
+    expect(result.current.filterEvents(events)).toHaveLength(0)
+  })
 })

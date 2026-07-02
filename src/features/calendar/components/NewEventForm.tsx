@@ -57,6 +57,7 @@ export function NewEventForm({
   const [startTime, setStartTime] = useState('15:00')
   const [endTime, setEndTime] = useState('15:45')
   const [allDay, setAllDay] = useState(false)
+  const [location, setLocation] = useState('')
   const [needsDriver, setNeedsDriver] = useState(false)
   const [ownerIds, setOwnerIds] = useState<string[]>([])
   const [responsibleId, setResponsibleId] = useState<string | null>(null)
@@ -86,7 +87,7 @@ export function NewEventForm({
       ownerMemberIds: ownerIds,
       responsibleMemberId: responsibleId,
       needsDriver,
-      location: null,
+      location: location.trim() === '' ? null : location.trim(),
     })
   }
 
@@ -117,6 +118,15 @@ export function NewEventForm({
       </View>
 
       <ToggleRow label="All-day" value={allDay} onValueChange={setAllDay} />
+
+      <FormField
+        label="Location"
+        value={location}
+        onChangeText={setLocation}
+        hint="Optional"
+        testID="event-location-input"
+        maxLength={255}
+      />
 
       <ChipGroup
         legend="For (owner)"

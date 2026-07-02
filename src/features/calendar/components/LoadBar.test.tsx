@@ -51,6 +51,26 @@ describe('LoadBar (Hearth Glow)', () => {
     expect(screen.getByText('● Lopsided')).toBeTruthy()
   })
 
+  it('subtitle reads "this month\'s" when the range is MONTH', () => {
+    render(<LoadBar load={load} range="MONTH" />)
+    expect(screen.getByText("this month's labor balance")).toBeTruthy()
+  })
+
+  it('subtitle reads "today\'s" when the range is DAY', () => {
+    render(<LoadBar load={load} range="DAY" />)
+    expect(screen.getByText("today's labor balance")).toBeTruthy()
+  })
+
+  it('subtitle reads "this week\'s" when the range is WEEK', () => {
+    render(<LoadBar load={load} range="WEEK" />)
+    expect(screen.getByText("this week's labor balance")).toBeTruthy()
+  })
+
+  it('subtitle defaults to "this week\'s" when no range is passed (back-compat)', () => {
+    render(<LoadBar load={load} />)
+    expect(screen.getByText("this week's labor balance")).toBeTruthy()
+  })
+
   it('renders nothing with no entries', () => {
     const empty = { total: 0, summaryLabel: null, entries: [] } as CalendarLoadVM
     const { toJSON } = render(<LoadBar load={empty} />)

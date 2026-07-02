@@ -49,13 +49,14 @@ export type CalendarPeriod = {
   end: Scalars['String']['output'];
   /** Human label, e.g. 'Jun 23 – 29, 2026' or 'Thursday June 26'. */
   label: Scalars['String']['output'];
-  /** DAY or WEEK. */
+  /** DAY, WEEK, or MONTH. */
   range: CalendarRange;
   /** ISO date (yyyy-MM-dd) of the first day in the window. */
   start: Scalars['String']['output'];
   timezone: Scalars['String']['output'];
 };
 
+/**  Household Calendar inputs (HES-CAL). */
 export type CalendarPeriodInput = {
   /** ISO date (yyyy-MM-dd) anchoring the window; the server resolves the window in the household tz. */
   anchor: Scalars['String']['input'];
@@ -64,6 +65,7 @@ export type CalendarPeriodInput = {
 
 export type CalendarRange =
   | 'DAY'
+  | 'MONTH'
   | 'WEEK';
 
 export type ConnectedAccount = {
@@ -118,6 +120,11 @@ export type Household = {
   timezone: Scalars['String']['output'];
 };
 
+/**
+ *  Household Calendar types (HES-CAL). All computed values (timeLabel, isCoverageGap, load
+ *  percentages, colorHex, period window) are produced by the backend — the frontend renders them.
+ *  Date/time values are ISO-8601 strings (no custom scalars).
+ */
 export type HouseholdCalendar = {
   __typename?: 'HouseholdCalendar';
   connectedAccounts: Array<ConnectedAccount>;
